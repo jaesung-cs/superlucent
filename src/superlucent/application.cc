@@ -97,7 +97,7 @@ void Application::Run()
     std::this_thread::sleep_until(start_time + Duration(frame / fps_));
 
     const auto current_time = Clock::now();
-    std::cout << "fps: " << frame / Duration(current_time - start_time).count() << std::endl;
+    const auto fps = frame / Duration(current_time - start_time).count();
   }
 }
 

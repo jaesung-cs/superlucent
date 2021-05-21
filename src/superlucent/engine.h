@@ -21,6 +21,9 @@ private:
   void CreateDevice();
   void DestroyDevice();
 
+  void PreallocateMemory();
+  void FreeMemory();
+
 private:
   const int max_width_;
   const int max_height_;
@@ -39,6 +42,33 @@ private:
   uint32_t queue_index_ = 0;
   vk::Queue queue_;
   vk::Queue present_queue_;
+
+  // Memory
+  vk::DeviceMemory device_memory_;
+  vk::DeviceSize device_offset_ = 0;
+
+  vk::DeviceMemory host_memory_;
+  vk::DeviceSize host_offset_ = 0;
+
+  struct StagingBuffer
+  {
+    static constexpr int size = 32 * 1024 * 1024; // 32MB
+
+    vk::Buffer buffer;
+    vk::DeviceMemory memory;
+    void* map;
+  };
+  StagingBuffer staging_buffer_;
+
+  struct UniformBuffer
+  {
+    static constexpr int size = 32 * 1024 * 1024; // 32MB
+
+    vk::Buffer buffer;
+    vk::DeviceMemory memory;
+    void* map;
+  };
+  UniformBuffer uniform_buffer_;
 };
 }
 
