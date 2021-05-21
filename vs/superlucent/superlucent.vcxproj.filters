@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="src">
+      <UniqueIdentifier>{1e968214-565a-4588-81da-97b8006dee6c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\superlucent">
+      <UniqueIdentifier>{f9857301-319e-440d-bc06-7b7dbac289b6}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\main.cc">
+      <Filter>src\superlucent</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\application.cc">
+      <Filter>src\superlucent</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\engine.cc">
+      <Filter>src\superlucent</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\superlucent\application.h">
+      <Filter>src\superlucent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine.h">
+      <Filter>src\superlucent</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

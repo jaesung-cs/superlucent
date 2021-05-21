@@ -1,0 +1,12 @@
+# Rules in this file were initially inferred by Visual Studio IntelliCode from the C:\workspace\twopi\vs\twopi\ codebase based on best match to current usage at 1/23/2021
+# You can modify the rules from these initially generated values to suit your own policies
+# You can learn more about editorconfig here: https://docs.microsoft.com/en-us/visualstudio/ide/editorconfig-code-style-settings-reference
+
+root = true
+
+[*]
+indent_size = 2
+indent_style = space
+
+[*{.h,.hpp,.c,.cc,.cpp}]
+cpp_indent_namespace_contents = false
