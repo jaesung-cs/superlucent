@@ -11,7 +11,7 @@ class Engine
 {
 public:
   Engine() = delete;
-  Engine(GLFWwindow* window, int max_width, int max_height);
+  Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height);
   ~Engine();
 
 private:
@@ -24,12 +24,32 @@ private:
   void PreallocateMemory();
   void FreeMemory();
 
-private:
-  const int max_width_;
-  const int max_height_;
+  void CreateSwapchain();
+  void DestroySwapchain();
 
-  int width_ = 0;
-  int height_ = 0;
+  void CreateRendertarget();
+  void DestroyRendertarget();
+
+  struct Memory
+  {
+    vk::DeviceMemory memory;
+    vk::DeviceSize offset;
+    vk::DeviceSize size;
+  };
+
+  Memory AcquireDeviceMemory(vk::Buffer buffer);
+  Memory AcquireDeviceMemory(vk::Image image);
+  Memory AcquireDeviceMemory(vk::MemoryRequirements memory_requirements);
+  Memory AcquireHostMemory(vk::Buffer buffer);
+  Memory AcquireHostMemory(vk::Image image);
+  Memory AcquireHostMemory(vk::MemoryRequirements memory_requirements);
+
+private:
+  const uint32_t max_width_;
+  const uint32_t max_height_;
+
+  uint32_t width_ = 0;
+  uint32_t height_ = 0;
 
   // Instance
   vk::Instance instance_;
@@ -56,7 +76,7 @@ private:
 
     vk::Buffer buffer;
     vk::DeviceMemory memory;
-    void* map;
+    void* map = nullptr;
   };
   StagingBuffer staging_buffer_;
 
@@ -66,9 +86,28 @@ private:
 
     vk::Buffer buffer;
     vk::DeviceMemory memory;
-    void* map;
+    void* map = nullptr;
   };
   UniformBuffer uniform_buffer_;
+
+  // Swapchain
+  vk::SwapchainKHR swapchain_;
+  uint32_t swapchain_image_count_ = 0;
+  vk::Format swapchain_image_format_;
+  std::vector<vk::Image> swapchain_images_;
+  std::vector<vk::ImageView> swapchain_image_views_;
+
+  // Rendertarget
+  struct Rendertarget
+  {
+    Memory color_memory;
+    vk::Image color_image;
+    vk::ImageView color_image_view;
+    Memory depth_memory;
+    vk::Image depth_image;
+    vk::ImageView depth_image_view;
+  };
+  Rendertarget rendertarget_;
 };
 }
 
