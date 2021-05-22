@@ -183,6 +183,9 @@ void Engine::CreateDevice()
   // Choose the first GPU
   physical_device_ = instance_.enumeratePhysicalDevices()[0];
 
+  // Device properties
+  ubo_alignment_ = physical_device_.getProperties().limits.minUniformBufferOffsetAlignment;
+
   // Find general queue capable of graphics, compute and present
   constexpr auto queue_flag = vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute;
   const auto queue_family_properties = physical_device_.getQueueFamilyProperties();
@@ -356,7 +359,7 @@ void Engine::PreallocateMemory()
 
   // Persistently mapped uniform buffer
   uniform_buffer_.buffer = device_.createBuffer({ {},
-    uniform_buffer_.size, vk::BufferUsageFlagBits::eTransferSrc });
+    uniform_buffer_.size, vk::BufferUsageFlagBits::eUniformBuffer });
   uniform_buffer_.memory = device_.allocateMemory({
     device_.getBufferMemoryRequirements(uniform_buffer_.buffer).size,
     host_index });
@@ -391,7 +394,7 @@ void Engine::PreallocateMemory()
     { vk::DescriptorType::eUniformBuffer, max_num_descriptors },
     { vk::DescriptorType::eUniformBufferDynamic, max_num_descriptors },
   };
-  descriptor_pool_ = device_.createDescriptorPool({ {}, max_sets, pool_sizes });
+  descriptor_pool_ = device_.createDescriptorPool({ vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, max_sets, pool_sizes });
 
   // Preallocate command pools
   command_pool_ = device_.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer, queue_index_ });
@@ -692,10 +695,52 @@ void Engine::PrepareResources()
   queue_.submit(vk::SubmitInfo{ {}, {}, transient_command_buffer_, {} }, transfer_fence_);
   device_.waitForFences(transfer_fence_, true, UINT64_MAX);
   transient_command_buffer_.reset();
+
+  // Calculate uniform buffer offset and ranges in uniform buffer
+  vk::DeviceSize uniform_offset = 0ull;
+  camera_ubos_.resize(swapchain_image_count_);
+  for (int i = 0; i < swapchain_image_count_; i++)
+  {
+    camera_ubos_[i].offset = uniform_offset;
+    camera_ubos_[i].size = sizeof(CameraUbo);
+    uniform_offset = align(uniform_offset + sizeof(CameraUbo), ubo_alignment_);
+  }
+
+  triangle_model_ubos_.resize(swapchain_image_count_);
+  for (int i = 0; i < swapchain_image_count_; i++)
+  {
+    triangle_model_ubos_[i].offset = uniform_offset;
+    triangle_model_ubos_[i].size = sizeof(ModelUbo);
+    uniform_offset = align(uniform_offset + sizeof(ModelUbo), ubo_alignment_);
+  }
+  
+  // Descriptor set
+  std::vector<vk::DescriptorSetLayout> set_layouts(swapchain_image_count_, graphics_descriptor_set_layout_);
+  graphics_descriptor_sets_ = device_.allocateDescriptorSets({
+    descriptor_pool_, set_layouts
+    });
+
+  for (int i = 0; i < graphics_descriptor_sets_.size(); i++)
+  {
+    std::vector<vk::DescriptorBufferInfo> buffer_infos{
+      { uniform_buffer_.buffer, camera_ubos_[i].offset, camera_ubos_[i].size },
+      { uniform_buffer_.buffer, triangle_model_ubos_[i].offset, triangle_model_ubos_[i].size },
+    };
+    std::vector<vk::WriteDescriptorSet> descriptor_writes{
+      { graphics_descriptor_sets_[i], 0u, 0u, vk::DescriptorType::eUniformBuffer,
+      nullptr, buffer_infos[0], nullptr },
+      { graphics_descriptor_sets_[i], 1u, 0u, vk::DescriptorType::eUniformBuffer,
+      nullptr, buffer_infos[1], nullptr },
+    };
+    device_.updateDescriptorSets(descriptor_writes, {});
+  }
 }
 
 void Engine::DestroyResources()
 {
+  device_.freeDescriptorSets(descriptor_pool_, graphics_descriptor_sets_);
+  graphics_descriptor_sets_.clear();
+
   device_.destroyBuffer(triangle_buffer_.buffer);
 }
 

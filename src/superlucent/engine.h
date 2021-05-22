@@ -3,6 +3,8 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include <glm/glm.hpp>
+
 struct GLFWwindow;
 
 namespace supl
@@ -14,6 +16,22 @@ class Camera;
 
 class Engine
 {
+private:
+  // Binding 0
+  struct CameraUbo
+  {
+    alignas(16) glm::mat4 projection;
+    alignas(16) glm::mat4 view;
+    alignas(16) glm::vec3 eye;
+  };
+
+  // Binding 1
+  struct ModelUbo
+  {
+    alignas(16) glm::mat4 model;
+    alignas(16) glm::mat3x4 model_inverse_transpose;
+  };
+
 public:
   Engine() = delete;
   Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height);
@@ -161,6 +179,21 @@ private:
     vk::Buffer buffer;
   };
   VertexBuffer triangle_buffer_;
+
+  // Descriptor set
+  std::vector<vk::DescriptorSet> graphics_descriptor_sets_;
+
+  vk::DeviceSize ubo_alignment_;
+  CameraUbo camera_;
+  ModelUbo triangle_model_;
+
+  struct Uniform
+  {
+    vk::DeviceSize offset;
+    vk::DeviceSize size;
+  };
+  std::vector<Uniform> camera_ubos_;
+  std::vector<Uniform> triangle_model_ubos_;
 
   // Transfer
   vk::Fence transfer_fence_;
