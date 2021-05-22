@@ -48,10 +48,12 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
   CreateRendertarget();
   CreateFramebuffer();
   CreatePipelines();
+  PrepareResources();
 }
 
 Engine::~Engine()
 {
+  DestroyResources();
   DestroyPipelines();
   DestroyFramebuffer();
   DestroyRendertarget();
@@ -350,7 +352,7 @@ void Engine::PreallocateMemory()
     device_.getBufferMemoryRequirements(staging_buffer_.buffer).size,
     host_index });
   device_.bindBufferMemory(staging_buffer_.buffer, staging_buffer_.memory, 0);
-  staging_buffer_.map = device_.mapMemory(staging_buffer_.memory, 0, staging_buffer_.size);
+  staging_buffer_.map = static_cast<uint8_t*>(device_.mapMemory(staging_buffer_.memory, 0, staging_buffer_.size));
 
   // Persistently mapped uniform buffer
   uniform_buffer_.buffer = device_.createBuffer({ {},
@@ -359,7 +361,7 @@ void Engine::PreallocateMemory()
     device_.getBufferMemoryRequirements(uniform_buffer_.buffer).size,
     host_index });
   device_.bindBufferMemory(uniform_buffer_.buffer, uniform_buffer_.memory, 0);
-  uniform_buffer_.map = device_.mapMemory(uniform_buffer_.memory, 0, uniform_buffer_.size);
+  uniform_buffer_.map = static_cast<uint8_t*>(device_.mapMemory(uniform_buffer_.memory, 0, uniform_buffer_.size));
 
   // Preallocate framebuffer memory
   auto temp_color_image = device_.createImage({ {},
@@ -393,11 +395,17 @@ void Engine::PreallocateMemory()
 
   // Preallocate command pools
   command_pool_ = device_.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer, queue_index_ });
-  transient_command_pool_ = device_.createCommandPool({ vk::CommandPoolCreateFlagBits::eTransient, queue_index_ });
+  transient_command_pool_ = device_.createCommandPool({ 
+    vk::CommandPoolCreateFlagBits::eResetCommandBuffer | vk::CommandPoolCreateFlagBits::eTransient, queue_index_ });
+
+  // Transfer fence
+  transfer_fence_ = device_.createFence({});
 }
 
 void Engine::FreeMemory()
 {
+  device_.destroyFence(transfer_fence_);
+
   device_.destroyCommandPool(transient_command_pool_);
   device_.destroyCommandPool(command_pool_);
 
@@ -647,6 +655,48 @@ void Engine::DestroyGraphicsPipeline()
   device_.destroyDescriptorSetLayout(graphics_descriptor_set_layout_);
   device_.destroyPipeline(graphics_pipeline_);
   device_.destroyPipelineLayout(graphics_pipeline_layout_);
+}
+
+void Engine::PrepareResources()
+{
+  // Triangle vertex buffer
+  std::vector<float> triangle_vertex_buffer{
+    0.f, 0.f, 0.f, 1.f, 0.f, 0.f,
+    1.f, 0.f, 0.f, 0.f, 1.f, 0.f,
+    0.f, 1.f, 0.f, 0.f, 0.f, 1.f,
+  };
+  std::vector<uint32_t> triangle_index_buffer{
+    0, 1, 2
+  };
+  const auto triangle_vertex_buffer_size = triangle_vertex_buffer.size() * sizeof(float);
+  const auto triangle_index_buffer_size = triangle_index_buffer.size() * sizeof(uint32_t);
+  const auto triangle_buffer_size = triangle_vertex_buffer_size + triangle_index_buffer_size;
+
+  triangle_buffer_.buffer = device_.createBuffer({ {},
+    triangle_buffer_size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eIndexBuffer
+    });
+
+  const auto memory = AcquireDeviceMemory(triangle_buffer_.buffer);
+  device_.bindBufferMemory(triangle_buffer_.buffer, memory.memory, memory.offset);
+
+  // Transfer
+  std::memcpy(staging_buffer_.map, triangle_vertex_buffer.data(), triangle_vertex_buffer_size);
+  std::memcpy(staging_buffer_.map + triangle_vertex_buffer_size, triangle_index_buffer.data(), triangle_index_buffer_size);
+
+  transient_command_buffer_.begin({ vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
+  transient_command_buffer_.copyBuffer(staging_buffer_.buffer, triangle_buffer_.buffer, {
+    { 0ull, 0ull, triangle_buffer_size }
+    });
+  transient_command_buffer_.end();
+
+  queue_.submit(vk::SubmitInfo{ {}, {}, transient_command_buffer_, {} }, transfer_fence_);
+  device_.waitForFences(transfer_fence_, true, UINT64_MAX);
+  transient_command_buffer_.reset();
+}
+
+void Engine::DestroyResources()
+{
+  device_.destroyBuffer(triangle_buffer_.buffer);
 }
 
 vk::ShaderModule Engine::CreateShaderModule(const std::string& filepath)

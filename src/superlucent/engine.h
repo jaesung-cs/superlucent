@@ -48,6 +48,9 @@ private:
   void CreatePipelines();
   void DestroyPipelines();
 
+  void PrepareResources();
+  void DestroyResources();
+
   struct Memory
   {
     vk::DeviceMemory memory;
@@ -106,7 +109,7 @@ private:
 
     vk::Buffer buffer;
     vk::DeviceMemory memory;
-    void* map = nullptr;
+    uint8_t* map = nullptr;
   };
   StagingBuffer staging_buffer_;
 
@@ -116,7 +119,7 @@ private:
 
     vk::Buffer buffer;
     vk::DeviceMemory memory;
-    void* map = nullptr;
+    uint8_t* map = nullptr;
   };
   UniformBuffer uniform_buffer_;
 
@@ -151,6 +154,16 @@ private:
   // Command buffers
   vk::CommandBuffer transient_command_buffer_;
   std::vector<vk::CommandBuffer> draw_command_buffers_;
+
+  // Resources
+  struct VertexBuffer
+  {
+    vk::Buffer buffer;
+  };
+  VertexBuffer triangle_buffer_;
+
+  // Transfer
+  vk::Fence transfer_fence_;
 };
 }
 
