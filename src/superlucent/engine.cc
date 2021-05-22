@@ -80,7 +80,10 @@ void Engine::Resize(uint32_t width, uint32_t height)
 void Engine::UpdateCamera(std::shared_ptr<scene::Camera> camera)
 {
   camera_.view = camera->ViewMatrix();
+
   camera_.projection = camera->ProjectionMatrix();
+  camera_.projection[1][1] *= -1.f;
+
   camera_.eye = camera->Eye();
 }
 
@@ -124,9 +127,6 @@ void Engine::Draw()
     { image_available_semaphores_[current_frame_], stages, draw_command_buffer, render_finished_semaphores_[current_frame_] },
     }, in_flight_fences_[current_frame_]);
 
-  // DEBUG: wait for present
-  queue_.waitIdle();
-
   // Present
   std::vector<uint32_t> image_indices{ image_index };
   const auto present_result = present_queue_.presentKHR(
@@ -139,8 +139,6 @@ void Engine::Draw()
   else if (present_result != vk::Result::eSuccess)
     throw std::runtime_error("Failed to present swapchain image");
 
-  std::cout << "Present result: " << vk::to_string(present_result) << std::endl;
-
   current_frame_ = (current_frame_ + 1) % 2;
 }
 
@@ -152,7 +150,7 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
   command_buffer.setScissor(0, vk::Rect2D{ {0u, 0u}, {width_, height_} });
 
   std::vector<vk::ClearValue> clear_values{
-    vk::ClearColorValue{ std::array<float, 4>{0.3f * image_index, 0.8f, 0.8f, 1.f} },
+    vk::ClearColorValue{ std::array<float, 4>{0.8f, 0.8f, 0.8f, 1.f} },
     vk::ClearDepthStencilValue{ 1.f, 0u }
   };
   command_buffer.beginRenderPass({ render_pass_, swapchain_framebuffers_[image_index],
@@ -724,7 +722,8 @@ void Engine::CreateGraphicsPipeline()
   vk::PipelineColorBlendAttachmentState color_blend_attachment{
     false,
     vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha, vk::BlendOp::eAdd,
-    vk::BlendFactor::eOne, vk::BlendFactor::eZero, vk::BlendOp::eAdd
+    vk::BlendFactor::eOne, vk::BlendFactor::eZero, vk::BlendOp::eAdd,
+    vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
   };
   vk::PipelineColorBlendStateCreateInfo color_blend{ {},
     false, {}, color_blend_attachment,
