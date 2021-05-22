@@ -5,6 +5,8 @@
 
 #include <GLFW/glfw3.h>
 
+#include <superlucent/scene/camera.h>
+
 namespace supl
 {
 namespace
@@ -56,6 +58,21 @@ Engine::~Engine()
   DestroySwapchain();
   DestroyDevice();
   DestroyInstance();
+}
+
+void Engine::Resize(uint32_t width, uint32_t height)
+{
+  // TODO
+}
+
+void Engine::UpdateCamera(std::shared_ptr<scene::Camera> camera)
+{
+  // TODO
+}
+
+void Engine::Draw()
+{
+  // TODO
 }
 
 Engine::Memory Engine::AcquireDeviceMemory(vk::Buffer buffer)

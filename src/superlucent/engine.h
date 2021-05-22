@@ -7,12 +7,21 @@ struct GLFWwindow;
 
 namespace supl
 {
+namespace scene
+{
+class Camera;
+}
+
 class Engine
 {
 public:
   Engine() = delete;
   Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height);
   ~Engine();
+
+  void Resize(uint32_t width, uint32_t height);
+  void UpdateCamera(std::shared_ptr<scene::Camera> camera);
+  void Draw();
 
 private:
   void CreateInstance(GLFWwindow* window);

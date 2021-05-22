@@ -10,6 +10,8 @@
 #include <GLFW/glfw3.h>
 
 #include <superlucent/engine.h>
+#include <superlucent/scene/camera.h>
+#include <superlucent/scene/camera_control.h>
 
 namespace supl
 {
@@ -17,8 +19,10 @@ namespace
 {
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 {
+  double x, y;
+  glfwGetCursorPos(window, &x, &y);
   auto module_window = static_cast<Application*>(glfwGetWindowUserPointer(window));
-  module_window->MouseButton(button, action, mods);
+  module_window->MouseButton(button, action, mods, x, y);
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -71,6 +75,11 @@ Application::Application()
   glfwSetWindowPos(window_, 100, 100);
 
   engine_ = std::make_unique<Engine>(window_, max_width, max_height);
+
+  camera_ = std::make_shared<scene::Camera>();
+  camera_->SetScreenSize(width_, height_);
+
+  camera_control_ = std::make_unique<scene::CameraControl>(camera_);
 }
 
 Application::~Application()
@@ -90,7 +99,8 @@ void Application::Run()
   {
     glfwPollEvents();
 
-    // TODO: draw
+    engine_->UpdateCamera(camera_);
+    engine_->Draw();
 
     frame++;
 
@@ -101,8 +111,24 @@ void Application::Run()
   }
 }
 
-void Application::MouseButton(int button, int action, int mods)
+void Application::MouseButton(int button, int action, int mods, double x, double y)
 {
+  int mouse_button_index = -1;
+  switch (button)
+  {
+  case GLFW_MOUSE_BUTTON_LEFT: mouse_button_index = 0; break;
+  case GLFW_MOUSE_BUTTON_RIGHT: mouse_button_index = 1; break;
+  }
+
+  int mouse_button_state_index = -1;
+  switch (action)
+  {
+  case GLFW_RELEASE: mouse_button_state_index = 0; break;
+  case GLFW_PRESS: mouse_button_state_index = 1; break;
+  }
+
+  if (mouse_button_index >= 0)
+    mouse_buttons_[mouse_button_index] = mouse_button_state_index;
 }
 
 void Application::Key(int key, int scancode, int action, int mods)
@@ -119,13 +145,40 @@ void Application::Key(int key, int scancode, int action, int mods)
 
 void Application::CursorPos(double x, double y)
 {
+  const auto dx = static_cast<int>(x - mouse_last_x_);
+  const auto dy = static_cast<int>(y - mouse_last_y_);
+
+  if (mouse_buttons_[0] && mouse_buttons_[1])
+  {
+    camera_control_->ZoomByPixels(dx, dy);
+    camera_control_->Update();
+  }
+
+  else if (mouse_buttons_[0])
+  {
+    camera_control_->RotateByPixels(dx, dy);
+    camera_control_->Update();
+  }
+
+  else if (mouse_buttons_[1])
+  {
+    camera_control_->TranslateByPixels(dx, dy);
+    camera_control_->Update();
+  }
+
+  mouse_last_x_ = x;
+  mouse_last_y_ = y;
 }
 
 void Application::Scroll(double scroll)
 {
+  camera_control_->ZoomByWheel(static_cast<int>(scroll));
+  camera_control_->Update();
 }
 
 void Application::Resize(int width, int height)
 {
+  camera_->SetScreenSize(width, height);
+  engine_->Resize(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
 }
 }

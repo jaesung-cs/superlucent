@@ -10,6 +10,9 @@
     <Filter Include="src\superlucent\shader">
       <UniqueIdentifier>{2ee0c52c-efe0-4002-83f3-fcecfca9e031}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\superlucent\scene">
+      <UniqueIdentifier>{bd22a472-9c63-4a13-89e0-31deb35d7d1a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cc">
@@ -21,6 +24,12 @@
     <ClCompile Include="..\..\src\superlucent\engine.cc">
       <Filter>src\superlucent</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\scene\camera.cc">
+      <Filter>src\superlucent\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\scene\camera_control.cc">
+      <Filter>src\superlucent\scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\superlucent\application.h">
@@ -28,6 +37,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\superlucent\engine.h">
       <Filter>src\superlucent</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\scene\camera.h">
+      <Filter>src\superlucent\scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\scene\camera_control.h">
+      <Filter>src\superlucent\scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
