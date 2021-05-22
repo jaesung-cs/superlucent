@@ -11,6 +11,7 @@ namespace scene
 CameraControl::CameraControl(std::shared_ptr<scene::Camera> camera)
   : camera_(camera)
 {
+  Update();
 }
 
 void CameraControl::Update()

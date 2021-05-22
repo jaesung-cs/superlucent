@@ -49,10 +49,18 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
   CreateFramebuffer();
   CreatePipelines();
   PrepareResources();
+  CreateSynchronizationObjects();
+
+  // Initialize uniform values
+  triangle_model_.model = glm::mat4(1.f);
+  triangle_model_.model_inverse_transpose = glm::mat3(1.f);
 }
 
 Engine::~Engine()
 {
+  device_.waitIdle();
+
+  DestroySynchronizationObjects();
   DestroyResources();
   DestroyPipelines();
   DestroyFramebuffer();
@@ -71,12 +79,103 @@ void Engine::Resize(uint32_t width, uint32_t height)
 
 void Engine::UpdateCamera(std::shared_ptr<scene::Camera> camera)
 {
-  // TODO
+  camera_.view = camera->ViewMatrix();
+  camera_.projection = camera->ProjectionMatrix();
+  camera_.eye = camera->Eye();
 }
 
 void Engine::Draw()
 {
-  // TODO
+  auto wait_result = device_.waitForFences(in_flight_fences_[current_frame_], true, UINT64_MAX);
+
+  const auto acquire_next_image_result = device_.acquireNextImageKHR(swapchain_, UINT64_MAX, image_available_semaphores_[current_frame_]);
+  if (acquire_next_image_result.result == vk::Result::eErrorOutOfDateKHR)
+  {
+    // TODO: recreate swapchain
+    return;
+  }
+  else if (acquire_next_image_result.result != vk::Result::eSuccess && acquire_next_image_result.result != vk::Result::eSuboptimalKHR)
+    throw std::runtime_error("Failed to acquire next swapchain image");
+
+  const auto image_index = acquire_next_image_result.value;
+
+  if (images_in_flight_[image_index])
+    wait_result = device_.waitForFences(images_in_flight_[image_index], true, UINT64_MAX);
+  images_in_flight_[image_index] = in_flight_fences_[current_frame_];
+
+  device_.resetFences(in_flight_fences_[current_frame_]);
+
+  // Build command buffer
+  auto& draw_command_buffer = draw_command_buffers_[image_index];
+  draw_command_buffer.reset();
+  draw_command_buffer.begin({ vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
+  RecordDrawCommands(draw_command_buffer, image_index);
+  draw_command_buffer.end();
+
+  // Update uniforms
+  std::memcpy(uniform_buffer_.map + camera_ubos_[image_index].offset, &camera_, sizeof(CameraUbo));
+  std::memcpy(uniform_buffer_.map + triangle_model_ubos_[image_index].offset, &triangle_model_, sizeof(ModelUbo));
+
+  // Submit
+  std::vector<vk::PipelineStageFlags> stages{
+    vk::PipelineStageFlagBits::eColorAttachmentOutput
+  };
+  queue_.submit({
+    { image_available_semaphores_[current_frame_], stages, draw_command_buffer, render_finished_semaphores_[current_frame_] },
+    }, in_flight_fences_[current_frame_]);
+
+  // DEBUG: wait for present
+  queue_.waitIdle();
+
+  // Present
+  std::vector<uint32_t> image_indices{ image_index };
+  const auto present_result = present_queue_.presentKHR(
+    { render_finished_semaphores_[current_frame_], swapchain_, image_indices });
+
+  if (present_result == vk::Result::eErrorOutOfDateKHR || present_result == vk::Result::eSuboptimalKHR)
+  {
+    // TODO: Recreate swapchain
+  }
+  else if (present_result != vk::Result::eSuccess)
+    throw std::runtime_error("Failed to present swapchain image");
+
+  std::cout << "Present result: " << vk::to_string(present_result) << std::endl;
+
+  current_frame_ = (current_frame_ + 1) % 2;
+}
+
+void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t image_index)
+{
+  vk::Viewport viewport{ 0.f, 0.f, static_cast<float>(width_), static_cast<float>(height_), 0.f, 1.f };
+  command_buffer.setViewport(0, viewport);
+
+  command_buffer.setScissor(0, vk::Rect2D{ {0u, 0u}, {width_, height_} });
+
+  std::vector<vk::ClearValue> clear_values{
+    vk::ClearColorValue{ std::array<float, 4>{0.3f * image_index, 0.8f, 0.8f, 1.f} },
+    vk::ClearDepthStencilValue{ 1.f, 0u }
+  };
+  command_buffer.beginRenderPass({ render_pass_, swapchain_framebuffers_[image_index],
+    vk::Rect2D{ {0u, 0u}, {width_, height_} }, clear_values
+    }, vk::SubpassContents::eInline
+  );
+
+  // Draw triangle model
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphics_pipeline_);
+
+  command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, graphics_pipeline_layout_, 0u,
+    graphics_descriptor_sets_[image_index], {});
+
+  command_buffer.bindVertexBuffers(0u, { triangle_buffer_.buffer }, { 0ull });
+
+  command_buffer.bindIndexBuffer(triangle_buffer_.buffer, triangle_buffer_.index_offset, vk::IndexType::eUint32);
+
+  command_buffer.drawIndexed(triangle_buffer_.num_indices, 1u, 0u, 0u, 0u);
+
+  // Shader-defined triangle
+  command_buffer.draw(3, 1, 0, 0);
+
+  command_buffer.endRenderPass();
 }
 
 Engine::Memory Engine::AcquireDeviceMemory(vk::Buffer buffer)
@@ -295,7 +394,7 @@ void Engine::CreateSwapchain()
   for (int i = 0; i < swapchain_images_.size(); i++)
   {
     swapchain_image_views_[i] = device_.createImageView({
-      {}, swapchain_images_[0], vk::ImageViewType::e2D, swapchain_image_format_, {},
+      {}, swapchain_images_[i], vk::ImageViewType::e2D, swapchain_image_format_, {},
       {vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1} });
   }
 }
@@ -567,7 +666,7 @@ void Engine::CreateGraphicsPipeline()
   graphics_pipeline_layout_ = device_.createPipelineLayout({ {}, graphics_descriptor_set_layout_, {} });
 
   // Shader modules
-  const std::string base_dir = "c:\\workspace\\superlucent\\src\\superlucent\\shader";
+  const std::string base_dir = "C:\\workspace\\superlucent\\src\\superlucent\\shader";
   vk::ShaderModule vert_module = CreateShaderModule(base_dir + "\\color.vert.spv");
   vk::ShaderModule frag_module = CreateShaderModule(base_dir + "\\color.frag.spv");
 
@@ -581,7 +680,7 @@ void Engine::CreateGraphicsPipeline()
   std::vector<vk::VertexInputBindingDescription> vertex_binding_descriptions{
     { 0, sizeof(float) * 6, vk::VertexInputRate::eVertex },
   };
-  std::vector < vk::VertexInputAttributeDescription> vertex_attribute_descriptions{
+  std::vector<vk::VertexInputAttributeDescription> vertex_attribute_descriptions{
     { 0, 0, vk::Format::eR32G32B32Sfloat, 0 },
     { 1, 0, vk::Format::eR32G32B32Sfloat, sizeof(float) * 3 },
   };
@@ -604,7 +703,7 @@ void Engine::CreateGraphicsPipeline()
 
   // Rasterization
   vk::PipelineRasterizationStateCreateInfo rasterization{ {},
-    false, false, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise,
+    false, false, vk::PolygonMode::eFill, vk::CullModeFlagBits::eNone, vk::FrontFace::eCounterClockwise,
     false, 0.f, 0.f, 0.f,
     1.f
   };
@@ -614,14 +713,16 @@ void Engine::CreateGraphicsPipeline()
 
   // Depth stencil
   vk::PipelineDepthStencilStateCreateInfo depth_stencil{ {},
-    true, true, vk::CompareOp::eLess, false,
+    // TODO: Disable depth test for now
+    false, false, vk::CompareOp::eLess, false,
+    // true, true, vk::CompareOp::eLess, false,
     false, {}, {},
     0.f, 1.f
   };
 
   // Color blend
   vk::PipelineColorBlendAttachmentState color_blend_attachment{
-    true,
+    false,
     vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha, vk::BlendOp::eAdd,
     vk::BlendFactor::eOne, vk::BlendFactor::eZero, vk::BlendOp::eAdd
   };
@@ -678,13 +779,15 @@ void Engine::PrepareResources()
   triangle_buffer_.buffer = device_.createBuffer({ {},
     triangle_buffer_size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eIndexBuffer
     });
+  triangle_buffer_.index_offset = triangle_vertex_buffer_size;
+  triangle_buffer_.num_indices = static_cast<uint32_t>(triangle_index_buffer.size());
 
   const auto memory = AcquireDeviceMemory(triangle_buffer_.buffer);
   device_.bindBufferMemory(triangle_buffer_.buffer, memory.memory, memory.offset);
 
   // Transfer
   std::memcpy(staging_buffer_.map, triangle_vertex_buffer.data(), triangle_vertex_buffer_size);
-  std::memcpy(staging_buffer_.map + triangle_vertex_buffer_size, triangle_index_buffer.data(), triangle_index_buffer_size);
+  std::memcpy(staging_buffer_.map + triangle_buffer_.index_offset, triangle_index_buffer.data(), triangle_index_buffer_size);
 
   transient_command_buffer_.begin({ vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
   transient_command_buffer_.copyBuffer(staging_buffer_.buffer, triangle_buffer_.buffer, {
@@ -692,14 +795,14 @@ void Engine::PrepareResources()
     });
   transient_command_buffer_.end();
 
-  queue_.submit(vk::SubmitInfo{ {}, {}, transient_command_buffer_, {} }, transfer_fence_);
-  device_.waitForFences(transfer_fence_, true, UINT64_MAX);
+  queue_.submit({ { {}, {}, transient_command_buffer_, {} } }, transfer_fence_);
+  const auto wait_result = device_.waitForFences(transfer_fence_, true, UINT64_MAX);
   transient_command_buffer_.reset();
 
   // Calculate uniform buffer offset and ranges in uniform buffer
   vk::DeviceSize uniform_offset = 0ull;
   camera_ubos_.resize(swapchain_image_count_);
-  for (int i = 0; i < swapchain_image_count_; i++)
+  for (uint32_t i = 0; i < swapchain_image_count_; i++)
   {
     camera_ubos_[i].offset = uniform_offset;
     camera_ubos_[i].size = sizeof(CameraUbo);
@@ -707,7 +810,7 @@ void Engine::PrepareResources()
   }
 
   triangle_model_ubos_.resize(swapchain_image_count_);
-  for (int i = 0; i < swapchain_image_count_; i++)
+  for (uint32_t i = 0; i < swapchain_image_count_; i++)
   {
     triangle_model_ubos_[i].offset = uniform_offset;
     triangle_model_ubos_[i].size = sizeof(ModelUbo);
@@ -742,6 +845,34 @@ void Engine::DestroyResources()
   graphics_descriptor_sets_.clear();
 
   device_.destroyBuffer(triangle_buffer_.buffer);
+}
+
+void Engine::CreateSynchronizationObjects()
+{
+  for (int i = 0; i < 2; i++)
+  {
+    image_available_semaphores_.emplace_back(device_.createSemaphore({}));
+    render_finished_semaphores_.emplace_back(device_.createSemaphore({}));
+    in_flight_fences_.emplace_back(device_.createFence({ vk::FenceCreateFlagBits::eSignaled }));
+  }
+
+  // Pointer to fence
+  images_in_flight_.resize(swapchain_image_count_);
+}
+
+void Engine::DestroySynchronizationObjects()
+{
+  for (auto& semaphore : image_available_semaphores_)
+    device_.destroySemaphore(semaphore);
+  image_available_semaphores_.clear();
+
+  for (auto& semaphore : render_finished_semaphores_)
+    device_.destroySemaphore(semaphore);
+  render_finished_semaphores_.clear();
+
+  for (auto& fence : in_flight_fences_)
+    device_.destroyFence(fence);
+  in_flight_fences_.clear();
 }
 
 vk::ShaderModule Engine::CreateShaderModule(const std::string& filepath)

@@ -42,6 +42,8 @@ public:
   void Draw();
 
 private:
+  void RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t image_index);
+
   void CreateInstance(GLFWwindow* window);
   void DestroyInstance();
 
@@ -68,6 +70,9 @@ private:
 
   void PrepareResources();
   void DestroyResources();
+
+  void CreateSynchronizationObjects();
+  void DestroySynchronizationObjects();
 
   struct Memory
   {
@@ -177,6 +182,8 @@ private:
   struct VertexBuffer
   {
     vk::Buffer buffer;
+    vk::DeviceSize index_offset;
+    uint32_t num_indices;
   };
   VertexBuffer triangle_buffer_;
 
@@ -197,6 +204,13 @@ private:
 
   // Transfer
   vk::Fence transfer_fence_;
+
+  // Present synchronization
+  std::vector<vk::Semaphore> image_available_semaphores_;
+  std::vector<vk::Semaphore> render_finished_semaphores_;
+  uint32_t current_frame_ = 0;
+  std::vector<vk::Fence> in_flight_fences_;
+  std::vector<vk::Fence> images_in_flight_;
 };
 }
 
