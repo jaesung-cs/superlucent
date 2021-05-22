@@ -44,6 +44,7 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
   CreateDevice();
   CreateSwapchain();
   PreallocateMemory();
+  AllocateCommandBuffers();
   CreateRendertarget();
   CreateFramebuffer();
   CreatePipelines();
@@ -54,6 +55,7 @@ Engine::~Engine()
   DestroyPipelines();
   DestroyFramebuffer();
   DestroyRendertarget();
+  FreeCommandBuffers();
   FreeMemory();
   DestroySwapchain();
   DestroyDevice();
@@ -388,10 +390,17 @@ void Engine::PreallocateMemory()
     { vk::DescriptorType::eUniformBufferDynamic, max_num_descriptors },
   };
   descriptor_pool_ = device_.createDescriptorPool({ {}, max_sets, pool_sizes });
+
+  // Preallocate command pools
+  command_pool_ = device_.createCommandPool({ vk::CommandPoolCreateFlagBits::eResetCommandBuffer, queue_index_ });
+  transient_command_pool_ = device_.createCommandPool({ vk::CommandPoolCreateFlagBits::eTransient, queue_index_ });
 }
 
 void Engine::FreeMemory()
 {
+  device_.destroyCommandPool(transient_command_pool_);
+  device_.destroyCommandPool(command_pool_);
+
   device_.destroyDescriptorPool(descriptor_pool_);
 
   device_.unmapMemory(staging_buffer_.memory);
@@ -404,6 +413,20 @@ void Engine::FreeMemory()
 
   device_.freeMemory(device_memory_);
   device_.freeMemory(host_memory_);
+}
+
+void Engine::AllocateCommandBuffers()
+{
+  draw_command_buffers_ = device_.allocateCommandBuffers({ command_pool_, vk::CommandBufferLevel::ePrimary, swapchain_image_count_ });
+  transient_command_buffer_ = device_.allocateCommandBuffers({ transient_command_pool_, vk::CommandBufferLevel::ePrimary, 1 })[0];
+}
+
+void Engine::FreeCommandBuffers()
+{
+  device_.freeCommandBuffers(command_pool_, draw_command_buffers_);
+  draw_command_buffers_.clear();
+
+  device_.freeCommandBuffers(transient_command_pool_, transient_command_buffer_);
 }
 
 void Engine::CreateRendertarget()

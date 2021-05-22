@@ -30,11 +30,14 @@ private:
   void CreateDevice();
   void DestroyDevice();
 
+  void CreateSwapchain();
+  void DestroySwapchain();
+
   void PreallocateMemory();
   void FreeMemory();
 
-  void CreateSwapchain();
-  void DestroySwapchain();
+  void AllocateCommandBuffers();
+  void FreeCommandBuffers();
 
   void CreateRendertarget();
   void DestroyRendertarget();
@@ -83,15 +86,19 @@ private:
   vk::Queue queue_;
   vk::Queue present_queue_;
 
+  // Command pools
+  vk::CommandPool command_pool_;
+  vk::CommandPool transient_command_pool_;
+
+  // Descriptor pool
+  vk::DescriptorPool descriptor_pool_;
+
   // Memory
   vk::DeviceMemory device_memory_;
   vk::DeviceSize device_offset_ = 0;
 
   vk::DeviceMemory host_memory_;
   vk::DeviceSize host_offset_ = 0;
-
-  // Descriptor pool
-  vk::DescriptorPool descriptor_pool_;
 
   struct StagingBuffer
   {
@@ -140,6 +147,10 @@ private:
   vk::DescriptorSetLayout graphics_descriptor_set_layout_;
   vk::PipelineLayout graphics_pipeline_layout_;
   vk::Pipeline graphics_pipeline_;
+
+  // Command buffers
+  vk::CommandBuffer transient_command_buffer_;
+  std::vector<vk::CommandBuffer> draw_command_buffers_;
 };
 }
 
