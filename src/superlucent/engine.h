@@ -81,6 +81,9 @@ private:
   vk::DeviceMemory host_memory_;
   vk::DeviceSize host_offset_ = 0;
 
+  // Descriptor pool
+  vk::DescriptorPool descriptor_pool_;
+
   struct StagingBuffer
   {
     static constexpr int size = 32 * 1024 * 1024; // 32MB

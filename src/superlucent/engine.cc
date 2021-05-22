@@ -362,10 +362,21 @@ void Engine::PreallocateMemory()
     });
   rendertarget_.depth_memory = AcquireDeviceMemory(temp_depth_image);
   device_.destroyImage(temp_depth_image);
+
+  // Preallocate descriptor pool
+  constexpr uint32_t max_num_descriptors = 1024;
+  constexpr uint32_t max_sets = 1024;
+  std::vector<vk::DescriptorPoolSize> pool_sizes{
+    { vk::DescriptorType::eUniformBuffer, max_num_descriptors },
+    { vk::DescriptorType::eUniformBufferDynamic, max_num_descriptors },
+  };
+  descriptor_pool_ = device_.createDescriptorPool({ {}, max_sets, pool_sizes });
 }
 
 void Engine::FreeMemory()
 {
+  device_.destroyDescriptorPool(descriptor_pool_);
+
   device_.unmapMemory(staging_buffer_.memory);
   device_.freeMemory(staging_buffer_.memory);
   device_.destroyBuffer(staging_buffer_.buffer);
