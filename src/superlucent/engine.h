@@ -30,6 +30,12 @@ private:
   void CreateRendertarget();
   void DestroyRendertarget();
 
+  void CreateFramebuffer();
+  void DestroyFramebuffer();
+
+  void CreatePipelines();
+  void DestroyPipelines();
+
   struct Memory
   {
     vk::DeviceMemory memory;
@@ -43,6 +49,11 @@ private:
   Memory AcquireHostMemory(vk::Buffer buffer);
   Memory AcquireHostMemory(vk::Image image);
   Memory AcquireHostMemory(vk::MemoryRequirements memory_requirements);
+
+  vk::ShaderModule CreateShaderModule(const std::string& filepath);
+
+  void CreateGraphicsPipeline();
+  void DestroyGraphicsPipeline();
 
 private:
   const uint32_t max_width_;
@@ -108,6 +119,15 @@ private:
     vk::ImageView depth_image_view;
   };
   Rendertarget rendertarget_;
+
+  // Pipeline
+  vk::RenderPass render_pass_;
+  std::vector<vk::Framebuffer> swapchain_framebuffers_;
+  vk::PipelineCache pipeline_cache_;
+
+  vk::DescriptorSetLayout graphics_descriptor_set_layout_;
+  vk::PipelineLayout graphics_pipeline_layout_;
+  vk::Pipeline graphics_pipeline_;
 };
 }
 

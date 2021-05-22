@@ -7,6 +7,9 @@
     <Filter Include="src\superlucent">
       <UniqueIdentifier>{f9857301-319e-440d-bc06-7b7dbac289b6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\superlucent\shader">
+      <UniqueIdentifier>{2ee0c52c-efe0-4002-83f3-fcecfca9e031}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cc">
@@ -26,5 +29,19 @@
     <ClInclude Include="..\..\src\superlucent\engine.h">
       <Filter>src\superlucent</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\superlucent\shader\.gitignore">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\color.frag">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\color.vert">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\compile.py">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

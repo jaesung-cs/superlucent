@@ -1,6 +1,7 @@
 #include <superlucent/engine.h>
 
 #include <iostream>
+#include <fstream>
 
 #include <GLFW/glfw3.h>
 
@@ -20,7 +21,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
   return VK_FALSE;
 }
 
-constexpr auto Align(vk::DeviceSize offset, vk::DeviceSize alignment)
+constexpr auto align(vk::DeviceSize offset, vk::DeviceSize alignment)
 {
   return (offset + alignment - 1) & ~(alignment - 1);
 }
@@ -42,10 +43,14 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
   CreateSwapchain();
   PreallocateMemory();
   CreateRendertarget();
+  CreateFramebuffer();
+  CreatePipelines();
 }
 
 Engine::~Engine()
 {
+  DestroyPipelines();
+  DestroyFramebuffer();
   DestroyRendertarget();
   FreeMemory();
   DestroySwapchain();
@@ -67,7 +72,7 @@ Engine::Memory Engine::AcquireDeviceMemory(vk::MemoryRequirements memory_require
 {
   Memory memory;
   memory.memory = device_memory_;
-  memory.offset = Align(device_offset_, memory_requirements.alignment);
+  memory.offset = align(device_offset_, memory_requirements.alignment);
   memory.size = memory_requirements.size;
   device_offset_ = memory.offset + memory.size;
   return memory;
@@ -87,7 +92,7 @@ Engine::Memory Engine::AcquireHostMemory(vk::MemoryRequirements memory_requireme
 {
   Memory memory;
   memory.memory = host_memory_;
-  memory.offset = Align(device_offset_, memory_requirements.alignment);
+  memory.offset = align(device_offset_, memory_requirements.alignment);
   memory.size = memory_requirements.size;
   device_offset_ = memory.offset + memory.size;
   return memory;
@@ -408,5 +413,208 @@ void Engine::DestroyRendertarget()
 
   device_.destroyImageView(rendertarget_.depth_image_view);
   device_.destroyImage(rendertarget_.depth_image);
+}
+
+void Engine::CreateFramebuffer()
+{
+  // Render pass
+  std::vector<vk::AttachmentDescription> attachment_descriptions{
+    // Color
+    { {}, swapchain_image_format_, vk::SampleCountFlagBits::e4,
+    vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore,
+    vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
+    vk::ImageLayout::eUndefined, vk::ImageLayout::eColorAttachmentOptimal },
+    // Depth
+    { {}, vk::Format::eD24UnormS8Uint, vk::SampleCountFlagBits::e4,
+    vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eDontCare,
+    vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
+    vk::ImageLayout::eUndefined, vk::ImageLayout::eDepthStencilAttachmentOptimal },
+    // Resolve
+    { {}, swapchain_image_format_, vk::SampleCountFlagBits::e1,
+    vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eStore,
+    vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp::eDontCare,
+    vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR },
+  };
+
+  vk::AttachmentReference color_attachment_reference{ 0, vk::ImageLayout::eColorAttachmentOptimal };
+  vk::AttachmentReference depth_attachment_reference{ 1, vk::ImageLayout::eDepthStencilAttachmentOptimal };
+  vk::AttachmentReference resolve_attachment_reference{ 2, vk::ImageLayout::eColorAttachmentOptimal };
+
+  std::vector<vk::SubpassDescription> subpasses{
+    { {}, vk::PipelineBindPoint::eGraphics,
+    {}, color_attachment_reference, resolve_attachment_reference, &depth_attachment_reference },
+  };
+
+  std::vector<vk::SubpassDependency> dependencies{
+    { VK_SUBPASS_EXTERNAL, 0,
+    vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests,
+    vk::PipelineStageFlagBits::eColorAttachmentOutput | vk::PipelineStageFlagBits::eEarlyFragmentTests,
+    {}, vk::AccessFlagBits::eColorAttachmentWrite | vk::AccessFlagBits::eDepthStencilAttachmentWrite },
+  };
+
+  render_pass_ = device_.createRenderPass({ {}, attachment_descriptions, subpasses, dependencies });
+
+  // Framebuffer
+  swapchain_framebuffers_.resize(swapchain_image_count_);
+  for (uint32_t i = 0; i < swapchain_image_count_; i++)
+  {
+    std::vector<vk::ImageView> attachments{
+      rendertarget_.color_image_view,
+      rendertarget_.depth_image_view,
+      swapchain_image_views_[i],
+    };
+
+    swapchain_framebuffers_[i] = device_.createFramebuffer({ {}, render_pass_, attachments, width_, height_, 1 });
+  }
+}
+
+void Engine::DestroyFramebuffer()
+{
+  for (auto& framebuffer : swapchain_framebuffers_)
+    device_.destroyFramebuffer(framebuffer);
+  swapchain_framebuffers_.clear();
+
+  device_.destroyRenderPass(render_pass_);
+}
+
+void Engine::CreatePipelines()
+{
+  // Create pipeline cache
+  pipeline_cache_ = device_.createPipelineCache({});
+
+  CreateGraphicsPipeline();
+}
+
+void Engine::DestroyPipelines()
+{
+  DestroyGraphicsPipeline();
+
+  device_.destroyPipelineCache(pipeline_cache_);
+}
+
+void Engine::CreateGraphicsPipeline()
+{
+  // Descriptor set layout
+  std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
+    { 0u, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex },
+    { 1u, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex },
+  };
+  graphics_descriptor_set_layout_ = device_.createDescriptorSetLayout({ {}, descriptor_set_layout_bindings });
+
+  // Pipeline layout
+  graphics_pipeline_layout_ = device_.createPipelineLayout({ {}, graphics_descriptor_set_layout_, {} });
+
+  // Shader modules
+  const std::string base_dir = "c:\\workspace\\superlucent\\src\\superlucent\\shader";
+  vk::ShaderModule vert_module = CreateShaderModule(base_dir + "\\color.vert.spv");
+  vk::ShaderModule frag_module = CreateShaderModule(base_dir + "\\color.frag.spv");
+
+  // Shader stages
+  std::vector<vk::PipelineShaderStageCreateInfo> shader_stages{
+    { {}, vk::ShaderStageFlagBits::eVertex, vert_module, "main" },
+    { {}, vk::ShaderStageFlagBits::eFragment, frag_module, "main" },
+  };
+
+  // Vertex input
+  std::vector<vk::VertexInputBindingDescription> vertex_binding_descriptions{
+    { 0, sizeof(float) * 6, vk::VertexInputRate::eVertex },
+  };
+  std::vector < vk::VertexInputAttributeDescription> vertex_attribute_descriptions{
+    { 0, 0, vk::Format::eR32G32B32Sfloat, 0 },
+    { 1, 0, vk::Format::eR32G32B32Sfloat, sizeof(float) * 3 },
+  };
+  vk::PipelineVertexInputStateCreateInfo vertex_input{ {},
+    vertex_binding_descriptions, vertex_attribute_descriptions };
+
+  // Input assembly
+  vk::PipelineInputAssemblyStateCreateInfo input_assembly{ {},
+    vk::PrimitiveTopology::eTriangleList, false
+  };
+
+  // Viewport
+  vk::Viewport viewport_area{
+    0.f, 0.f,
+    static_cast<float>(width_), static_cast<float>(height_),
+    0.f, 1.f
+  };
+  vk::Rect2D scissor{ { 0u, 0u }, { width_, height_ } };
+  vk::PipelineViewportStateCreateInfo viewport{ {}, viewport_area, scissor };
+
+  // Rasterization
+  vk::PipelineRasterizationStateCreateInfo rasterization{ {},
+    false, false, vk::PolygonMode::eFill, vk::CullModeFlagBits::eBack, vk::FrontFace::eCounterClockwise,
+    false, 0.f, 0.f, 0.f,
+    1.f
+  };
+
+  // Multisample
+  vk::PipelineMultisampleStateCreateInfo multisample{ {}, vk::SampleCountFlagBits::e4 };
+
+  // Depth stencil
+  vk::PipelineDepthStencilStateCreateInfo depth_stencil{ {},
+    true, true, vk::CompareOp::eLess, false,
+    false, {}, {},
+    0.f, 1.f
+  };
+
+  // Color blend
+  vk::PipelineColorBlendAttachmentState color_blend_attachment{
+    true,
+    vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha, vk::BlendOp::eAdd,
+    vk::BlendFactor::eOne, vk::BlendFactor::eZero, vk::BlendOp::eAdd
+  };
+  vk::PipelineColorBlendStateCreateInfo color_blend{ {},
+    false, {}, color_blend_attachment,
+    { 0.f, 0.f, 0.f, 0.f }
+  };
+
+  // Dynamic states
+  std::vector<vk::DynamicState> dynamic_states{
+    vk::DynamicState::eViewport,
+    vk::DynamicState::eScissor,
+  };
+  vk::PipelineDynamicStateCreateInfo dynamic_state{ {}, dynamic_states };
+ 
+  vk::GraphicsPipelineCreateInfo pipeline_create_info{ {}, shader_stages,
+    &vertex_input, &input_assembly, nullptr,
+    &viewport, &rasterization, &multisample, &depth_stencil, &color_blend, &dynamic_state,
+    graphics_pipeline_layout_,
+    render_pass_, 0,
+    nullptr, -1
+  };
+  auto result = device_.createGraphicsPipeline(pipeline_cache_, pipeline_create_info);
+  std::cout << "Grahpics pipeline creation result: " << vk::to_string(result.result) << std::endl;
+  graphics_pipeline_ = result.value;
+
+  // Destroy shader module
+  device_.destroyShaderModule(vert_module);
+  device_.destroyShaderModule(frag_module);
+}
+
+void Engine::DestroyGraphicsPipeline()
+{
+  device_.destroyDescriptorSetLayout(graphics_descriptor_set_layout_);
+  device_.destroyPipeline(graphics_pipeline_);
+  device_.destroyPipelineLayout(graphics_pipeline_layout_);
+}
+
+vk::ShaderModule Engine::CreateShaderModule(const std::string& filepath)
+{
+  std::ifstream file(filepath, std::ios::ate | std::ios::binary);
+  if (!file.is_open())
+    throw std::runtime_error("Failed to open file: " + filepath);
+
+  size_t file_size = (size_t)file.tellg();
+  std::vector<char> buffer(file_size);
+  file.seekg(0);
+  file.read(buffer.data(), file_size);
+  file.close();
+
+  std::vector<uint32_t> code;
+  auto* int_ptr = reinterpret_cast<uint32_t*>(buffer.data());
+  for (int i = 0; i < file_size / 4; i++)
+    code.push_back(int_ptr[i]);
+
+  return device_.createShaderModule({ {}, code });
 }
 }
