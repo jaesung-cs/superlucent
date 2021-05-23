@@ -58,5 +58,11 @@
     <None Include="..\..\src\superlucent\shader\compile.py">
       <Filter>src\superlucent\shader</Filter>
     </None>
+    <None Include="..\..\src\superlucent\shader\floor.frag">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\floor.vert">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

@@ -53,6 +53,7 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
 
   // Initialize uniform values
   triangle_model_.model = glm::mat4(1.f);
+  triangle_model_.model[3][2] = 1.f;
   triangle_model_.model_inverse_transpose = glm::mat3(1.f);
 }
 
@@ -159,7 +160,7 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
   );
 
   // Draw triangle model
-  command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, graphics_pipeline_);
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, color_pipeline_);
 
   command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, graphics_pipeline_layout_, 0u,
     graphics_descriptor_sets_[image_index], {});
@@ -170,8 +171,14 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
 
   command_buffer.drawIndexed(triangle_buffer_.num_indices, 1u, 0u, 0u, 0u);
 
-  // Shader-defined triangle
-  command_buffer.draw(3, 1, 0, 0);
+  // Draw floor model
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, floor_pipeline_);
+
+  command_buffer.bindVertexBuffers(0u, { floor_buffer_.buffer }, { 0ull });
+
+  command_buffer.bindIndexBuffer(floor_buffer_.buffer, floor_buffer_.index_offset, vk::IndexType::eUint32);
+
+  command_buffer.drawIndexed(floor_buffer_.num_indices, 1u, 0u, 0u, 0u);
 
   command_buffer.endRenderPass();
 }
@@ -743,9 +750,34 @@ void Engine::CreateGraphicsPipelines()
     nullptr, -1
   };
 
-  graphics_pipeline_ = CreateGraphicsPipeline(pipeline_create_info);
+  color_pipeline_ = CreateGraphicsPipeline(pipeline_create_info);
+  device_.destroyShaderModule(vert_module);
+  device_.destroyShaderModule(frag_module);
 
-  // Destroy shader module
+  // Floor graphics pipelineshader_stages
+  vert_module = CreateShaderModule(base_dir + "\\floor.vert.spv");
+  frag_module = CreateShaderModule(base_dir + "\\floor.frag.spv");
+
+  shader_stages = {
+    { {}, vk::ShaderStageFlagBits::eVertex, vert_module, "main" },
+    { {}, vk::ShaderStageFlagBits::eFragment, frag_module, "main" },
+  };
+
+  vertex_binding_descriptions = {
+    { 0u, sizeof(float) * 2, vk::VertexInputRate::eVertex },
+  };
+  vertex_attribute_descriptions = {
+    { 0u, 0u, vk::Format::eR32G32B32Sfloat, 0u },
+  };
+  vertex_input
+    .setVertexAttributeDescriptions(vertex_attribute_descriptions)
+    .setVertexBindingDescriptions(vertex_binding_descriptions);
+
+  input_assembly.setTopology(vk::PrimitiveTopology::eTriangleStrip);
+
+  pipeline_create_info.setStages(shader_stages);
+
+  floor_pipeline_ = CreateGraphicsPipeline(pipeline_create_info);
   device_.destroyShaderModule(vert_module);
   device_.destroyShaderModule(frag_module);
 }
@@ -753,7 +785,8 @@ void Engine::CreateGraphicsPipelines()
 void Engine::DestroyGraphicsPipelines()
 {
   device_.destroyDescriptorSetLayout(graphics_descriptor_set_layout_);
-  device_.destroyPipeline(graphics_pipeline_);
+  device_.destroyPipeline(color_pipeline_);
+  device_.destroyPipeline(floor_pipeline_);
   device_.destroyPipelineLayout(graphics_pipeline_layout_);
 }
 
@@ -778,16 +811,53 @@ void Engine::PrepareResources()
   triangle_buffer_.index_offset = triangle_vertex_buffer_size;
   triangle_buffer_.num_indices = static_cast<uint32_t>(triangle_index_buffer.size());
 
-  const auto memory = AcquireDeviceMemory(triangle_buffer_.buffer);
-  device_.bindBufferMemory(triangle_buffer_.buffer, memory.memory, memory.offset);
+  // Floor buffer
+  constexpr float floor_range = 20.f;
+  std::vector<float> floor_vertex_buffer{
+    -floor_range, -floor_range,
+    floor_range, -floor_range,
+    -floor_range, floor_range,
+    floor_range, floor_range,
+  };
+  std::vector<uint32_t> floor_index_buffer{
+    0, 1, 2, 3
+  };
+
+  const auto floor_vertex_buffer_size = floor_vertex_buffer.size() * sizeof(float);
+  const auto floor_index_buffer_size = floor_index_buffer.size() * sizeof(uint32_t);
+  const auto floor_buffer_size = floor_vertex_buffer_size + floor_index_buffer_size;
+
+  floor_buffer_.buffer = device_.createBuffer({ {},
+    floor_buffer_size, vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eIndexBuffer
+    });
+  floor_buffer_.index_offset = floor_vertex_buffer_size;
+  floor_buffer_.num_indices = static_cast<uint32_t>(floor_index_buffer.size());
+
+  // Memory binding
+  const auto triangle_memory = AcquireDeviceMemory(triangle_buffer_.buffer);
+  device_.bindBufferMemory(triangle_buffer_.buffer, triangle_memory.memory, triangle_memory.offset);
+
+  const auto floor_memory = AcquireDeviceMemory(floor_buffer_.buffer);
+  device_.bindBufferMemory(floor_buffer_.buffer, floor_memory.memory, floor_memory.offset);
 
   // Transfer
-  std::memcpy(staging_buffer_.map, triangle_vertex_buffer.data(), triangle_vertex_buffer_size);
-  std::memcpy(staging_buffer_.map + triangle_buffer_.index_offset, triangle_index_buffer.data(), triangle_index_buffer_size);
+  vk::DeviceSize staging_offset = 0ull;
+  std::memcpy(staging_buffer_.map + staging_offset, triangle_vertex_buffer.data(), triangle_vertex_buffer_size);
+  staging_offset += triangle_vertex_buffer_size;
+  std::memcpy(staging_buffer_.map + staging_offset, triangle_index_buffer.data(), triangle_index_buffer_size);
+  staging_offset += triangle_index_buffer_size;
+
+  std::memcpy(staging_buffer_.map + staging_offset, floor_vertex_buffer.data(), floor_vertex_buffer_size);
+  staging_offset += floor_vertex_buffer_size;
+  std::memcpy(staging_buffer_.map + staging_offset, floor_index_buffer.data(), floor_index_buffer_size);
+  staging_offset += floor_index_buffer_size;
 
   transient_command_buffer_.begin({ vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
   transient_command_buffer_.copyBuffer(staging_buffer_.buffer, triangle_buffer_.buffer, {
-    { 0ull, 0ull, triangle_buffer_size }
+    { 0ull, 0ull, triangle_buffer_size },
+    });
+  transient_command_buffer_.copyBuffer(staging_buffer_.buffer, floor_buffer_.buffer, {
+    { triangle_buffer_size, 0ull, floor_buffer_size },
     });
   transient_command_buffer_.end();
 
@@ -841,6 +911,7 @@ void Engine::DestroyResources()
   graphics_descriptor_sets_.clear();
 
   device_.destroyBuffer(triangle_buffer_.buffer);
+  device_.destroyBuffer(floor_buffer_.buffer);
 }
 
 void Engine::CreateSynchronizationObjects()

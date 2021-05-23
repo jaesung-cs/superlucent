@@ -179,6 +179,8 @@ python compile.py
     <None Include="..\..\src\superlucent\shader\color.frag" />
     <None Include="..\..\src\superlucent\shader\color.vert" />
     <None Include="..\..\src\superlucent\shader\compile.py" />
+    <None Include="..\..\src\superlucent\shader\floor.frag" />
+    <None Include="..\..\src\superlucent\shader\floor.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

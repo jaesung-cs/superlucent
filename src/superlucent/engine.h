@@ -174,7 +174,8 @@ private:
 
   vk::DescriptorSetLayout graphics_descriptor_set_layout_;
   vk::PipelineLayout graphics_pipeline_layout_;
-  vk::Pipeline graphics_pipeline_;
+  vk::Pipeline color_pipeline_;
+  vk::Pipeline floor_pipeline_;
 
   // Command buffers
   vk::CommandBuffer transient_command_buffer_;
@@ -188,6 +189,7 @@ private:
     uint32_t num_indices;
   };
   VertexBuffer triangle_buffer_;
+  VertexBuffer floor_buffer_;
 
   // Descriptor set
   std::vector<vk::DescriptorSet> graphics_descriptor_sets_;
