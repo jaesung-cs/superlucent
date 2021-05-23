@@ -711,9 +711,7 @@ void Engine::CreateGraphicsPipeline()
 
   // Depth stencil
   vk::PipelineDepthStencilStateCreateInfo depth_stencil{ {},
-    // TODO: Disable depth test for now
-    false, false, vk::CompareOp::eLess, false,
-    // true, true, vk::CompareOp::eLess, false,
+    true, true, vk::CompareOp::eLess, false,
     false, {}, {},
     0.f, 1.f
   };
