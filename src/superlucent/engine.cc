@@ -730,7 +730,7 @@ void Engine::CreateGraphicsPipelines()
 
   // Color blend
   vk::PipelineColorBlendAttachmentState color_blend_attachment{
-    false,
+    true,
     vk::BlendFactor::eSrcAlpha, vk::BlendFactor::eOneMinusSrcAlpha, vk::BlendOp::eAdd,
     vk::BlendFactor::eOne, vk::BlendFactor::eZero, vk::BlendOp::eAdd,
     vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA
