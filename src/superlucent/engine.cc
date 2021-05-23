@@ -858,7 +858,7 @@ void Engine::PrepareResources()
   floor_buffer_.num_indices = static_cast<uint32_t>(floor_index_buffer.size());
 
   // Floor texture
-  constexpr int floor_texture_length = 32;
+  constexpr int floor_texture_length = 128;
   uint8_t floor_texture[floor_texture_length * floor_texture_length * 4];
   for (int u = 0; u < floor_texture_length; u++)
   {
