@@ -15,5 +15,5 @@ layout (location = 0) out vec2 frag_tex_coord;
 void main()
 {
   gl_Position = camera.projection * camera.view * vec4(position, 0.f, 1.f);
-  frag_tex_coord = position;
+  frag_tex_coord = position / 2.f;
 }

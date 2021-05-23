@@ -48,12 +48,13 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
   CreateRendertarget();
   CreateFramebuffer();
   CreatePipelines();
+  CreateSampler();
   PrepareResources();
   CreateSynchronizationObjects();
 
   // Initialize uniform values
   triangle_model_.model = glm::mat4(1.f);
-  triangle_model_.model[3][2] = 1.f;
+  triangle_model_.model[3][2] = 0.1f;
   triangle_model_.model_inverse_transpose = glm::mat3(1.f);
 }
 
@@ -63,6 +64,7 @@ Engine::~Engine()
 
   DestroySynchronizationObjects();
   DestroyResources();
+  DestroySampler();
   DestroyPipelines();
   DestroyFramebuffer();
   DestroyRendertarget();
@@ -320,7 +322,8 @@ void Engine::CreateDevice()
   auto features = physical_device_.getFeatures();
   features
     .setTessellationShader(true)
-    .setGeometryShader(true);
+    .setGeometryShader(true)
+    .setSamplerAnisotropy(true);
 
   // Create device
   vk::DeviceCreateInfo device_create_info{ {},
@@ -497,6 +500,7 @@ void Engine::PreallocateMemory()
   std::vector<vk::DescriptorPoolSize> pool_sizes{
     { vk::DescriptorType::eUniformBuffer, max_num_descriptors },
     { vk::DescriptorType::eUniformBufferDynamic, max_num_descriptors },
+    { vk::DescriptorType::eCombinedImageSampler, 16 },
   };
   descriptor_pool_ = device_.createDescriptorPool({ vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet, max_sets, pool_sizes });
 
@@ -664,6 +668,7 @@ void Engine::CreateGraphicsPipelines()
   std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
     { 0u, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex },
     { 1u, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex },
+    { 2u, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment },
   };
   graphics_descriptor_set_layout_ = device_.createDescriptorSetLayout({ {}, descriptor_set_layout_bindings });
 
@@ -790,6 +795,25 @@ void Engine::DestroyGraphicsPipelines()
   device_.destroyPipelineLayout(graphics_pipeline_layout_);
 }
 
+void Engine::CreateSampler()
+{
+  sampler_ = device_.createSampler({ {},
+    vk::Filter::eLinear, vk::Filter::eLinear, vk::SamplerMipmapMode::eLinear,
+    vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat, vk::SamplerAddressMode::eRepeat,
+    0.f,
+    true, 16.f,
+    false, vk::CompareOp::eNever,
+    0.f, static_cast<float>(mipmap_level_),
+    vk::BorderColor::eFloatTransparentBlack,
+    false
+    });
+}
+
+void Engine::DestroySampler()
+{
+  device_.destroySampler(sampler_);
+}
+
 void Engine::PrepareResources()
 {
   // Triangle vertex buffer
@@ -833,12 +857,44 @@ void Engine::PrepareResources()
   floor_buffer_.index_offset = floor_vertex_buffer_size;
   floor_buffer_.num_indices = static_cast<uint32_t>(floor_index_buffer.size());
 
+  // Floor texture
+  constexpr int floor_texture_length = 32;
+  uint8_t floor_texture[floor_texture_length * floor_texture_length * 4];
+  for (int u = 0; u < floor_texture_length; u++)
+  {
+    for (int v = 0; v < floor_texture_length; v++)
+    {
+      uint8_t color = (255 - 64) + 64 * !((u < floor_texture_length / 2) ^ (v < floor_texture_length / 2));
+      floor_texture[(v * floor_texture_length + u) * 4 + 0] = color;
+      floor_texture[(v * floor_texture_length + u) * 4 + 1] = color;
+      floor_texture[(v * floor_texture_length + u) * 4 + 2] = color;
+      floor_texture[(v * floor_texture_length + u) * 4 + 3] = 255;
+    }
+  }
+  constexpr int floor_texture_size = floor_texture_length * floor_texture_length * sizeof(uint8_t) * 4;
+
+  floor_texture_.image = device_.createImage({ {},
+    vk::ImageType::e2D, vk::Format::eR8G8B8A8Srgb, { floor_texture_length, floor_texture_length, 1 },
+    mipmap_level_, 1, vk::SampleCountFlagBits::e1,
+    vk::ImageTiling::eOptimal,
+    vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eSampled,
+    vk::SharingMode::eExclusive, {}, vk::ImageLayout::eUndefined
+    });
+
   // Memory binding
   const auto triangle_memory = AcquireDeviceMemory(triangle_buffer_.buffer);
   device_.bindBufferMemory(triangle_buffer_.buffer, triangle_memory.memory, triangle_memory.offset);
 
   const auto floor_memory = AcquireDeviceMemory(floor_buffer_.buffer);
   device_.bindBufferMemory(floor_buffer_.buffer, floor_memory.memory, floor_memory.offset);
+
+  const auto floor_texture_memory = AcquireDeviceMemory(floor_texture_.image);
+  device_.bindImageMemory(floor_texture_.image, floor_texture_memory.memory, floor_texture_memory.offset);
+
+  floor_texture_.image_view = device_.createImageView({ {},
+    floor_texture_.image, vk::ImageViewType::e2D,
+    vk::Format::eR8G8B8A8Srgb, {},
+    { vk::ImageAspectFlagBits::eColor, 0, mipmap_level_, 0, 1 } });
 
   // Transfer
   vk::DeviceSize staging_offset = 0ull;
@@ -852,13 +908,32 @@ void Engine::PrepareResources()
   std::memcpy(staging_buffer_.map + staging_offset, floor_index_buffer.data(), floor_index_buffer_size);
   staging_offset += floor_index_buffer_size;
 
+  std::memcpy(staging_buffer_.map + staging_offset, floor_texture, floor_texture_size);
+  staging_offset += floor_texture_size;
+
+  // Transfer commands
   transient_command_buffer_.begin({ vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
+
   transient_command_buffer_.copyBuffer(staging_buffer_.buffer, triangle_buffer_.buffer, {
     { 0ull, 0ull, triangle_buffer_size },
     });
   transient_command_buffer_.copyBuffer(staging_buffer_.buffer, floor_buffer_.buffer, {
     { triangle_buffer_size, 0ull, floor_buffer_size },
     });
+
+  ImageLayoutTransition(transient_command_buffer_, floor_texture_.image,
+    vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
+
+  transient_command_buffer_.copyBufferToImage(staging_buffer_.buffer, floor_texture_.image,
+    vk::ImageLayout::eTransferDstOptimal, {
+      { triangle_buffer_size + floor_buffer_size, 0, 0,
+      { vk::ImageAspectFlagBits::eColor, 0, 0, 1 },
+      { 0, 0, 0 },
+      { floor_texture_length, floor_texture_length, 1 } },
+    });
+
+  GenerateMipmap(transient_command_buffer_, floor_texture_.image, floor_texture_length, floor_texture_length, mipmap_level_);
+
   transient_command_buffer_.end();
 
   queue_.submit({ { {}, {}, transient_command_buffer_, {} } }, transfer_fence_);
@@ -895,11 +970,16 @@ void Engine::PrepareResources()
       { uniform_buffer_.buffer, camera_ubos_[i].offset, camera_ubos_[i].size },
       { uniform_buffer_.buffer, triangle_model_ubos_[i].offset, triangle_model_ubos_[i].size },
     };
+    std::vector<vk::DescriptorImageInfo> image_infos{
+      { sampler_, floor_texture_.image_view, vk::ImageLayout::eShaderReadOnlyOptimal },
+    };
     std::vector<vk::WriteDescriptorSet> descriptor_writes{
       { graphics_descriptor_sets_[i], 0u, 0u, vk::DescriptorType::eUniformBuffer,
       nullptr, buffer_infos[0], nullptr },
       { graphics_descriptor_sets_[i], 1u, 0u, vk::DescriptorType::eUniformBuffer,
       nullptr, buffer_infos[1], nullptr },
+      { graphics_descriptor_sets_[i], 2u, 0u, vk::DescriptorType::eCombinedImageSampler,
+      image_infos[0], nullptr, nullptr },
     };
     device_.updateDescriptorSets(descriptor_writes, {});
   }
@@ -912,6 +992,8 @@ void Engine::DestroyResources()
 
   device_.destroyBuffer(triangle_buffer_.buffer);
   device_.destroyBuffer(floor_buffer_.buffer);
+  device_.destroyImage(floor_texture_.image);
+  device_.destroyImageView(floor_texture_.image_view);
 }
 
 void Engine::CreateSynchronizationObjects()
@@ -968,5 +1050,85 @@ vk::Pipeline Engine::CreateGraphicsPipeline(vk::GraphicsPipelineCreateInfo& crea
   if (result.result != vk::Result::eSuccess)
     throw std::runtime_error("Failed to create graphics pipeline, with error code: " + vk::to_string(result.result));
   return result.value;
+}
+
+void Engine::ImageLayoutTransition(vk::CommandBuffer& command_buffer, vk::Image image, vk::ImageLayout old_layout, vk::ImageLayout new_layout)
+{
+  vk::PipelineStageFlags src_stage_mask = {};
+  vk::AccessFlags src_access_mask = {};
+  vk::PipelineStageFlags dst_stage_mask = {};
+  vk::AccessFlags dst_access_mask = {};
+
+  if (old_layout == vk::ImageLayout::eUndefined && new_layout == vk::ImageLayout::eTransferDstOptimal)
+  {
+    src_stage_mask = vk::PipelineStageFlagBits::eTopOfPipe;
+    dst_stage_mask = vk::PipelineStageFlagBits::eTransfer;
+    dst_access_mask = vk::AccessFlagBits::eTransferWrite;
+  }
+  else if (old_layout == vk::ImageLayout::eTransferDstOptimal && new_layout == vk::ImageLayout::eShaderReadOnlyOptimal)
+  {
+    src_stage_mask = vk::PipelineStageFlagBits::eTransfer;
+    src_access_mask = vk::AccessFlagBits::eTransferWrite;
+    dst_stage_mask = vk::PipelineStageFlagBits::eFragmentShader;
+    dst_access_mask = vk::AccessFlagBits::eShaderRead;
+  }
+
+  command_buffer.pipelineBarrier(src_stage_mask, dst_stage_mask, {},
+    {},
+    {},
+    {
+      { src_access_mask, dst_access_mask, old_layout, new_layout, VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+      image, { vk::ImageAspectFlagBits::eColor, 0, mipmap_level_, 0, 1 } },
+    });
+}
+
+void Engine::GenerateMipmap(vk::CommandBuffer& command_buffer, vk::Image image, uint32_t width, uint32_t height, int mipmap_levels)
+{
+  for (uint32_t i = 0; i < mipmap_levels - 1; i++)
+  {
+    command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eTransfer, {},
+      {},
+      {},
+    {
+      vk::ImageMemoryBarrier{ vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eTransferRead,
+      vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eTransferSrcOptimal,
+      VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+      image, vk::ImageSubresourceRange{ vk::ImageAspectFlagBits::eColor, i, 1, 0, 1 } },
+    });
+
+    command_buffer.blitImage(
+      image, vk::ImageLayout::eTransferSrcOptimal,
+      image, vk::ImageLayout::eTransferDstOptimal, {
+        vk::ImageBlit{
+          vk::ImageSubresourceLayers{ vk::ImageAspectFlagBits::eColor, i, 0, 1 },
+          std::array<vk::Offset3D, 2>{ vk::Offset3D{ 0, 0, 0 }, vk::Offset3D{ static_cast<int>(width), static_cast<int>(height), 1 } },
+          vk::ImageSubresourceLayers{ vk::ImageAspectFlagBits::eColor, i + 1, 0, 1},
+          std::array<vk::Offset3D, 2>{ vk::Offset3D{ 0, 0, 0 }, vk::Offset3D{ static_cast<int>(width) / 2, static_cast<int>(height) / 2, 1 } },
+        },
+      }, vk::Filter::eLinear);
+
+    command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {},
+      {},
+      {},
+    {
+      vk::ImageMemoryBarrier{ vk::AccessFlagBits::eTransferRead, vk::AccessFlagBits::eShaderRead,
+      vk::ImageLayout::eTransferSrcOptimal, vk::ImageLayout::eShaderReadOnlyOptimal,
+      VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+      image, vk::ImageSubresourceRange{ vk::ImageAspectFlagBits::eColor, i, 1, 0, 1 } },
+    });
+
+    width /= 2;
+    height /= 2;
+  }
+
+  command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eFragmentShader, {},
+    {},
+    {},
+    {
+      vk::ImageMemoryBarrier{ vk::AccessFlagBits::eTransferWrite, vk::AccessFlagBits::eShaderRead,
+      vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal,
+      VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+      image, vk::ImageSubresourceRange{ vk::ImageAspectFlagBits::eColor, static_cast<uint32_t>(mipmap_levels) - 1, 1, 0, 1 } },
+    });
 }
 }

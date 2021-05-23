@@ -68,6 +68,9 @@ private:
   void CreatePipelines();
   void DestroyPipelines();
 
+  void CreateSampler();
+  void DestroySampler();
+
   void PrepareResources();
   void DestroyResources();
 
@@ -94,6 +97,9 @@ private:
   void DestroyGraphicsPipelines();
 
   vk::Pipeline CreateGraphicsPipeline(vk::GraphicsPipelineCreateInfo& create_info);
+
+  void ImageLayoutTransition(vk::CommandBuffer& command_buffer, vk::Image image, vk::ImageLayout old_layout, vk::ImageLayout new_layout);
+  void GenerateMipmap(vk::CommandBuffer& command_buffer, vk::Image image, uint32_t width, uint32_t height, int mipmap_levels);
 
 private:
   const uint32_t max_width_;
@@ -181,6 +187,10 @@ private:
   vk::CommandBuffer transient_command_buffer_;
   std::vector<vk::CommandBuffer> draw_command_buffers_;
 
+  // Sampler
+  const uint32_t mipmap_level_ = 3u;
+  vk::Sampler sampler_;
+
   // Resources
   struct VertexBuffer
   {
@@ -190,6 +200,13 @@ private:
   };
   VertexBuffer triangle_buffer_;
   VertexBuffer floor_buffer_;
+
+  struct Texture
+  {
+    vk::Image image;
+    vk::ImageView image_view;
+  };
+  Texture floor_texture_;
 
   // Descriptor set
   std::vector<vk::DescriptorSet> graphics_descriptor_sets_;

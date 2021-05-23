@@ -3,9 +3,11 @@
 
 layout (location = 0) in vec2 frag_tex_coord;
 
+layout (binding = 2) uniform sampler2D tex;
+
 layout (location = 0) out vec4 out_color;
 
 void main()
 {
-  out_color = vec4(frag_tex_coord, 0.f, 1.f);
+  out_color = vec4(texture(tex, frag_tex_coord).rgb, 1.f);
 }
