@@ -641,17 +641,17 @@ void Engine::CreatePipelines()
   // Create pipeline cache
   pipeline_cache_ = device_.createPipelineCache({});
 
-  CreateGraphicsPipeline();
+  CreateGraphicsPipelines();
 }
 
 void Engine::DestroyPipelines()
 {
-  DestroyGraphicsPipeline();
+  DestroyGraphicsPipelines();
 
   device_.destroyPipelineCache(pipeline_cache_);
 }
 
-void Engine::CreateGraphicsPipeline()
+void Engine::CreateGraphicsPipelines()
 {
   // Descriptor set layout
   std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
@@ -742,16 +742,15 @@ void Engine::CreateGraphicsPipeline()
     render_pass_, 0,
     nullptr, -1
   };
-  auto result = device_.createGraphicsPipeline(pipeline_cache_, pipeline_create_info);
-  std::cout << "Grahpics pipeline creation result: " << vk::to_string(result.result) << std::endl;
-  graphics_pipeline_ = result.value;
+
+  graphics_pipeline_ = CreateGraphicsPipeline(pipeline_create_info);
 
   // Destroy shader module
   device_.destroyShaderModule(vert_module);
   device_.destroyShaderModule(frag_module);
 }
 
-void Engine::DestroyGraphicsPipeline()
+void Engine::DestroyGraphicsPipelines()
 {
   device_.destroyDescriptorSetLayout(graphics_descriptor_set_layout_);
   device_.destroyPipeline(graphics_pipeline_);
@@ -890,5 +889,13 @@ vk::ShaderModule Engine::CreateShaderModule(const std::string& filepath)
     code.push_back(int_ptr[i]);
 
   return device_.createShaderModule({ {}, code });
+}
+
+vk::Pipeline Engine::CreateGraphicsPipeline(vk::GraphicsPipelineCreateInfo& create_info)
+{
+  auto result = device_.createGraphicsPipeline(pipeline_cache_, create_info);
+  if (result.result != vk::Result::eSuccess)
+    throw std::runtime_error("Failed to create graphics pipeline, with error code: " + vk::to_string(result.result));
+  return result.value;
 }
 }

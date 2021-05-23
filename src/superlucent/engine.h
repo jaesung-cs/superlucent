@@ -90,8 +90,10 @@ private:
 
   vk::ShaderModule CreateShaderModule(const std::string& filepath);
 
-  void CreateGraphicsPipeline();
-  void DestroyGraphicsPipeline();
+  void CreateGraphicsPipelines();
+  void DestroyGraphicsPipelines();
+
+  vk::Pipeline CreateGraphicsPipeline(vk::GraphicsPipelineCreateInfo& create_info);
 
 private:
   const uint32_t max_width_;
