@@ -33,6 +33,8 @@ public:
   void Run();
 
 private:
+  void UpdateKeyboard(double dt);
+
   GLFWwindow* window_;
   int width_ = 0;
   int height_ = 0;
@@ -49,9 +51,10 @@ private:
   std::unique_ptr<scene::CameraControl> camera_control_;
 
   // Events
-  std::array<int, 2> mouse_buttons_;
+  std::array<bool, 2> mouse_buttons_{};
   double mouse_last_x_ = 0.;
   double mouse_last_y_ = 0.;
+  std::array<bool, 256> key_pressed_{};
 };
 }
 

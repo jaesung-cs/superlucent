@@ -97,6 +97,12 @@ Application::Application()
   light->SetDiffuse(glm::vec3{ 0.8f, 0.8f, 0.8f });
   light->SetSpecular(glm::vec3{ 1.f, 1.f, 1.f });
   lights_.emplace_back(std::move(light));
+
+  // Initialize events
+  for (int i = 0; i < key_pressed_.size(); i++)
+    key_pressed_[i] = false;
+  for (int i = 0; i < mouse_buttons_.size(); i++)
+    mouse_buttons_[i] = false;
 }
 
 Application::~Application()
@@ -109,12 +115,20 @@ void Application::Run()
 {
   using Clock = std::chrono::high_resolution_clock;
   using Duration = std::chrono::duration<double>;
+  using Timestamp = Clock::time_point;
 
   uint64_t frame = 0;
   const auto start_time = Clock::now();
+  Timestamp previous_time = start_time;
   while (!glfwWindowShouldClose(window_))
   {
     glfwPollEvents();
+
+    const auto current_time = Clock::now();
+
+    // Update keyboard
+    const auto dt = std::chrono::duration<double>(current_time - previous_time).count();
+    UpdateKeyboard(dt);
 
     // Light position updated to camera eye
     lights_[0]->SetPosition(camera_->Eye() - camera_->Center());
@@ -127,8 +141,9 @@ void Application::Run()
 
     std::this_thread::sleep_until(start_time + Duration(frame / fps_));
 
-    const auto current_time = Clock::now();
-    const auto fps = frame / Duration(current_time - start_time).count();
+    const auto fps = frame / Duration(Clock::now() - start_time).count();
+
+    previous_time = current_time;
   }
 }
 
@@ -162,6 +177,17 @@ void Application::Key(int key, int scancode, int action, int mods)
       return;
     }
   }
+
+  switch (action)
+  {
+  case GLFW_PRESS:
+    key_pressed_[key] = true;
+    break;
+  case GLFW_RELEASE:
+    key_pressed_[key] = false;
+    break;
+  }
+
 }
 
 void Application::CursorPos(double x, double y)
@@ -201,5 +227,24 @@ void Application::Resize(int width, int height)
 {
   camera_->SetScreenSize(width, height);
   engine_->Resize(static_cast<uint32_t>(width), static_cast<uint32_t>(height));
+}
+
+void Application::UpdateKeyboard(double dt)
+{
+  const auto dtf = static_cast<float>(dt);
+
+  // Move camera
+  if (key_pressed_['W'])
+    camera_control_->MoveForward(dtf);
+  if (key_pressed_['S'])
+    camera_control_->MoveForward(-dtf);
+  if (key_pressed_['A'])
+    camera_control_->MoveRight(-dtf);
+  if (key_pressed_['D'])
+    camera_control_->MoveRight(dtf);
+  if (key_pressed_[' '])
+    camera_control_->MoveUp(dtf);
+
+  camera_control_->Update();
 }
 }
