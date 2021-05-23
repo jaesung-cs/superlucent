@@ -5,6 +5,9 @@
 
 #include <GLFW/glfw3.h>
 
+#include <glm/gtc/matrix_transform.hpp>
+
+#include <superlucent/scene/light.h>
 #include <superlucent/scene/camera.h>
 
 namespace supl
@@ -80,6 +83,29 @@ void Engine::Resize(uint32_t width, uint32_t height)
   // TODO
 }
 
+void Engine::UpdateLights(const std::vector<std::shared_ptr<scene::Light>>& lights)
+{
+  int num_directional_lights = 0;
+  int num_point_lights = 0;
+
+  for (auto light : lights)
+  {
+    LightUbo::Light light_data;
+    light_data.position = light->Position();
+    light_data.ambient = light->Ambient();
+    light_data.diffuse = light->Diffuse();
+    light_data.specular = light->Specular();
+
+    if (light->IsDirectionalLight())
+    {
+      light_data.position = glm::normalize(light_data.position);
+      lights_.directional_lights[num_directional_lights++] = light_data;
+    }
+    else if (light->IsPointLight())
+      lights_.point_lights[num_point_lights++] = light_data;
+  }
+}
+
 void Engine::UpdateCamera(std::shared_ptr<scene::Camera> camera)
 {
   camera_.view = camera->ViewMatrix();
@@ -121,6 +147,7 @@ void Engine::Draw()
   // Update uniforms
   std::memcpy(uniform_buffer_.map + camera_ubos_[image_index].offset, &camera_, sizeof(CameraUbo));
   std::memcpy(uniform_buffer_.map + triangle_model_ubos_[image_index].offset, &triangle_model_, sizeof(ModelUbo));
+  std::memcpy(uniform_buffer_.map + light_ubos_[image_index].offset, &lights_, sizeof(LightUbo));
 
   // Submit
   std::vector<vk::PipelineStageFlags> stages{
@@ -666,9 +693,10 @@ void Engine::CreateGraphicsPipelines()
 {
   // Descriptor set layout
   std::vector<vk::DescriptorSetLayoutBinding> descriptor_set_layout_bindings{
-    { 0u, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex },
+    { 0u, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment },
     { 1u, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eVertex },
     { 2u, vk::DescriptorType::eCombinedImageSampler, 1, vk::ShaderStageFlagBits::eFragment },
+    { 3u, vk::DescriptorType::eUniformBuffer, 1, vk::ShaderStageFlagBits::eFragment },
   };
   graphics_descriptor_set_layout_ = device_.createDescriptorSetLayout({ {}, descriptor_set_layout_bindings });
 
@@ -957,7 +985,15 @@ void Engine::PrepareResources()
     triangle_model_ubos_[i].size = sizeof(ModelUbo);
     uniform_offset = align(uniform_offset + sizeof(ModelUbo), ubo_alignment_);
   }
-  
+
+  light_ubos_.resize(swapchain_image_count_);
+  for (uint32_t i = 0; i < swapchain_image_count_; i++)
+  {
+    light_ubos_[i].offset = uniform_offset;
+    light_ubos_[i].size = sizeof(LightUbo);
+    uniform_offset = align(uniform_offset + sizeof(LightUbo), ubo_alignment_);
+  }
+
   // Descriptor set
   std::vector<vk::DescriptorSetLayout> set_layouts(swapchain_image_count_, graphics_descriptor_set_layout_);
   graphics_descriptor_sets_ = device_.allocateDescriptorSets({
@@ -969,6 +1005,7 @@ void Engine::PrepareResources()
     std::vector<vk::DescriptorBufferInfo> buffer_infos{
       { uniform_buffer_.buffer, camera_ubos_[i].offset, camera_ubos_[i].size },
       { uniform_buffer_.buffer, triangle_model_ubos_[i].offset, triangle_model_ubos_[i].size },
+      { uniform_buffer_.buffer, light_ubos_[i].offset, light_ubos_[i].size },
     };
     std::vector<vk::DescriptorImageInfo> image_infos{
       { sampler_, floor_texture_.image_view, vk::ImageLayout::eShaderReadOnlyOptimal },
@@ -980,6 +1017,8 @@ void Engine::PrepareResources()
       nullptr, buffer_infos[1], nullptr },
       { graphics_descriptor_sets_[i], 2u, 0u, vk::DescriptorType::eCombinedImageSampler,
       image_infos[0], nullptr, nullptr },
+      { graphics_descriptor_sets_[i], 3u, 0u, vk::DescriptorType::eUniformBuffer,
+      nullptr, buffer_infos[2], nullptr },
     };
     device_.updateDescriptorSets(descriptor_writes, {});
   }

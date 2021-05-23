@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <array>
+#include <vector>
 
 struct GLFWwindow;
 
@@ -12,6 +13,7 @@ class Engine;
 
 namespace scene
 {
+class Light;
 class Camera;
 class CameraControl;
 }
@@ -39,6 +41,10 @@ private:
 
   std::unique_ptr<Engine> engine_;
 
+  // Light
+  std::vector<std::shared_ptr<scene::Light>> lights_;
+
+  // Camera
   std::shared_ptr<scene::Camera> camera_;
   std::unique_ptr<scene::CameraControl> camera_control_;
 

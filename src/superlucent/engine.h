@@ -11,6 +11,7 @@ namespace supl
 {
 namespace scene
 {
+class Light;
 class Camera;
 }
 
@@ -32,12 +33,29 @@ private:
     alignas(16) glm::mat3x4 model_inverse_transpose;
   };
 
+  // Binding 3
+  struct LightUbo
+  {
+    struct Light
+    {
+      alignas(16) glm::vec3 position;
+      alignas(16) glm::vec3 ambient;
+      alignas(16) glm::vec3 diffuse;
+      alignas(16) glm::vec3 specular;
+    };
+
+    static constexpr int max_num_lights = 8;
+    Light directional_lights[max_num_lights];
+    Light point_lights[max_num_lights];
+  };
+
 public:
   Engine() = delete;
   Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height);
   ~Engine();
 
   void Resize(uint32_t width, uint32_t height);
+  void UpdateLights(const std::vector<std::shared_ptr<scene::Light>>& lights);
   void UpdateCamera(std::shared_ptr<scene::Camera> camera);
   void Draw();
 
@@ -214,6 +232,7 @@ private:
   vk::DeviceSize ubo_alignment_;
   CameraUbo camera_;
   ModelUbo triangle_model_;
+  LightUbo lights_;
 
   struct Uniform
   {
@@ -222,6 +241,7 @@ private:
   };
   std::vector<Uniform> camera_ubos_;
   std::vector<Uniform> triangle_model_ubos_;
+  std::vector<Uniform> light_ubos_;
 
   // Transfer
   vk::Fence transfer_fence_;

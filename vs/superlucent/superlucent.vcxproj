@@ -173,6 +173,8 @@ python compile.py
     <ClInclude Include="..\..\src\superlucent\engine.h" />
     <ClInclude Include="..\..\src\superlucent\scene\camera.h" />
     <ClInclude Include="..\..\src\superlucent\scene\camera_control.h" />
+    <ClInclude Include="..\..\src\superlucent\scene\light.h" />
+    <ClInclude Include="..\..\src\superlucent\shader\core\light.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\superlucent\shader\.gitignore" />
