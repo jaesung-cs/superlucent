@@ -118,6 +118,7 @@ void Application::Run()
   using Timestamp = Clock::time_point;
 
   uint64_t frame = 0;
+  int64_t recent_seconds = 0;
   const auto start_time = Clock::now();
   Timestamp previous_time = start_time;
   while (!glfwWindowShouldClose(window_))
@@ -139,9 +140,14 @@ void Application::Run()
 
     frame++;
 
-    std::this_thread::sleep_until(start_time + Duration(frame / fps_));
+    const auto seconds = static_cast<int64_t>(Duration(Clock::now() - start_time).count());
+    if (seconds > recent_seconds)
+    {
+      const auto fps = frame / Duration(Clock::now() - start_time).count();
+      std::cout << fps << std::endl;
 
-    const auto fps = frame / Duration(Clock::now() - start_time).count();
+      recent_seconds = seconds;
+    }
 
     previous_time = current_time;
   }

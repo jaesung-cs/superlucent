@@ -402,6 +402,7 @@ void Engine::CreateSwapchain()
   if (image_count != 3)
     throw std::runtime_error("Triple buffering is not supported");
 
+  // Present mode: use mailbox if available. Limit fps in draw call
   vk::PresentModeKHR present_mode = vk::PresentModeKHR::eFifo;
   const auto present_modes = physical_device_.getSurfacePresentModesKHR(surface_);
   for (auto available_mode : present_modes)

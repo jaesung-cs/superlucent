@@ -39,8 +39,6 @@ private:
   int width_ = 0;
   int height_ = 0;
 
-  const double fps_ = 144.;
-
   std::unique_ptr<Engine> engine_;
 
   // Light
