@@ -1,0 +1,26 @@
+#version 450
+#extension GL_ARB_separate_shader_objects : enable
+
+// Vertex
+layout (location = 0) in vec3 position;
+layout (location = 1) in vec3 normal;
+
+// Instance
+layout (location = 2) in vec3 center;
+
+layout (std140, binding = 0) uniform Camera
+{
+  mat4 projection;
+  mat4 view;
+  vec3 eye;
+} camera;
+
+layout (location = 0) out vec3 frag_position;
+layout (location = 1) out vec3 frag_normal;
+
+void main()
+{
+  frag_position = center + position;
+  gl_Position = camera.projection * camera.view * vec4(center + position, 1.f);
+  frag_normal = normal;
+}

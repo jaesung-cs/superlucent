@@ -178,6 +178,8 @@ python compile.py
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\superlucent\shader\.gitignore" />
+    <None Include="..\..\src\superlucent\shader\cell_sphere.frag" />
+    <None Include="..\..\src\superlucent\shader\cell_sphere.vert" />
     <None Include="..\..\src\superlucent\shader\color.frag" />
     <None Include="..\..\src\superlucent\shader\color.vert" />
     <None Include="..\..\src\superlucent\shader\compile.py" />

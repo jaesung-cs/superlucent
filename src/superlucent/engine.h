@@ -200,6 +200,7 @@ private:
   vk::PipelineLayout graphics_pipeline_layout_;
   vk::Pipeline color_pipeline_;
   vk::Pipeline floor_pipeline_;
+  vk::Pipeline cell_sphere_pipeline_;
 
   // Command buffers
   vk::CommandBuffer transient_command_buffer_;
@@ -218,6 +219,16 @@ private:
   };
   VertexBuffer triangle_buffer_;
   VertexBuffer floor_buffer_;
+
+  struct CellsBuffer
+  {
+    vk::Buffer buffer;
+    vk::DeviceSize index_offset;
+    vk::DeviceSize instance_offset;
+    uint32_t num_indices;
+    uint32_t num_instances;
+  };
+  CellsBuffer cells_buffer_;
 
   struct Texture
   {

@@ -220,6 +220,17 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
 
   command_buffer.drawIndexed(floor_buffer_.num_indices, 1u, 0u, 0u, 0u);
 
+  // Draw cells
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, cell_sphere_pipeline_);
+
+  command_buffer.bindVertexBuffers(0u,
+    { cells_buffer_.buffer, cells_buffer_.buffer },
+    { 0ull, cells_buffer_.instance_offset });
+
+  command_buffer.bindIndexBuffer(cells_buffer_.buffer, cells_buffer_.index_offset, vk::IndexType::eUint32);
+
+  command_buffer.drawIndexed(cells_buffer_.num_indices, cells_buffer_.num_instances, 0u, 0u, 0u);
+
   command_buffer.endRenderPass();
 }
 
@@ -1058,7 +1069,7 @@ void Engine::CreateGraphicsPipelines()
   device_.destroyShaderModule(vert_module);
   device_.destroyShaderModule(frag_module);
 
-  // Floor graphics pipelineshader_stages
+  // Floor graphics pipeline
   vert_module = CreateShaderModule(base_dir + "\\floor.vert.spv");
   frag_module = CreateShaderModule(base_dir + "\\floor.frag.spv");
 
@@ -1096,6 +1107,67 @@ void Engine::CreateGraphicsPipelines()
   floor_pipeline_ = CreateGraphicsPipeline(pipeline_create_info);
   device_.destroyShaderModule(vert_module);
   device_.destroyShaderModule(frag_module);
+
+  // Cell sphere graphics pipeline
+  vert_module = CreateShaderModule(base_dir + "\\cell_sphere.vert.spv");
+  frag_module = CreateShaderModule(base_dir + "\\cell_sphere.frag.spv");
+
+  shader_stages.resize(2);
+
+  shader_stages.resize(2);
+  shader_stages[0]
+    .setStage(vk::ShaderStageFlagBits::eVertex)
+    .setModule(vert_module)
+    .setPName("main");
+
+  shader_stages[1]
+    .setStage(vk::ShaderStageFlagBits::eFragment)
+    .setModule(frag_module)
+    .setPName("main");
+
+  std::vector<vk::VertexInputBindingDescription> vertex_binding_descriptions(2);
+  vertex_binding_descriptions[0]
+    .setBinding(0)
+    .setStride(sizeof(float) * 6)
+    .setInputRate(vk::VertexInputRate::eVertex);
+
+  vertex_binding_descriptions[1]
+    .setBinding(1)
+    .setStride(sizeof(float) * 3)
+    .setInputRate(vk::VertexInputRate::eInstance);
+
+  vertex_attribute_descriptions.resize(3);
+  vertex_attribute_descriptions[0]
+    .setLocation(0)
+    .setBinding(0)
+    .setFormat(vk::Format::eR32G32B32Sfloat)
+    .setOffset(0);
+
+  vertex_attribute_descriptions[1]
+    .setLocation(1)
+    .setBinding(0)
+    .setFormat(vk::Format::eR32G32B32Sfloat)
+    .setOffset(sizeof(float) * 3);
+
+  vertex_attribute_descriptions[2]
+    .setLocation(2)
+    .setBinding(1)
+    .setFormat(vk::Format::eR32G32B32Sfloat)
+    .setOffset(0);
+
+  vertex_input
+    .setVertexBindingDescriptions(vertex_binding_descriptions)
+    .setVertexAttributeDescriptions(vertex_attribute_descriptions);
+
+  input_assembly
+    .setTopology(vk::PrimitiveTopology::eTriangleStrip)
+    .setPrimitiveRestartEnable(true);
+
+  pipeline_create_info.setStages(shader_stages);
+
+  cell_sphere_pipeline_ = CreateGraphicsPipeline(pipeline_create_info);
+  device_.destroyShaderModule(vert_module);
+  device_.destroyShaderModule(frag_module);
 }
 
 void Engine::DestroyGraphicsPipelines()
@@ -1103,6 +1175,7 @@ void Engine::DestroyGraphicsPipelines()
   device_.destroyDescriptorSetLayout(graphics_descriptor_set_layout_);
   device_.destroyPipeline(color_pipeline_);
   device_.destroyPipeline(floor_pipeline_);
+  device_.destroyPipeline(cell_sphere_pipeline_);
   device_.destroyPipelineLayout(graphics_pipeline_layout_);
 }
 
@@ -1210,6 +1283,97 @@ void Engine::PrepareResources()
     .setInitialLayout(vk::ImageLayout::eUndefined);
   floor_texture_.image = device_.createImage(image_create_info);
 
+  // Cells buffer
+  constexpr int sphere_segments = 16;
+  constexpr int cell_count = 32;
+  constexpr float radius = 1.f / cell_count;
+  std::vector<float> cells_buffer;
+  std::vector<std::vector<uint32_t>> cells_indices;
+  std::vector<uint32_t> cells_index_buffer;
+
+  cells_buffer.push_back(0.f);
+  cells_buffer.push_back(0.f);
+  cells_buffer.push_back(radius);
+  cells_buffer.push_back(0.f);
+  cells_buffer.push_back(0.f);
+  cells_buffer.push_back(1.f);
+
+  cells_buffer.push_back(0.f);
+  cells_buffer.push_back(0.f);
+  cells_buffer.push_back(-radius);
+  cells_buffer.push_back(0.f);
+  cells_buffer.push_back(0.f);
+  cells_buffer.push_back(-1.f);
+
+  uint32_t cell_index = 2;
+
+  cells_indices.resize(sphere_segments);
+  constexpr auto pi = glm::pi<float>();
+  for (int i = 0; i < sphere_segments; i++)
+  {
+    cells_indices[i].resize(sphere_segments);
+
+    const auto theta = static_cast<float>(i) / sphere_segments * 2.f * pi;
+    const auto cos_theta = std::cos(theta);
+    const auto sin_theta = std::sin(theta);
+    for (int j = 1; j < sphere_segments; j++)
+    {
+      cells_indices[i][j] = cell_index++;
+
+      const auto phi = (0.5f - static_cast<float>(j) / sphere_segments) * pi;
+      const auto cos_phi = std::cos(phi);
+      const auto sin_phi = std::sin(phi);
+
+      cells_buffer.push_back(radius * cos_theta * cos_phi);
+      cells_buffer.push_back(radius * sin_theta * cos_phi);
+      cells_buffer.push_back(radius * sin_phi);
+      cells_buffer.push_back(cos_theta * cos_phi);
+      cells_buffer.push_back(sin_theta * cos_phi);
+      cells_buffer.push_back(sin_phi);
+    }
+  }
+  const auto cells_vertex_buffer_size = cells_buffer.size() * sizeof(float);
+
+  // Cells instances
+  for (int i = 0; i < cell_count; i++)
+  {
+    for (int j = 0; j < cell_count; j++)
+    {
+      for (int k = 0; k < cell_count; k++)
+      {
+        cells_buffer.push_back(radius * i * 2);
+        cells_buffer.push_back(radius * j * 2);
+        cells_buffer.push_back(radius * k * 2);
+      }
+    }
+  }
+  const auto cells_instance_buffer_size = cells_buffer.size() * sizeof(float) - cells_vertex_buffer_size;
+
+  // Sphere indices
+  for (int i = 0; i < sphere_segments; i++)
+  {
+    cells_index_buffer.push_back(0);
+    for (int j = 1; j < sphere_segments; j++)
+    {
+      cells_index_buffer.push_back(cells_indices[i][j]);
+      cells_index_buffer.push_back(cells_indices[(i + 1) % sphere_segments][j]);
+    }
+    cells_index_buffer.push_back(1);
+    cells_index_buffer.push_back(-1);
+  }
+  const auto cells_index_buffer_size = cells_index_buffer.size() * sizeof(uint32_t);
+  const auto cells_buffer_size = cells_vertex_buffer_size + cells_instance_buffer_size + cells_index_buffer_size;
+
+  buffer_create_info
+    .setSize(cells_vertex_buffer_size + cells_instance_buffer_size + cells_index_buffer_size)
+    .setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eIndexBuffer);
+  cells_buffer_.buffer = device_.createBuffer(buffer_create_info);
+
+  cells_buffer_.instance_offset = cells_vertex_buffer_size;
+  cells_buffer_.index_offset = cells_vertex_buffer_size + cells_instance_buffer_size;
+  cells_buffer_.num_indices = cells_index_buffer.size();
+  cells_buffer_.num_instances = cell_count * cell_count * cell_count;
+
   // Memory binding
   const auto triangle_memory = AcquireDeviceMemory(triangle_buffer_.buffer);
   device_.bindBufferMemory(triangle_buffer_.buffer, triangle_memory.memory, triangle_memory.offset);
@@ -1220,6 +1384,10 @@ void Engine::PrepareResources()
   const auto floor_texture_memory = AcquireDeviceMemory(floor_texture_.image);
   device_.bindImageMemory(floor_texture_.image, floor_texture_memory.memory, floor_texture_memory.offset);
 
+  const auto cells_memory = AcquireDeviceMemory(cells_buffer_.buffer);
+  device_.bindBufferMemory(cells_buffer_.buffer, cells_memory.memory, cells_memory.offset);
+
+  // Create image view for floor texture
   vk::ImageSubresourceRange subresource_range;
   subresource_range
     .setAspectMask(vk::ImageAspectFlagBits::eColor)
@@ -1249,6 +1417,11 @@ void Engine::PrepareResources()
   std::memcpy(staging_buffer_.map + staging_offset, floor_index_buffer.data(), floor_index_buffer_size);
   staging_offset += floor_index_buffer_size;
 
+  std::memcpy(staging_buffer_.map + staging_offset, cells_buffer.data(), cells_vertex_buffer_size + cells_instance_buffer_size);
+  staging_offset += cells_vertex_buffer_size + cells_instance_buffer_size;
+  std::memcpy(staging_buffer_.map + staging_offset, cells_index_buffer.data(), cells_index_buffer_size);
+  staging_offset += cells_index_buffer_size;
+
   std::memcpy(staging_buffer_.map + staging_offset, floor_texture.data(), floor_texture_size);
   staging_offset += floor_texture_size;
 
@@ -1271,6 +1444,12 @@ void Engine::PrepareResources()
     .setSize(floor_buffer_size);
   transient_command_buffer_.copyBuffer(staging_buffer_.buffer, floor_buffer_.buffer, copy_region);
 
+  copy_region
+    .setSrcOffset(triangle_buffer_size + floor_buffer_size)
+    .setDstOffset(0)
+    .setSize(cells_buffer_size);
+  transient_command_buffer_.copyBuffer(staging_buffer_.buffer, cells_buffer_.buffer, copy_region);
+
   ImageLayoutTransition(transient_command_buffer_, floor_texture_.image,
     vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
 
@@ -1283,7 +1462,7 @@ void Engine::PrepareResources()
 
   vk::BufferImageCopy image_copy_region;
   image_copy_region
-    .setBufferOffset(triangle_buffer_size + floor_buffer_size)
+    .setBufferOffset(triangle_buffer_size + floor_buffer_size + cells_buffer_size)
     .setBufferRowLength(0)
     .setBufferImageHeight(0)
     .setImageSubresource(image_subresource_layer)
@@ -1402,6 +1581,7 @@ void Engine::DestroyResources()
 
   device_.destroyBuffer(triangle_buffer_.buffer);
   device_.destroyBuffer(floor_buffer_.buffer);
+  device_.destroyBuffer(cells_buffer_.buffer);
   device_.destroyImage(floor_texture_.image);
   device_.destroyImageView(floor_texture_.image_view);
 }
