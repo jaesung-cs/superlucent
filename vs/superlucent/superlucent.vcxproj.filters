@@ -79,5 +79,11 @@
     <None Include="..\..\src\superlucent\shader\cell_sphere.frag">
       <Filter>src\superlucent\shader</Filter>
     </None>
+    <None Include="..\..\src\superlucent\shader\particle_forward.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle_velocity_update.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
   </ItemGroup>
 </Project>

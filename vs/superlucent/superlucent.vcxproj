@@ -185,6 +185,8 @@ python compile.py
     <None Include="..\..\src\superlucent\shader\compile.py" />
     <None Include="..\..\src\superlucent\shader\floor.frag" />
     <None Include="..\..\src\superlucent\shader\floor.vert" />
+    <None Include="..\..\src\superlucent\shader\particle_forward.comp" />
+    <None Include="..\..\src\superlucent\shader\particle_velocity_update.comp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

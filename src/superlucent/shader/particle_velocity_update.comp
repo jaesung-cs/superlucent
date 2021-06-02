@@ -1,0 +1,70 @@
+#version 450
+
+struct Particle
+{
+  vec4 prev_position;
+  vec4 position; // [px, py, pz, 0]
+  vec4 velocity; // [vx, vy, vz, 0]
+  vec4 properties; // [radius, mass, 0, 0]
+  vec4 collision; // [-1 or 0 or 1, -1 or 0 or 1, 0 or 1, 0]
+  vec4 external_force;
+};
+
+layout(std140, binding = 0) buffer ParticleSsbo
+{
+  Particle particles[];
+};
+
+layout (local_size_x = 256) in;
+
+layout (binding = 1) uniform SimulationParamsUbo
+{
+	float dt;
+	int num_particles;
+} params;
+
+vec3 computeRestitutionUpdate(vec3 normal, vec4 velocity, float resilience)
+{
+  float vn = dot(velocity.xyz, normal);
+  return normal * (-vn + min(-resilience * vn, 0.f));
+}
+
+void main() 
+{
+	const int index = int(gl_GlobalInvocationID);
+	if (index >= params.num_particles)
+    return;
+    
+  const vec4 collision = particles[index].collision;
+  const float radius = particles[index].properties.x;
+  const float mass = particles[index].properties.y;
+
+  vec4 velocity = (particles[index].position - particles[index].prev_position) / params.dt;
+  
+  // Solve velocities
+  const float resilience = 0.8f;
+
+  vec4 solved_velocity = velocity;
+  if (collision.x != 0.f)
+  {
+    const vec3 normal = vec3(collision.x, 0.f, 0.f);
+    vec3 dv = computeRestitutionUpdate(normal, velocity, resilience);
+    solved_velocity.xyz += dv;
+  }
+
+  if (collision.z != 0.f)
+  {
+    const vec3 normal = vec3(0.f, collision.y, 0.f);
+    vec3 dv = computeRestitutionUpdate(normal, velocity, resilience);
+    solved_velocity.xyz += dv;
+  }
+
+  if (collision.z != 0.f)
+  {
+    const vec3 normal = vec3(0.f, 0.f, collision.z);
+    vec3 dv = computeRestitutionUpdate(normal, velocity, resilience);
+    solved_velocity.xyz += dv;
+  }
+
+  particles[index].velocity = solved_velocity;
+}

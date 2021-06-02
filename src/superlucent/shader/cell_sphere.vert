@@ -7,6 +7,7 @@ layout (location = 1) in vec3 normal;
 
 // Instance
 layout (location = 2) in vec3 center;
+layout (location = 3) in float radius;
 
 layout (std140, binding = 0) uniform Camera
 {
@@ -20,7 +21,7 @@ layout (location = 1) out vec3 frag_normal;
 
 void main()
 {
-  frag_position = center + position;
-  gl_Position = camera.projection * camera.view * vec4(center + position, 1.f);
+  frag_position = center + radius * position;
+  gl_Position = camera.projection * camera.view * vec4(frag_position, 1.f);
   frag_normal = normal;
 }

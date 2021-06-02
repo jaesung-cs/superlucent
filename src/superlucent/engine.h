@@ -114,7 +114,11 @@ private:
   void CreateGraphicsPipelines();
   void DestroyGraphicsPipelines();
 
+  void CreateComputePipelines();
+  void DestroyComputePipelines();
+
   vk::Pipeline CreateGraphicsPipeline(vk::GraphicsPipelineCreateInfo& create_info);
+  vk::Pipeline CreateComputePipeline(vk::ComputePipelineCreateInfo& create_info);
 
   void ImageLayoutTransition(vk::CommandBuffer& command_buffer, vk::Image image, vk::ImageLayout old_layout, vk::ImageLayout new_layout);
   void GenerateMipmap(vk::CommandBuffer& command_buffer, vk::Image image, uint32_t width, uint32_t height, int mipmap_levels);
@@ -202,6 +206,19 @@ private:
   vk::Pipeline floor_pipeline_;
   vk::Pipeline cell_sphere_pipeline_;
 
+  // Position-based particle simulation
+  struct ParticleSimulation
+  {
+    vk::DescriptorSetLayout descriptor_set_layout;
+    vk::PipelineLayout pipeline_layout;
+    vk::Pipeline forward_pipeline;
+    vk::Pipeline velocity_update_pipeline;
+
+    vk::Buffer particle_buffer;
+    uint32_t num_particles;
+  };
+  ParticleSimulation particle_simulation_;
+
   // Command buffers
   vk::CommandBuffer transient_command_buffer_;
   std::vector<vk::CommandBuffer> draw_command_buffers_;
@@ -220,16 +237,9 @@ private:
   VertexBuffer triangle_buffer_;
   VertexBuffer floor_buffer_;
 
-  struct InstanceBuffer
-  {
-    vk::Buffer buffer;
-    uint32_t num_instances;
-  };
-
   struct CellsBuffer
   {
     VertexBuffer vertex;
-    InstanceBuffer instance;
   };
   CellsBuffer cells_buffer_;
 
