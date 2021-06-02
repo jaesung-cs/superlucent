@@ -220,13 +220,16 @@ private:
   VertexBuffer triangle_buffer_;
   VertexBuffer floor_buffer_;
 
-  struct CellsBuffer
+  struct InstanceBuffer
   {
     vk::Buffer buffer;
-    vk::DeviceSize index_offset;
-    vk::DeviceSize instance_offset;
-    uint32_t num_indices;
     uint32_t num_instances;
+  };
+
+  struct CellsBuffer
+  {
+    VertexBuffer vertex;
+    InstanceBuffer instance;
   };
   CellsBuffer cells_buffer_;
 
