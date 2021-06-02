@@ -116,8 +116,16 @@ void Engine::UpdateCamera(std::shared_ptr<scene::Camera> camera)
   camera_.eye = camera->Eye();
 }
 
-void Engine::Draw()
+void Engine::Draw(std::chrono::high_resolution_clock::time_point timestamp)
 {
+  double dt = 0.;
+  if (first_draw_)
+    first_draw_ = false;
+  else
+    dt = std::chrono::duration<double>(timestamp - previous_timestamp_).count();
+
+  previous_timestamp_ = timestamp;
+
   auto wait_result = device_.waitForFences(in_flight_fences_[current_frame_], true, UINT64_MAX);
 
   const auto acquire_next_image_result = device_.acquireNextImageKHR(swapchain_, UINT64_MAX, image_available_semaphores_[current_frame_]);
@@ -142,13 +150,17 @@ void Engine::Draw()
   draw_command_buffer.reset();
 
   draw_command_buffer.begin({ vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
-  RecordDrawCommands(draw_command_buffer, image_index);
+  RecordDrawCommands(draw_command_buffer, image_index, dt);
   draw_command_buffer.end();
 
   // Update uniforms
   std::memcpy(uniform_buffer_.map + camera_ubos_[image_index].offset, &camera_, sizeof(CameraUbo));
   std::memcpy(uniform_buffer_.map + triangle_model_ubos_[image_index].offset, &triangle_model_, sizeof(ModelUbo));
   std::memcpy(uniform_buffer_.map + light_ubos_[image_index].offset, &lights_, sizeof(LightUbo));
+
+  particle_simulation_.simulation_params.dt = dt;
+  particle_simulation_.simulation_params.num_particles = particle_simulation_.num_particles;
+  std::memcpy(uniform_buffer_.map + particle_simulation_.simulation_params_ubos[image_index].offset, &particle_simulation_.simulation_params, sizeof(SimulationParamsUbo));
 
   // Submit
   std::vector<vk::PipelineStageFlags> stages{
@@ -181,8 +193,60 @@ void Engine::Draw()
   current_frame_ = (current_frame_ + 1) % 2;
 }
 
-void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t image_index)
+void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t image_index, double dt)
 {
+  if (dt > 0.)
+  {
+    // Barrier to make sure previous rendering command
+    // TODO: triple buffering as well as for particle buffers
+    vk::BufferMemoryBarrier buffer_memory_barrier;
+    buffer_memory_barrier
+      .setSrcAccessMask(vk::AccessFlagBits::eVertexAttributeRead)
+      .setDstAccessMask(vk::AccessFlagBits::eShaderWrite)
+      .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+      .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+      .setBuffer(particle_simulation_.particle_buffer)
+      .setOffset(0)
+      .setSize(particle_simulation_.num_particles * sizeof(float) * 24);
+    command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eVertexInput, vk::PipelineStageFlagBits::eComputeShader, {},
+      {}, buffer_memory_barrier, {});
+
+    // Compute shaders
+    command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, particle_simulation_.forward_pipeline);
+
+    command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, particle_simulation_.pipeline_layout, 0u,
+      particle_simulation_.descriptor_sets[image_index], {});
+
+    command_buffer.dispatch((particle_simulation_.num_particles + 255) / 256, 1, 1);
+
+    buffer_memory_barrier
+      .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+      .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+      .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+      .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+      .setBuffer(particle_simulation_.particle_buffer)
+      .setOffset(0)
+      .setSize(particle_simulation_.num_particles * sizeof(float) * 24);
+    command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+      {}, buffer_memory_barrier, {});
+
+    command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, particle_simulation_.velocity_update_pipeline);
+
+    command_buffer.dispatch((particle_simulation_.num_particles + 255) / 256, 1, 1);
+
+    buffer_memory_barrier
+      .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+      .setDstAccessMask(vk::AccessFlagBits::eVertexAttributeRead)
+      .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+      .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+      .setBuffer(particle_simulation_.particle_buffer)
+      .setOffset(0)
+      .setSize(particle_simulation_.num_particles * sizeof(float) * 24);
+    command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eVertexInput, {},
+      {}, buffer_memory_barrier, {});
+  }
+
+  // Begin render pass
   command_buffer.setViewport(0, vk::Viewport{ 0.f, 0.f, static_cast<float>(width_), static_cast<float>(height_), 0.f, 1.f });
 
   command_buffer.setScissor(0, vk::Rect2D{ {0u, 0u}, {width_, height_} });
@@ -616,6 +680,7 @@ void Engine::PreallocateMemory()
     { vk::DescriptorType::eUniformBuffer, max_num_descriptors },
     { vk::DescriptorType::eUniformBufferDynamic, max_num_descriptors },
     { vk::DescriptorType::eCombinedImageSampler, 16 },
+    { vk::DescriptorType::eStorageBuffer, 2 },
   };
   vk::DescriptorPoolCreateInfo descriptor_pool_create_info;
   descriptor_pool_create_info
@@ -1436,24 +1501,24 @@ void Engine::PrepareResources()
   {
     for (int j = 0; j < cell_count; j++)
     {
-      for (int k = 0; k < cell_count; k++)
+      for (int k = 0; k < 1; k++)
       {
         // prev_position
         particle_buffer.push_back(radius * i * 2);
         particle_buffer.push_back(radius * j * 2);
-        particle_buffer.push_back(radius * k * 2);
+        particle_buffer.push_back(radius * k * 2 + 1.f);
         particle_buffer.push_back(0.f);
 
         // position
         particle_buffer.push_back(radius * i * 2);
         particle_buffer.push_back(radius * j * 2);
-        particle_buffer.push_back(radius * k * 2);
+        particle_buffer.push_back(radius * k * 2 + 1.f);
         particle_buffer.push_back(0.f);
 
         // velocity
-        particle_buffer.push_back(0.f);
-        particle_buffer.push_back(0.f);
-        particle_buffer.push_back(0.f);
+        particle_buffer.push_back(-5.f);
+        particle_buffer.push_back(5.f);
+        particle_buffer.push_back(1.f);
         particle_buffer.push_back(0.f);
 
         // properties
@@ -1489,7 +1554,7 @@ void Engine::PrepareResources()
     .setSize(particle_buffer_size)
     .setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer);
   particle_simulation_.particle_buffer = device_.createBuffer(buffer_create_info);
-  particle_simulation_.num_particles = cell_count * cell_count * cell_count;
+  particle_simulation_.num_particles = cell_count * cell_count * 1;
 
   // Memory binding
   const auto triangle_memory = AcquireDeviceMemory(triangle_buffer_.buffer);
@@ -1702,11 +1767,58 @@ void Engine::PrepareResources()
 
     device_.updateDescriptorSets(descriptor_writes, {});
   }
+
+  // Particle descriptor set
+  particle_simulation_.simulation_params_ubos.resize(swapchain_image_count_);
+  for (int i = 0; i < swapchain_image_count_; i++)
+  {
+    particle_simulation_.simulation_params_ubos[i].offset = uniform_offset;
+    particle_simulation_.simulation_params_ubos[i].size = sizeof(SimulationParamsUbo);
+    uniform_offset = align(uniform_offset + sizeof(SimulationParamsUbo), ubo_alignment_);
+  }
+
+  set_layouts = std::vector<vk::DescriptorSetLayout>(swapchain_image_count_, particle_simulation_.descriptor_set_layout);
+  descriptor_set_allocate_info
+    .setDescriptorPool(descriptor_pool_)
+    .setSetLayouts(set_layouts);
+  particle_simulation_.descriptor_sets = device_.allocateDescriptorSets(descriptor_set_allocate_info);
+
+  for (int i = 0; i < swapchain_image_count_; i++)
+  {
+    std::vector<vk::DescriptorBufferInfo> buffer_infos(2);
+    buffer_infos[0]
+      .setBuffer(particle_simulation_.particle_buffer)
+      .setOffset(0)
+      .setRange(particle_simulation_.num_particles * sizeof(float) * 24);
+
+    buffer_infos[1]
+      .setBuffer(uniform_buffer_.buffer)
+      .setOffset(particle_simulation_.simulation_params_ubos[i].offset)
+      .setRange(particle_simulation_.simulation_params_ubos[i].size);
+
+    std::vector<vk::WriteDescriptorSet> descriptor_writes(2);
+    descriptor_writes[0]
+      .setDstSet(particle_simulation_.descriptor_sets[i])
+      .setDstBinding(0)
+      .setDstArrayElement(0)
+      .setDescriptorType(vk::DescriptorType::eStorageBuffer)
+      .setBufferInfo(buffer_infos[0]);
+
+    descriptor_writes[1]
+      .setDstSet(particle_simulation_.descriptor_sets[i])
+      .setDstBinding(1)
+      .setDstArrayElement(0)
+      .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+      .setBufferInfo(buffer_infos[1]);
+
+    device_.updateDescriptorSets(descriptor_writes, {});
+  }
 }
 
 void Engine::DestroyResources()
 {
   graphics_descriptor_sets_.clear();
+  particle_simulation_.descriptor_sets.clear();
 
   device_.destroyBuffer(triangle_buffer_.buffer);
   device_.destroyBuffer(floor_buffer_.buffer);

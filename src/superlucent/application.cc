@@ -136,7 +136,7 @@ void Application::Run()
 
     engine_->UpdateLights(lights_);
     engine_->UpdateCamera(camera_);
-    engine_->Draw();
+    engine_->Draw(current_time);
 
     frame++;
 

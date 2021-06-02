@@ -50,7 +50,7 @@ void main()
     particles[index].collision.x = -1.f;
   }
   else
-    particles[index].collision.x = 1.f;
+    particles[index].collision.x = 0.f;
     
   if (particles[index].position.y - radius < -wall_distance)
   {
@@ -63,7 +63,7 @@ void main()
     particles[index].collision.y = -1.f;
   }
   else
-    particles[index].collision.y = 1.f;
+    particles[index].collision.y = 0.f;
 
   if (particles[index].position.z - radius < 0.f)
   {

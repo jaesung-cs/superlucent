@@ -23,10 +23,12 @@ layout (binding = 1) uniform SimulationParamsUbo
 	int num_particles;
 } params;
 
-vec3 computeRestitutionUpdate(vec3 normal, vec4 velocity, float resilience)
+vec3 computeRestitutionUpdate(vec3 normal, vec4 velocity, vec4 prev_velocity, float resilience)
 {
   float vn = dot(velocity.xyz, normal);
-  return normal * (-vn + min(-resilience * vn, 0.f));
+  float vntilde = dot(prev_velocity.xyz, normal);
+
+  return normal * (-vn + -resilience * vntilde);
 }
 
 void main() 
@@ -39,30 +41,31 @@ void main()
   const float radius = particles[index].properties.x;
   const float mass = particles[index].properties.y;
 
+  vec4 prev_velocity = particles[index].velocity;
   vec4 velocity = (particles[index].position - particles[index].prev_position) / params.dt;
   
   // Solve velocities
-  const float resilience = 0.8f;
+  const float resilience = 0.9f;
 
   vec4 solved_velocity = velocity;
   if (collision.x != 0.f)
   {
     const vec3 normal = vec3(collision.x, 0.f, 0.f);
-    vec3 dv = computeRestitutionUpdate(normal, velocity, resilience);
+    vec3 dv = computeRestitutionUpdate(normal, velocity, prev_velocity, resilience);
     solved_velocity.xyz += dv;
   }
 
-  if (collision.z != 0.f)
+  if (collision.y != 0.f)
   {
     const vec3 normal = vec3(0.f, collision.y, 0.f);
-    vec3 dv = computeRestitutionUpdate(normal, velocity, resilience);
+    vec3 dv = computeRestitutionUpdate(normal, velocity, prev_velocity, resilience);
     solved_velocity.xyz += dv;
   }
 
   if (collision.z != 0.f)
   {
     const vec3 normal = vec3(0.f, 0.f, collision.z);
-    vec3 dv = computeRestitutionUpdate(normal, velocity, resilience);
+    vec3 dv = computeRestitutionUpdate(normal, velocity, prev_velocity, resilience);
     solved_velocity.xyz += dv;
   }
 

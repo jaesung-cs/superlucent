@@ -1,6 +1,8 @@
 #ifndef SUPERLUCENT_ENGINE_H_
 #define SUPERLUCENT_ENGINE_H_
 
+#include <chrono>
+
 #include <vulkan/vulkan.hpp>
 
 #include <glm/glm.hpp>
@@ -49,6 +51,13 @@ private:
     Light point_lights[max_num_lights];
   };
 
+  // Compute binding 1
+  struct SimulationParamsUbo
+  {
+    alignas(16) float dt;
+    int num_particles;
+  };
+
 public:
   Engine() = delete;
   Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height);
@@ -57,10 +66,10 @@ public:
   void Resize(uint32_t width, uint32_t height);
   void UpdateLights(const std::vector<std::shared_ptr<scene::Light>>& lights);
   void UpdateCamera(std::shared_ptr<scene::Camera> camera);
-  void Draw();
+  void Draw(std::chrono::high_resolution_clock::time_point timestamp);
 
 private:
-  void RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t image_index);
+  void RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t image_index, double dt);
 
   void CreateInstance(GLFWwindow* window);
   void DestroyInstance();
@@ -129,6 +138,9 @@ private:
 
   uint32_t width_ = 0;
   uint32_t height_ = 0;
+
+  bool first_draw_ = true;
+  std::chrono::high_resolution_clock::time_point previous_timestamp_;
 
   // Instance
   vk::Instance instance_;
@@ -206,6 +218,12 @@ private:
   vk::Pipeline floor_pipeline_;
   vk::Pipeline cell_sphere_pipeline_;
 
+  struct Uniform
+  {
+    vk::DeviceSize offset;
+    vk::DeviceSize size;
+  };
+
   // Position-based particle simulation
   struct ParticleSimulation
   {
@@ -216,6 +234,11 @@ private:
 
     vk::Buffer particle_buffer;
     uint32_t num_particles;
+
+    std::vector<vk::DescriptorSet> descriptor_sets;
+    std::vector<Uniform> simulation_params_ubos;
+
+    SimulationParamsUbo simulation_params;
   };
   ParticleSimulation particle_simulation_;
 
@@ -258,11 +281,6 @@ private:
   ModelUbo triangle_model_;
   LightUbo lights_;
 
-  struct Uniform
-  {
-    vk::DeviceSize offset;
-    vk::DeviceSize size;
-  };
   std::vector<Uniform> camera_ubos_;
   std::vector<Uniform> triangle_model_ubos_;
   std::vector<Uniform> light_ubos_;
