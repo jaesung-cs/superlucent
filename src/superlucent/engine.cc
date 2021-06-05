@@ -160,7 +160,7 @@ void Engine::Draw(std::chrono::high_resolution_clock::time_point timestamp)
 
   particle_simulation_.simulation_params.dt = dt;
   particle_simulation_.simulation_params.num_particles = particle_simulation_.num_particles;
-  particle_simulation_.simulation_params.alpha = 0.1f;
+  particle_simulation_.simulation_params.alpha = 0.05f;
   std::memcpy(uniform_buffer_.map + particle_simulation_.simulation_params_ubos[image_index].offset, &particle_simulation_.simulation_params, sizeof(SimulationParamsUbo));
 
   // Submit
