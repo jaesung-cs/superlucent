@@ -1,27 +1,9 @@
 #version 450
 
-struct Particle
-{
-  vec4 prev_position;
-  vec4 position; // [px, py, pz, 0]
-  vec4 velocity; // [vx, vy, vz, 0]
-  vec4 properties; // [radius, mass, 0, 0]
-  vec4 collision; // [-1 or 0 or 1, -1 or 0 or 1, 0 or 1, 0]
-  vec4 external_force;
-};
-
-layout(std140, binding = 0) buffer ParticleSsbo
-{
-  Particle particles[];
-};
-
 layout (local_size_x = 256) in;
 
-layout (binding = 1) uniform SimulationParamsUbo
-{
-	float dt;
-	int num_particles;
-} params;
+#include "particle/particle.h"
+#include "particle/simulation_params.h"
 
 vec3 computeRestitutionUpdate(vec3 normal, vec4 velocity, vec4 prev_velocity, float resilience)
 {
@@ -37,7 +19,6 @@ void main()
 	if (index >= params.num_particles)
     return;
     
-  const vec4 collision = particles[index].collision;
   const float radius = particles[index].properties.x;
   const float mass = particles[index].properties.y;
 
@@ -48,6 +29,7 @@ void main()
   const float resilience = 0.9f;
 
   vec4 solved_velocity = velocity;
+  /*
   if (collision.x != 0.f)
   {
     const vec3 normal = vec3(collision.x, 0.f, 0.f);
@@ -68,6 +50,7 @@ void main()
     vec3 dv = computeRestitutionUpdate(normal, velocity, prev_velocity, resilience);
     solved_velocity.xyz += dv;
   }
+  */
 
   particles[index].velocity = solved_velocity;
 }

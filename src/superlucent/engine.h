@@ -56,6 +56,7 @@ private:
   {
     alignas(16) float dt;
     int num_particles;
+    float alpha; // compliance of the constraints
   };
 
 public:
@@ -230,6 +231,7 @@ private:
     vk::DescriptorSetLayout descriptor_set_layout;
     vk::PipelineLayout pipeline_layout;
     vk::Pipeline forward_pipeline;
+    vk::Pipeline collision_detection_pipeline;
     vk::Pipeline velocity_update_pipeline;
 
     vk::Buffer particle_buffer;

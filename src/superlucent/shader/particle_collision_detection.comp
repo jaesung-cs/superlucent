@@ -1,0 +1,50 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+#include "particle/particle.h"
+#include "particle/simulation_params.h"
+#include "particle/collision_pairs.h"
+
+void main() 
+{
+	const int index = int(gl_GlobalInvocationID);
+	if (index >= params.num_particles)
+    return;
+
+  const float radius = particles[index].properties.x;
+  const float mass = particles[index].properties.y;
+  
+	vec4 position = particles[index].position;
+
+  // Temporary collision response against floor and virtual walls
+  const float wall_distance = 5.f;
+
+  if (position.x - radius < -wall_distance)
+  {
+    const uint collision_index = atomicAdd(num_collisions, 1);
+
+    collisions[collision_index].ids[0] = index;
+    collisions[collision_index].ids[1] = -1;
+
+    collisions[collision_index].r[0] = vec4(position.x - radius, position.yz, 0.f);
+    collisions[collision_index].r[1] = vec4(-wall_distance, position.yz, 0.f);
+    collisions[collision_index].n = vec4(1.f, 0.f, 0.f, 0.f);
+  }
+
+  if (particles[index].position.x + radius > wall_distance)
+  {
+  }
+    
+  if (particles[index].position.y - radius < -wall_distance)
+  {
+  }
+
+  if (particles[index].position.y + radius > wall_distance)
+  {
+  }
+
+  if (particles[index].position.z - radius < 0.f)
+  {
+  }
+}

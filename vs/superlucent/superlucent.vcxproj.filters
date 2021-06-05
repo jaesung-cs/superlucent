@@ -16,6 +16,9 @@
     <Filter Include="src\superlucent\shader\core">
       <UniqueIdentifier>{bf738e4b-f2f6-471a-a94b-2362cfe568bf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\superlucent\shader\particle">
+      <UniqueIdentifier>{82520e49-8978-4bb9-afcc-f1c7a31ef3ce}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cc">
@@ -53,6 +56,18 @@
     <ClInclude Include="..\..\src\superlucent\shader\core\light.h">
       <Filter>src\superlucent\shader\core</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\shader\particle\collision_pairs.h">
+      <Filter>src\superlucent\shader\particle</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\shader\particle\particle.h">
+      <Filter>src\superlucent\shader\particle</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\shader\particle\simulation_params.h">
+      <Filter>src\superlucent\shader\particle</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\shader\particle\solver.h">
+      <Filter>src\superlucent\shader\particle</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\superlucent\shader\.gitignore">
@@ -83,6 +98,24 @@
       <Filter>src\superlucent\shader</Filter>
     </None>
     <None Include="..\..\src\superlucent\shader\particle_velocity_update.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle_collision_detection.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle_initialize_collision_detection.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle_solve_delta_lambda.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle_initialize_solver.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle_solve_delta_x.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle_solve_x_lambda.comp">
       <Filter>src\superlucent\shader</Filter>
     </None>
   </ItemGroup>

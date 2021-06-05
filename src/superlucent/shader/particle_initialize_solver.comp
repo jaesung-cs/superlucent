@@ -1,0 +1,36 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+#include "particle/particle.h"
+#include "particle/simulation_params.h"
+#include "particle/collision_pairs.h"
+#include "particle/solver.h"
+
+void main() 
+{
+	const uint index = gl_GlobalInvocationID.x;
+	if (index >= Rows() + Cols())
+    return;
+
+  // lambda0
+  if (index < Rows())
+  {
+    uvec2 lambda_index = LambdaIndex(index);
+    solver.matrix[lambda_index.x][lambda_index.y] = 0.f;
+  }
+
+  // x0
+  else
+  {
+    const uint row = index - Rows();
+
+    uint particle_id = row / 3;
+    uint coord_id = row % 3;
+
+    float x0 = particles[particle_id].position[coord_id];
+
+    uvec2 x_index = XIndex(row);
+    solver.matrix[x_index.x][x_index.y] = x0;
+  }
+}

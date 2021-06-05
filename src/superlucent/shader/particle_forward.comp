@@ -1,27 +1,9 @@
 #version 450
 
-struct Particle
-{
-  vec4 prev_position;
-  vec4 position; // [px, py, pz, 0]
-  vec4 velocity; // [vx, vy, vz, 0]
-  vec4 properties; // [radius, mass, 0, 0]
-  vec4 collision; // [-1 or 0 or 1, -1 or 0 or 1, 0 or 1, 0]
-  vec4 external_force;
-};
-
-layout(std140, binding = 0) buffer ParticleSsbo
-{
-  Particle particles[];
-};
-
 layout (local_size_x = 256) in;
 
-layout (binding = 1) uniform SimulationParamsUbo
-{
-	float dt;
-	int num_particles;
-} params;
+#include "particle/particle.h"
+#include "particle/simulation_params.h"
 
 void main() 
 {
@@ -35,41 +17,4 @@ void main()
   particles[index].prev_position = particles[index].position;
   particles[index].velocity += params.dt * particles[index].external_force / mass;
 	particles[index].position += params.dt * particles[index].velocity;
-
-  // Temporary collision response against floor and virtual walls
-  const float wall_distance = 5.f;
-
-  if (particles[index].position.x - radius < -wall_distance)
-  {
-    particles[index].position.x = -wall_distance + radius;
-    particles[index].collision.x = 1.f;
-  }
-  else if (particles[index].position.x + radius > wall_distance)
-  {
-    particles[index].position.x = wall_distance - radius;
-    particles[index].collision.x = -1.f;
-  }
-  else
-    particles[index].collision.x = 0.f;
-    
-  if (particles[index].position.y - radius < -wall_distance)
-  {
-    particles[index].position.y = -wall_distance + radius;
-    particles[index].collision.y = 1.f;
-  }
-  else if (particles[index].position.y + radius > wall_distance)
-  {
-    particles[index].position.y = wall_distance - radius;
-    particles[index].collision.y = -1.f;
-  }
-  else
-    particles[index].collision.y = 0.f;
-
-  if (particles[index].position.z - radius < 0.f)
-  {
-    particles[index].position.z = radius;
-    particles[index].collision.z = 1.f;
-  }
-  else
-    particles[index].collision.z = 0.f;
 }

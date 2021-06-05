@@ -1,0 +1,50 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+#include "particle/particle.h"
+#include "particle/simulation_params.h"
+#include "particle/collision_pairs.h"
+#include "particle/solver.h"
+
+void main() 
+{
+	const uint row = gl_GlobalInvocationID.x;
+	if (row >= Cols())
+    return;
+    
+  // TODO: work group by number of particles, not number of rows
+  uint particle_id = row / 3;
+  uint coord_id = row % 3;
+
+  float m_inv = 1.f / particles[particle_id].properties.x;
+
+  // Set to zero
+  uvec2 delta_x_index = DeltaXIndex(row);
+  solver.matrix[delta_x_index.x][delta_x_index.y] = 0.f;
+
+  // Iterate constraints
+  for (uint constraint_id = 0; constraint_id < Rows(); constraint_id++)
+  {
+    uvec2 delta_lambda_index = DeltaLambdaIndex(row);
+    float delta_lambda = solver.matrix[delta_lambda_index.x][delta_lambda_index.y];
+
+    if (collisions[row].ids[0] == particle_id)
+    {
+      vec3 n = collisions[constraint_id].n.xyz;
+      vec3 Jc0 = n;
+
+      // Accumulate contribution by constraint_id
+      solver.matrix[delta_x_index.x][delta_x_index.y] += m_inv * Jc0[coord_id] * delta_lambda;
+    }
+    
+    if (collisions[row].ids[1] == particle_id)
+    {
+      vec3 n = collisions[constraint_id].n.xyz;
+      vec3 Jc1 = -n;
+
+      // Accumulate contribution by constraint_id
+      solver.matrix[delta_x_index.x][delta_x_index.y] += m_inv * Jc1[coord_id] * delta_lambda;
+    }
+  }
+}
