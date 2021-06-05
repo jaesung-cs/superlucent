@@ -28,8 +28,8 @@ void main()
   {
     uint row = index - Rows();
     
-    uvec2 x_index = XIndex(index);
-    uvec2 delta_x_index = DeltaXIndex(index);
+    uvec2 x_index = XIndex(row);
+    uvec2 delta_x_index = DeltaXIndex(row);
     solver.matrix[x_index.x][x_index.y] += solver.matrix[delta_x_index.x][delta_x_index.y];
   }
 }

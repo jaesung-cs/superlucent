@@ -56,8 +56,9 @@ void main()
   float lambda = solver.matrix[lambda_index.x][lambda_index.y];
 
   float numerator = -c - alpha_tilde * lambda;
-  float denominator = m0_inv * dot(Jc0, x0) - m1_inv * dot(Jc1, x1) + alpha_tilde;
+  float denominator = m0_inv * dot(Jc0, Jc0) - m1_inv * dot(Jc1, Jc1) + alpha_tilde;
 
   uvec2 delta_lambda_index = DeltaLambdaIndex(constraint_id);
   solver.matrix[delta_lambda_index.x][delta_lambda_index.y] = numerator / denominator;
+  // solver.matrix[delta_lambda_index.x][delta_lambda_index.y] = 1.f;
 }

@@ -231,11 +231,25 @@ private:
     vk::DescriptorSetLayout descriptor_set_layout;
     vk::PipelineLayout pipeline_layout;
     vk::Pipeline forward_pipeline;
+    vk::Pipeline initialize_collision_detection_pipeline;
     vk::Pipeline collision_detection_pipeline;
+    vk::Pipeline initialize_solver_pipeline;
+    vk::Pipeline solve_delta_lambda_pipeline;
+    vk::Pipeline solve_delta_x_pipeline;
+    vk::Pipeline solve_x_lambda_pipeline;
     vk::Pipeline velocity_update_pipeline;
 
     vk::Buffer particle_buffer;
     uint32_t num_particles;
+
+    // Collision pairs
+    vk::Buffer collision_pairs_buffer;
+    vk::DeviceSize collision_pairs_buffer_size;
+    uint32_t num_collisions;
+
+    // Solver matrices: lambda, x, delta_lambda, delta_x
+    vk::Buffer solver_buffer;
+    vk::DeviceSize solver_buffer_size;
 
     std::vector<vk::DescriptorSet> descriptor_sets;
     std::vector<Uniform> simulation_params_ubos;

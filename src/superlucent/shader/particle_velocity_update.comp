@@ -3,7 +3,9 @@
 layout (local_size_x = 256) in;
 
 #include "particle/particle.h"
+#include "particle/collision_pairs.h"
 #include "particle/simulation_params.h"
+#include "particle/solver.h"
 
 vec3 computeRestitutionUpdate(vec3 normal, vec4 velocity, vec4 prev_velocity, float resilience)
 {
@@ -19,6 +21,17 @@ void main()
 	if (index >= params.num_particles)
     return;
     
+  // Update position from solver
+  vec3 solver_position;
+  for (int coord = 0; coord < 3; coord++)
+  {
+    uvec2 x_index = XIndex(index * 3 + coord);
+    solver_position[coord] = solver.matrix[x_index.x][x_index.y];
+  }
+
+  // Update position
+  particles[index].position.xyz = solver_position;
+
   const float radius = particles[index].properties.x;
   const float mass = particles[index].properties.y;
 
@@ -52,5 +65,9 @@ void main()
   }
   */
 
+  // Update velocity
   particles[index].velocity = solved_velocity;
+
+  // TEST: collision count counts well?
+  // particles[index].velocity.z += num_collisions * params.dt * 0.1f;
 }

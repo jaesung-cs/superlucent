@@ -41,7 +41,7 @@ void main()
   const float r1 = 10.f;
   const float r2 = 15.f;
   const float r = length(frag_position);
-  const float alpha = 1.f - smoothstep(r1, r2, r);
+  const float alpha = 0.5f * (1.f - smoothstep(r1, r2, r));
  
   // Directional light
   const vec3 frag_normal = vec3(0.f, 0.f, 1.f);
