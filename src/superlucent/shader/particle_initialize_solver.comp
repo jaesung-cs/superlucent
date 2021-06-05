@@ -16,8 +16,7 @@ void main()
   // lambda0
   if (index < Rows())
   {
-    uvec2 lambda_index = LambdaIndex(index);
-    solver.matrix[lambda_index.x][lambda_index.y] = 0.f;
+    solver.matrix[LambdaIndex(index)] = 0.f;
   }
 
   // x0
@@ -30,7 +29,6 @@ void main()
 
     float x0 = particles[particle_id].position[coord_id];
 
-    uvec2 x_index = XIndex(row);
-    solver.matrix[x_index.x][x_index.y] = x0;
+    solver.matrix[XIndex(row)] = x0;
   }
 }

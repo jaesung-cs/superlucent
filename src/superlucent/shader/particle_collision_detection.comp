@@ -17,7 +17,29 @@ void main()
   
 	vec4 position = particles[index].position;
 
-  // collision response against floor and virtual walls
+  // Collision between particles
+  for (int j = index + 1; j < params.num_particles; j++)
+  {
+    vec3 pj = particles[j].position.xyz;
+    vec3 pd = pj - position.xyz;
+
+    float rj = particles[j].properties.x;
+
+    if (dot(pd, pd) <= (radius + rj) * (radius + rj))
+    {
+      const uint collision_index = atomicAdd(num_collisions, 1);
+
+      vec3 n = -normalize(pd);
+      collisions[collision_index].ids[0] = index;
+      collisions[collision_index].ids[1] = j;
+
+      collisions[collision_index].r[0] = vec4(-n * radius, 0.f);
+      collisions[collision_index].r[1] = vec4(n * rj, 0.f);
+      collisions[collision_index].n = vec4(n, 0.f);
+    }
+  }
+
+  // Collision against floor and virtual walls
   const float wall_distance = 5.f;
 
   if (position.x - radius < -wall_distance)
@@ -28,20 +50,44 @@ void main()
     collisions[collision_index].ids[1] = -1;
 
     collisions[collision_index].r[0] = vec4(-radius, 0.f, 0.f, 0.f);
-    collisions[collision_index].r[1] = vec4(-wall_distance, 0.f, 0.f, 0.f);
+    collisions[collision_index].r[1] = vec4(-wall_distance, position.yz, 0.f);
     collisions[collision_index].n = vec4(1.f, 0.f, 0.f, 0.f);
   }
 
   if (particles[index].position.x + radius > wall_distance)
   {
+    const uint collision_index = atomicAdd(num_collisions, 1);
+
+    collisions[collision_index].ids[0] = index;
+    collisions[collision_index].ids[1] = -1;
+
+    collisions[collision_index].r[0] = vec4(radius, 0.f, 0.f, 0.f);
+    collisions[collision_index].r[1] = vec4(wall_distance, position.yz, 0.f);
+    collisions[collision_index].n = vec4(-1.f, 0.f, 0.f, 0.f);
   }
 
   if (particles[index].position.y - radius < -wall_distance)
   {
+    const uint collision_index = atomicAdd(num_collisions, 1);
+
+    collisions[collision_index].ids[0] = index;
+    collisions[collision_index].ids[1] = -1;
+
+    collisions[collision_index].r[0] = vec4(0.f, -radius, 0.f, 0.f);
+    collisions[collision_index].r[1] = vec4(position.x, -wall_distance, position.z, 0.f);
+    collisions[collision_index].n = vec4(0.f, 1.f, 0.f, 0.f);
   }
 
   if (particles[index].position.y + radius > wall_distance)
   {
+    const uint collision_index = atomicAdd(num_collisions, 1);
+
+    collisions[collision_index].ids[0] = index;
+    collisions[collision_index].ids[1] = -1;
+
+    collisions[collision_index].r[0] = vec4(0.f, radius, 0.f, 0.f);
+    collisions[collision_index].r[1] = vec4(position.x, wall_distance, position.z, 0.f);
+    collisions[collision_index].n = vec4(0.f, -1.f, 0.f, 0.f);
   }
 
   if (position.z - radius < 0.f)
@@ -52,7 +98,7 @@ void main()
     collisions[collision_index].ids[1] = -1;
 
     collisions[collision_index].r[0] = vec4(0.f, 0.f, -radius, 0.f);
-    collisions[collision_index].r[1] = vec4(0.f, 0.f, -wall_distance, 0.f);
+    collisions[collision_index].r[1] = vec4(position.xy, 0.f, 0.f);
     collisions[collision_index].n = vec4(0.f, 0.f, 1.f, 0.f);
   }
 }

@@ -13,15 +13,12 @@ void main()
 	if (constraint_id >= Rows())
     return;
 
-  uvec2 is = collisions[constraint_id].ids.xy;
-  float m0_inv = 1.f / particles[is[0]].properties.x;
+  ivec2 is = collisions[constraint_id].ids.xy;
+  float m0_inv = 1.f / particles[is[0]].properties.y;
 
   vec3 x0;
   for (int i = 0; i < 3; i++)
-  {
-    uvec2 x0_index = XIndex(is[0] * 3 + i);
-    x0[i] = solver.matrix[x0_index.x][x0_index.y];
-  }
+    x0[i] = solver.matrix[XIndex(is[0] * 3 + i)];
 
   vec3 r0 = collisions[constraint_id].r[0].xyz;
   vec3 n = collisions[constraint_id].n.xyz;
@@ -34,31 +31,22 @@ void main()
   float m1_inv = 0.f;
   if (is[1] >= 0)
   {
-    m1_inv = 1.f / particles[is[1]].properties.x;
+    m1_inv = 1.f / particles[is[1]].properties.y;
 
-    vec3 x1;
     for (int i = 0; i < 3; i++)
-    {
-      uvec2 x1_index = XIndex(is[1] * 3 + i);
-      x1[i] = solver.matrix[x1_index.x][x1_index.y];
-    }
-
-    vec3 r1 = collisions[constraint_id].r[1].xyz;
-    vec3 n = collisions[constraint_id].n.xyz;
-
-    c -= dot(x1 + r1, n);
-    Jc1 = -n;
+      x1[i] = solver.matrix[XIndex(is[1] * 3 + i)];
   }
+  vec3 r1 = collisions[constraint_id].r[1].xyz;
+
+  c -= dot(x1 + r1, n);
+  Jc1 = -n;
 
   float alpha_tilde = params.alpha / params.dt / params.dt;
 
-  uvec2 lambda_index = LambdaIndex(constraint_id);
-  float lambda = solver.matrix[lambda_index.x][lambda_index.y];
+  float lambda = solver.matrix[LambdaIndex(constraint_id)];
 
   float numerator = -c - alpha_tilde * lambda;
-  float denominator = m0_inv * dot(Jc0, Jc0) - m1_inv * dot(Jc1, Jc1) + alpha_tilde;
+  float denominator = m0_inv * dot(Jc0, Jc0) + m1_inv * dot(Jc1, Jc1) + alpha_tilde;
 
-  uvec2 delta_lambda_index = DeltaLambdaIndex(constraint_id);
-  solver.matrix[delta_lambda_index.x][delta_lambda_index.y] = numerator / denominator;
-  // solver.matrix[delta_lambda_index.x][delta_lambda_index.y] = 1.f;
+  solver.matrix[DeltaLambdaIndex(constraint_id)] = numerator / denominator;
 }

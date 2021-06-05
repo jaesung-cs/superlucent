@@ -16,20 +16,13 @@ void main()
   // lambda
   if (index < Rows())
   {
-    uint row = index;
-    
-    uvec2 lambda_index = LambdaIndex(index);
-    uvec2 delta_lambda_index = DeltaLambdaIndex(index);
-    solver.matrix[lambda_index.x][lambda_index.y] += solver.matrix[delta_lambda_index.x][delta_lambda_index.y];
+    solver.matrix[LambdaIndex(index)] += solver.matrix[DeltaLambdaIndex(index)];
   }
 
   // x
   else
   {
     uint row = index - Rows();
-    
-    uvec2 x_index = XIndex(row);
-    uvec2 delta_x_index = DeltaXIndex(row);
-    solver.matrix[x_index.x][x_index.y] += solver.matrix[delta_x_index.x][delta_x_index.y];
+    solver.matrix[XIndex(row)] += solver.matrix[DeltaXIndex(row)];
   }
 }

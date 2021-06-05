@@ -24,10 +24,7 @@ void main()
   // Update position from solver
   vec3 solver_position;
   for (int coord = 0; coord < 3; coord++)
-  {
-    uvec2 x_index = XIndex(index * 3 + coord);
-    solver_position[coord] = solver.matrix[x_index.x][x_index.y];
-  }
+    solver_position[coord] = solver.matrix[XIndex(index * 3 + coord)];
 
   // Update position
   particles[index].position.xyz = solver_position;

@@ -160,7 +160,7 @@ void Engine::Draw(std::chrono::high_resolution_clock::time_point timestamp)
 
   particle_simulation_.simulation_params.dt = dt;
   particle_simulation_.simulation_params.num_particles = particle_simulation_.num_particles;
-  particle_simulation_.simulation_params.alpha = 0.f;
+  particle_simulation_.simulation_params.alpha = 0.1f;
   std::memcpy(uniform_buffer_.map + particle_simulation_.simulation_params_ubos[image_index].offset, &particle_simulation_.simulation_params, sizeof(SimulationParamsUbo));
 
   // Submit
@@ -267,7 +267,7 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
       {}, solver_buffer_memory_barrier, {});
 
     // Solve
-    constexpr int solver_iterations = 1;
+    constexpr int solver_iterations = 10;
     for (int i = 0; i < solver_iterations; i++)
     {
       // Solve delta lambda
@@ -279,7 +279,7 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
 
       // Solve delta x
       command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, particle_simulation_.solve_delta_x_pipeline);
-      command_buffer.dispatch((particle_simulation_.num_particles * 3 + 255) / 256, 1, 1);
+      command_buffer.dispatch((particle_simulation_.num_particles + 255) / 256, 1, 1);
 
       command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
         {}, solver_buffer_memory_barrier, {});
@@ -1538,7 +1538,7 @@ void Engine::PrepareResources()
 
   // Cells buffer
   constexpr int sphere_segments = 16;
-  constexpr int cell_count = 32;
+  constexpr int cell_count = 8;
   std::vector<float> cells_buffer;
   std::vector<std::vector<uint32_t>> cells_indices;
   std::vector<uint32_t> cells_index_buffer;
@@ -1610,25 +1610,25 @@ void Engine::PrepareResources()
   {
     for (int j = 0; j < cell_count; j++)
     {
-      for (int k = 0; k < 1; k++)
+      for (int k = 0; k < cell_count; k++)
       {
         num_particles++;
 
         // prev_position
-        particle_buffer.push_back(radius * i * 4);
-        particle_buffer.push_back(radius * j * 4);
-        particle_buffer.push_back(radius * k * 4 + 1.f);
+        particle_buffer.push_back(radius * (i * 4 + k));
+        particle_buffer.push_back(radius * (j * 4 + k));
+        particle_buffer.push_back(radius * k * 4 + 2.f);
         particle_buffer.push_back(0.f);
 
         // position
-        particle_buffer.push_back(radius * i * 4);
-        particle_buffer.push_back(radius * j * 4);
-        particle_buffer.push_back(radius * k * 4 + 1.f);
+        particle_buffer.push_back(radius * (i * 4 + k));
+        particle_buffer.push_back(radius * (j * 4 + k));
+        particle_buffer.push_back(radius * k * 4 + 2.f);
         particle_buffer.push_back(0.f);
 
         // velocity
-        particle_buffer.push_back(-5.f);
-        particle_buffer.push_back(5.f);
+        particle_buffer.push_back(-1.f);
+        particle_buffer.push_back(1.f);
         particle_buffer.push_back(1.f);
         particle_buffer.push_back(0.f);
 
@@ -1651,11 +1651,12 @@ void Engine::PrepareResources()
   // Collision and solver size
   const auto num_collisions = num_particles * (num_particles + 5);
   const auto collision_pairs_size = sizeof(uint32_t) + num_collisions * (sizeof(uint32_t) * 4 + sizeof(float) * 12);
-
+  
   const auto solver_size =
     (num_collisions // lambda
-    + num_particles * 3) // x
-    * 2; // delta
+      + num_particles * 3) // x
+    * 2 // delta
+    * sizeof(float);
 
   buffer_create_info
     .setSize(cells_vertex_buffer_size + cells_index_buffer_size)
