@@ -5,3 +5,5 @@ vs/.vs
 vs/*/Debug
 vs/*/Release
 vs/*/*.vcxproj.user
+
+.VSCodeCounter/
