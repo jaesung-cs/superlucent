@@ -76,12 +76,6 @@
     <None Include="..\..\src\superlucent\shader\.gitignore">
       <Filter>src\superlucent\shader</Filter>
     </None>
-    <None Include="..\..\src\superlucent\shader\color.frag">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
-    <None Include="..\..\src\superlucent\shader\color.vert">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
     <None Include="..\..\src\superlucent\shader\compile.py">
       <Filter>src\superlucent\shader</Filter>
     </None>

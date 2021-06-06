@@ -7,3 +7,5 @@ vs/*/Release
 vs/*/*.vcxproj.user
 
 .VSCodeCounter/
+
+results/hq/
