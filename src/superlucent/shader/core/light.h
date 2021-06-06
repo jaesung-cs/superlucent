@@ -29,7 +29,7 @@ vec3 compute_point_light_color(Light light, vec3 diffuse_color, vec3 specular, f
   vec3 color = atten * (
     light.ambient * diffuse_color
     + diffuse_strength * light.diffuse * diffuse_color
-    + specular_strength * light.specular * shininess);
+    + specular_strength * light.specular * specular);
 
   return color;
 }

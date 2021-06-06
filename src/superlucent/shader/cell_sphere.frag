@@ -40,8 +40,8 @@ void main()
   vec3 N = normalize(frag_normal);
   vec3 V = normalize(camera.eye - frag_position);
    
-  const vec3 diffuse_color = vec3(1.f, 0.f, 0.f);
-  const vec3 specular = vec3(0.1f, 0.1f, 0.1f);
+  const vec3 diffuse_color = vec3(0.f, 0.2f, 1.f);
+  const vec3 specular = vec3(1.f, 1.f, 1.f);
   const float shininess = 1.f;
 
   vec3 total_color = vec3(0.f, 0.f, 0.f);

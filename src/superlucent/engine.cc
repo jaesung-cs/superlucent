@@ -1294,6 +1294,8 @@ void Engine::CreateGraphicsPipelines()
     .setTopology(vk::PrimitiveTopology::eTriangleStrip)
     .setPrimitiveRestartEnable(true);
 
+  rasterization.setCullMode(vk::CullModeFlagBits::eBack);
+
   pipeline_create_info.setStages(shader_stages);
 
   cell_sphere_pipeline_ = CreateGraphicsPipeline(pipeline_create_info);
