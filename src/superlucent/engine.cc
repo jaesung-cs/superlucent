@@ -244,7 +244,7 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
     // Collision detection
     // TODO: dispatch indirect
     command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, particle_simulation_.collision_detection_pipeline);
-    command_buffer.dispatch((particle_simulation_.num_collisions + 255) / 256, 1, 1);
+    command_buffer.dispatch((particle_simulation_.num_particles + 31) / 32, (particle_simulation_.num_particles + 31) / 32, 1);
 
     command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
       {}, collision_buffer_memory_barrier, {});
@@ -1540,7 +1540,7 @@ void Engine::PrepareResources()
 
   // Cells buffer
   constexpr int sphere_segments = 16;
-  constexpr int cell_count = 8;
+  constexpr int cell_count = 16;
   std::vector<float> cells_buffer;
   std::vector<std::vector<uint32_t>> cells_indices;
   std::vector<uint32_t> cells_index_buffer;

@@ -1,6 +1,6 @@
 #version 450
 
-layout (local_size_x = 256) in;
+layout (local_size_x = 32, local_size_y = 32) in;
 
 #include "particle/particle.h"
 #include "particle/simulation_params.h"
@@ -8,97 +8,101 @@ layout (local_size_x = 256) in;
 
 void main() 
 {
-	const int index = int(gl_GlobalInvocationID);
-	if (index >= params.num_particles)
+	const uint i0 = gl_GlobalInvocationID.x;
+	const uint i1 = gl_GlobalInvocationID.y;
+	if (i0 >= params.num_particles || i1 >= params.num_particles)
     return;
 
-  const float radius = particles[index].properties.x;
-  const float mass = particles[index].properties.y;
+  const float r0 = particles[i0].properties.x;
+  const float m0 = particles[i0].properties.y;
   
-	vec4 position = particles[index].position;
+	vec3 p0 = particles[i0].position.xyz;
 
   // Collision between particles
-  for (int j = index + 1; j < params.num_particles; j++)
+  if (i0 < i1)
   {
-    vec3 pj = particles[j].position.xyz;
-    vec3 pd = pj - position.xyz;
+    vec3 p1 = particles[i1].position.xyz;
+    vec3 pd = p1 - p0;
 
-    float rj = particles[j].properties.x;
+    float r1 = particles[i1].properties.x;
 
-    if (dot(pd, pd) <= (radius + rj) * (radius + rj))
+    if (dot(pd, pd) <= (r0 + r1) * (r0 + r1))
     {
       const uint collision_index = atomicAdd(num_collisions, 1);
 
       vec3 n = -normalize(pd);
-      collisions[collision_index].ids[0] = index;
-      collisions[collision_index].ids[1] = j;
+      collisions[collision_index].ids[0] = int(i0);
+      collisions[collision_index].ids[1] = int(i1);
 
-      collisions[collision_index].r[0] = vec4(-n * radius, 0.f);
-      collisions[collision_index].r[1] = vec4(n * rj, 0.f);
+      collisions[collision_index].r[0] = vec4(-n * r0, 0.f);
+      collisions[collision_index].r[1] = vec4(n * r1, 0.f);
       collisions[collision_index].n = vec4(n, 0.f);
     }
   }
 
   // Collision against floor and virtual walls
-  const float wall_distance = 5.f;
-
-  if (position.x - radius < -wall_distance)
+  if (i1 == 0)
   {
-    const uint collision_index = atomicAdd(num_collisions, 1);
+    const float wall_distance = 5.f;
 
-    collisions[collision_index].ids[0] = index;
-    collisions[collision_index].ids[1] = -1;
+    if (p0.x - r0 < -wall_distance)
+    {
+      const uint collision_index = atomicAdd(num_collisions, 1);
 
-    collisions[collision_index].r[0] = vec4(-radius, 0.f, 0.f, 0.f);
-    collisions[collision_index].r[1] = vec4(-wall_distance, position.yz, 0.f);
-    collisions[collision_index].n = vec4(1.f, 0.f, 0.f, 0.f);
-  }
+      collisions[collision_index].ids[0] = int(i0);
+      collisions[collision_index].ids[1] = -1;
 
-  if (particles[index].position.x + radius > wall_distance)
-  {
-    const uint collision_index = atomicAdd(num_collisions, 1);
+      collisions[collision_index].r[0] = vec4(-r0, 0.f, 0.f, 0.f);
+      collisions[collision_index].r[1] = vec4(-wall_distance, p0.yz, 0.f);
+      collisions[collision_index].n = vec4(1.f, 0.f, 0.f, 0.f);
+    }
 
-    collisions[collision_index].ids[0] = index;
-    collisions[collision_index].ids[1] = -1;
+    if (p0.x + r0 > wall_distance)
+    {
+      const uint collision_index = atomicAdd(num_collisions, 1);
 
-    collisions[collision_index].r[0] = vec4(radius, 0.f, 0.f, 0.f);
-    collisions[collision_index].r[1] = vec4(wall_distance, position.yz, 0.f);
-    collisions[collision_index].n = vec4(-1.f, 0.f, 0.f, 0.f);
-  }
+      collisions[collision_index].ids[0] = int(i0);
+      collisions[collision_index].ids[1] = -1;
 
-  if (particles[index].position.y - radius < -wall_distance)
-  {
-    const uint collision_index = atomicAdd(num_collisions, 1);
+      collisions[collision_index].r[0] = vec4(r0, 0.f, 0.f, 0.f);
+      collisions[collision_index].r[1] = vec4(wall_distance, p0.yz, 0.f);
+      collisions[collision_index].n = vec4(-1.f, 0.f, 0.f, 0.f);
+    }
 
-    collisions[collision_index].ids[0] = index;
-    collisions[collision_index].ids[1] = -1;
+    if (p0.y - r0 < -wall_distance)
+    {
+      const uint collision_index = atomicAdd(num_collisions, 1);
 
-    collisions[collision_index].r[0] = vec4(0.f, -radius, 0.f, 0.f);
-    collisions[collision_index].r[1] = vec4(position.x, -wall_distance, position.z, 0.f);
-    collisions[collision_index].n = vec4(0.f, 1.f, 0.f, 0.f);
-  }
+      collisions[collision_index].ids[0] = int(i0);
+      collisions[collision_index].ids[1] = -1;
 
-  if (particles[index].position.y + radius > wall_distance)
-  {
-    const uint collision_index = atomicAdd(num_collisions, 1);
+      collisions[collision_index].r[0] = vec4(0.f, -r0, 0.f, 0.f);
+      collisions[collision_index].r[1] = vec4(p0.x, -wall_distance, p0.z, 0.f);
+      collisions[collision_index].n = vec4(0.f, 1.f, 0.f, 0.f);
+    }
 
-    collisions[collision_index].ids[0] = index;
-    collisions[collision_index].ids[1] = -1;
+    if (p0.y + r0 > wall_distance)
+    {
+      const uint collision_index = atomicAdd(num_collisions, 1);
 
-    collisions[collision_index].r[0] = vec4(0.f, radius, 0.f, 0.f);
-    collisions[collision_index].r[1] = vec4(position.x, wall_distance, position.z, 0.f);
-    collisions[collision_index].n = vec4(0.f, -1.f, 0.f, 0.f);
-  }
+      collisions[collision_index].ids[0] = int(i0);
+      collisions[collision_index].ids[1] = -1;
 
-  if (position.z - radius < 0.f)
-  {
-    const uint collision_index = atomicAdd(num_collisions, 1);
+      collisions[collision_index].r[0] = vec4(0.f, r0, 0.f, 0.f);
+      collisions[collision_index].r[1] = vec4(p0.x, wall_distance, p0.z, 0.f);
+      collisions[collision_index].n = vec4(0.f, -1.f, 0.f, 0.f);
+    }
 
-    collisions[collision_index].ids[0] = index;
-    collisions[collision_index].ids[1] = -1;
+    if (p0.z - r0 < 0.f)
+    {
+      const uint collision_index = atomicAdd(num_collisions, 1);
 
-    collisions[collision_index].r[0] = vec4(0.f, 0.f, -radius, 0.f);
-    collisions[collision_index].r[1] = vec4(position.xy, 0.f, 0.f);
-    collisions[collision_index].n = vec4(0.f, 0.f, 1.f, 0.f);
+      collisions[collision_index].ids[0] = int(i0);
+      collisions[collision_index].ids[1] = -1;
+
+      collisions[collision_index].r[0] = vec4(0.f, 0.f, -r0, 0.f);
+      collisions[collision_index].r[1] = vec4(p0.xy, 0.f, 0.f);
+      collisions[collision_index].n = vec4(0.f, 0.f, 1.f, 0.f);
+    }
   }
 }

@@ -36,11 +36,11 @@ private:
   std::shared_ptr<scene::Camera> camera_;
 
   // pos = center + radius * (cos theta cos phi, sin theta cos phi, sin phi)
-  glm::vec3 center_{ 2.f, -2.f, 0.f };
+  glm::vec3 center_{ 0.f, 0.f, 0.f };
   const glm::vec3 up_{ 0.f, 0.f, 1.f };
   float radius_ = 10.f;
-  float theta_ = -glm::pi<float>() / 4.f;
-  float phi_ = glm::pi<float>() / 8.f;
+  float theta_ = -glm::pi<float>() / 2.f;
+  float phi_ = glm::pi<float>() / 6.f;
 
   float translation_sensitivity_ = 0.003f;
   float rotation_sensitivity_ = 0.003f;
