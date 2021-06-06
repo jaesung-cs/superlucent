@@ -68,6 +68,9 @@
     <ClInclude Include="..\..\src\superlucent\shader\particle\solver.h">
       <Filter>src\superlucent\shader\particle</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\shader\particle\indirect.h">
+      <Filter>src\superlucent\shader\particle</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\superlucent\shader\.gitignore">
@@ -116,6 +119,9 @@
       <Filter>src\superlucent\shader</Filter>
     </None>
     <None Include="..\..\src\superlucent\shader\particle_solve_x_lambda.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle_initialize_dispatch.comp">
       <Filter>src\superlucent\shader</Filter>
     </None>
   </ItemGroup>

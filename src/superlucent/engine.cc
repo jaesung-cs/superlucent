@@ -242,16 +242,28 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
       {}, { particle_buffer_memory_barrier, collision_buffer_memory_barrier }, {});
 
     // Collision detection
-    // TODO: dispatch indirect
     command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, particle_simulation_.collision_detection_pipeline);
     command_buffer.dispatch((particle_simulation_.num_particles + 31) / 32, (particle_simulation_.num_particles + 31) / 32, 1);
 
     command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
       {}, collision_buffer_memory_barrier, {});
 
+    // Initialize dispatch
+    command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, particle_simulation_.initialize_dispatch_pipeline);
+    command_buffer.dispatch(1, 1, 1);
+
+    vk::MemoryBarrier dispatch_indirect_barrier;
+    dispatch_indirect_barrier
+      .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+      .setDstAccessMask(vk::AccessFlagBits::eIndirectCommandRead);
+
+    // Why draw indirect stage, not top of pipe or compute?
+    command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eDrawIndirect, {},
+      dispatch_indirect_barrier, {}, {});
+
     // Initialize solver
     command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, particle_simulation_.initialize_solver_pipeline);
-    command_buffer.dispatch((particle_simulation_.num_collisions + particle_simulation_.num_particles * 3 + 255) / 256, 1, 1);
+    command_buffer.dispatchIndirect(particle_simulation_.dispatch_indirect, 0);
 
     vk::BufferMemoryBarrier solver_buffer_memory_barrier;
     solver_buffer_memory_barrier
@@ -272,7 +284,7 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
     {
       // Solve delta lambda
       command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, particle_simulation_.solve_delta_lambda_pipeline);
-      command_buffer.dispatch((particle_simulation_.num_collisions + 255) / 256, 1, 1);
+      command_buffer.dispatchIndirect(particle_simulation_.dispatch_indirect, sizeof(uint32_t) * 4);
 
       command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
         {}, solver_buffer_memory_barrier, {});
@@ -286,7 +298,7 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
 
       // Solve x and lambda
       command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, particle_simulation_.solve_x_lambda_pipeline);
-      command_buffer.dispatch((particle_simulation_.num_collisions + particle_simulation_.num_particles * 3 + 255) / 256, 1, 1);
+      command_buffer.dispatchIndirect(particle_simulation_.dispatch_indirect, 0);
 
       command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
         {}, solver_buffer_memory_barrier, {});
@@ -737,7 +749,7 @@ void Engine::PreallocateMemory()
     { vk::DescriptorType::eUniformBuffer, max_num_descriptors },
     { vk::DescriptorType::eUniformBufferDynamic, max_num_descriptors },
     { vk::DescriptorType::eCombinedImageSampler, 16 },
-    { vk::DescriptorType::eStorageBuffer, 2 },
+    { vk::DescriptorType::eStorageBuffer, max_num_descriptors },
   };
   vk::DescriptorPoolCreateInfo descriptor_pool_create_info;
   descriptor_pool_create_info
@@ -1315,7 +1327,7 @@ void Engine::DestroyGraphicsPipelines()
 void Engine::CreateComputePipelines()
 {
   // Descriptor set layout
-  std::vector<vk::DescriptorSetLayoutBinding> bindings(4);
+  std::vector<vk::DescriptorSetLayoutBinding> bindings(5);
   bindings[0]
     .setBinding(0)
     .setStageFlags(vk::ShaderStageFlagBits::eCompute)
@@ -1340,6 +1352,12 @@ void Engine::CreateComputePipelines()
     .setDescriptorType(vk::DescriptorType::eStorageBuffer)
     .setDescriptorCount(1);
 
+  bindings[4]
+    .setBinding(4)
+    .setStageFlags(vk::ShaderStageFlagBits::eCompute)
+    .setDescriptorType(vk::DescriptorType::eStorageBuffer)
+    .setDescriptorCount(1);
+
   vk::DescriptorSetLayoutCreateInfo descriptor_set_layout_create_info;
   descriptor_set_layout_create_info
     .setBindings(bindings);
@@ -1356,6 +1374,7 @@ void Engine::CreateComputePipelines()
   vk::ShaderModule particle_forward_module = CreateShaderModule(base_dir + "\\particle_forward.comp.spv");
   vk::ShaderModule particle_initialize_collision_detection_module = CreateShaderModule(base_dir + "\\particle_initialize_collision_detection.comp.spv");
   vk::ShaderModule particle_collision_detection_module = CreateShaderModule(base_dir + "\\particle_collision_detection.comp.spv");
+  vk::ShaderModule particle_initialize_dispatch_module = CreateShaderModule(base_dir + "\\particle_initialize_dispatch.comp.spv");
   vk::ShaderModule particle_initialize_solver_module = CreateShaderModule(base_dir + "\\particle_initialize_solver.comp.spv");
   vk::ShaderModule particle_solve_delta_lambda_module = CreateShaderModule(base_dir + "\\particle_solve_delta_lambda.comp.spv");
   vk::ShaderModule particle_solve_delta_x_module = CreateShaderModule(base_dir + "\\particle_solve_delta_x.comp.spv");
@@ -1385,6 +1404,11 @@ void Engine::CreateComputePipelines()
   compute_pipeline_create_info.setStage(shader_stage);
   particle_simulation_.collision_detection_pipeline = CreateComputePipeline(compute_pipeline_create_info);
 
+  // Initialize dispatch
+  shader_stage.setModule(particle_initialize_dispatch_module);
+  compute_pipeline_create_info.setStage(shader_stage);
+  particle_simulation_.initialize_dispatch_pipeline = CreateComputePipeline(compute_pipeline_create_info);
+
   // Initialize solver
   shader_stage.setModule(particle_initialize_solver_module);
   compute_pipeline_create_info.setStage(shader_stage);
@@ -1413,6 +1437,7 @@ void Engine::CreateComputePipelines()
   device_.destroyShaderModule(particle_forward_module);
   device_.destroyShaderModule(particle_initialize_collision_detection_module);
   device_.destroyShaderModule(particle_collision_detection_module);
+  device_.destroyShaderModule(particle_initialize_dispatch_module);
   device_.destroyShaderModule(particle_initialize_solver_module);
   device_.destroyShaderModule(particle_solve_delta_lambda_module);
   device_.destroyShaderModule(particle_solve_delta_x_module);
@@ -1427,6 +1452,7 @@ void Engine::DestroyComputePipelines()
   device_.destroyPipeline(particle_simulation_.forward_pipeline);
   device_.destroyPipeline(particle_simulation_.initialize_collision_detection_pipeline);
   device_.destroyPipeline(particle_simulation_.collision_detection_pipeline);
+  device_.destroyPipeline(particle_simulation_.initialize_dispatch_pipeline);
   device_.destroyPipeline(particle_simulation_.initialize_solver_pipeline);
   device_.destroyPipeline(particle_simulation_.solve_delta_lambda_pipeline);
   device_.destroyPipeline(particle_simulation_.solve_delta_x_pipeline);
@@ -1662,6 +1688,8 @@ void Engine::PrepareResources()
     * 2 // delta
     * sizeof(float);
 
+  const auto dispatch_indirect_size = sizeof(uint32_t) * 8;
+
   buffer_create_info
     .setSize(cells_vertex_buffer_size + cells_index_buffer_size)
     .setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eIndexBuffer);
@@ -1675,6 +1703,7 @@ void Engine::PrepareResources()
   particle_simulation_.particle_buffer = device_.createBuffer(buffer_create_info);
   particle_simulation_.num_particles = num_particles;
 
+  // TODO: allocate a single buffer, and split with subresources
   buffer_create_info
     .setSize(collision_pairs_size)
     .setUsage(vk::BufferUsageFlagBits::eStorageBuffer);
@@ -1687,6 +1716,11 @@ void Engine::PrepareResources()
     .setUsage(vk::BufferUsageFlagBits::eStorageBuffer);
   particle_simulation_.solver_buffer = device_.createBuffer(buffer_create_info);
   particle_simulation_.solver_buffer_size = solver_size;
+
+  buffer_create_info
+    .setSize(dispatch_indirect_size)
+    .setUsage(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer);
+  particle_simulation_.dispatch_indirect = device_.createBuffer(buffer_create_info);
 
   // Memory binding
   const auto triangle_memory = AcquireDeviceMemory(triangle_buffer_.buffer);
@@ -1709,6 +1743,9 @@ void Engine::PrepareResources()
 
   const auto solver_memory = AcquireDeviceMemory(particle_simulation_.solver_buffer);
   device_.bindBufferMemory(particle_simulation_.solver_buffer, solver_memory.memory, solver_memory.offset);
+
+  const auto dispatch_indirect_memory = AcquireDeviceMemory(particle_simulation_.dispatch_indirect);
+  device_.bindBufferMemory(particle_simulation_.dispatch_indirect, dispatch_indirect_memory.memory, dispatch_indirect_memory.offset);
 
   // Create image view for floor texture
   vk::ImageSubresourceRange subresource_range;
@@ -1923,7 +1960,7 @@ void Engine::PrepareResources()
 
   for (int i = 0; i < swapchain_image_count_; i++)
   {
-    std::vector<vk::DescriptorBufferInfo> buffer_infos(4);
+    std::vector<vk::DescriptorBufferInfo> buffer_infos(5);
     buffer_infos[0]
       .setBuffer(particle_simulation_.particle_buffer)
       .setOffset(0)
@@ -1944,7 +1981,12 @@ void Engine::PrepareResources()
       .setOffset(0)
       .setRange(particle_simulation_.solver_buffer_size);
 
-    std::vector<vk::WriteDescriptorSet> descriptor_writes(4);
+    buffer_infos[4]
+      .setBuffer(particle_simulation_.dispatch_indirect)
+      .setOffset(0)
+      .setRange(sizeof(uint32_t) * 8);
+
+    std::vector<vk::WriteDescriptorSet> descriptor_writes(5);
     descriptor_writes[0]
       .setDstSet(particle_simulation_.descriptor_sets[i])
       .setDstBinding(0)
@@ -1973,6 +2015,13 @@ void Engine::PrepareResources()
       .setDescriptorType(vk::DescriptorType::eStorageBuffer)
       .setBufferInfo(buffer_infos[3]);
 
+    descriptor_writes[4]
+      .setDstSet(particle_simulation_.descriptor_sets[i])
+      .setDstBinding(4)
+      .setDstArrayElement(0)
+      .setDescriptorType(vk::DescriptorType::eStorageBuffer)
+      .setBufferInfo(buffer_infos[4]);
+
     device_.updateDescriptorSets(descriptor_writes, {});
   }
 }
@@ -1990,6 +2039,7 @@ void Engine::DestroyResources()
   device_.destroyBuffer(particle_simulation_.collision_pairs_buffer);
   device_.destroyBuffer(particle_simulation_.particle_buffer);
   device_.destroyBuffer(particle_simulation_.solver_buffer);
+  device_.destroyBuffer(particle_simulation_.dispatch_indirect);
 }
 
 void Engine::CreateSynchronizationObjects()

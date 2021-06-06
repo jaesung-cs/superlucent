@@ -1,0 +1,16 @@
+#version 450
+
+layout (local_size_x = 1) in;
+
+#include "particle/collision_pairs.h"
+#include "particle/simulation_params.h"
+#include "particle/indirect.h"
+
+void main() 
+{
+  // Initializer solver, solve x and lambda
+  dispatch_indirect_commands[0] = uvec4((num_collisions + params.num_particles * 3 + 255) / 256, 1, 1, 0);
+  
+  // Solve delta lambda
+  dispatch_indirect_commands[1] = uvec4((num_collisions + 255) / 256, 1, 1, 0);
+}

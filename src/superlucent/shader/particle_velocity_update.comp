@@ -64,7 +64,4 @@ void main()
 
   // Update velocity
   particles[index].velocity = solved_velocity;
-
-  // TEST: collision count counts well?
-  // particles[index].velocity.z += num_collisions * params.dt * 0.1f;
 }

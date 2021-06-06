@@ -233,6 +233,7 @@ private:
     vk::Pipeline forward_pipeline;
     vk::Pipeline initialize_collision_detection_pipeline;
     vk::Pipeline collision_detection_pipeline;
+    vk::Pipeline initialize_dispatch_pipeline;
     vk::Pipeline initialize_solver_pipeline;
     vk::Pipeline solve_delta_lambda_pipeline;
     vk::Pipeline solve_delta_x_pipeline;
@@ -250,6 +251,9 @@ private:
     // Solver matrices: lambda, x, delta_lambda, delta_x
     vk::Buffer solver_buffer;
     vk::DeviceSize solver_buffer_size;
+
+    // Dispatch indirect buffer
+    vk::Buffer dispatch_indirect;
 
     std::vector<vk::DescriptorSet> descriptor_sets;
     std::vector<Uniform> simulation_params_ubos;
