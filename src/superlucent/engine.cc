@@ -160,7 +160,7 @@ void Engine::Draw(std::chrono::high_resolution_clock::time_point timestamp)
 
   particle_simulation_.simulation_params.dt = dt;
   particle_simulation_.simulation_params.num_particles = particle_simulation_.num_particles;
-  particle_simulation_.simulation_params.alpha = 0.05f;
+  particle_simulation_.simulation_params.alpha = 0.1f;
   std::memcpy(uniform_buffer_.map + particle_simulation_.simulation_params_ubos[image_index].offset, &particle_simulation_.simulation_params, sizeof(SimulationParamsUbo));
 
   // Submit
@@ -1615,14 +1615,14 @@ void Engine::PrepareResources()
         num_particles++;
 
         // prev_position
-        particle_buffer.push_back(radius * (i * 4 + k));
-        particle_buffer.push_back(radius * (j * 4 + k));
+        particle_buffer.push_back(radius * (i * 4 + k - cell_count * 2));
+        particle_buffer.push_back(radius * (j * 4 + k - cell_count * 2));
         particle_buffer.push_back(radius * k * 4 + 2.f);
         particle_buffer.push_back(0.f);
 
         // position
-        particle_buffer.push_back(radius * (i * 4 + k));
-        particle_buffer.push_back(radius * (j * 4 + k));
+        particle_buffer.push_back(radius * (i * 4 + k - cell_count * 2));
+        particle_buffer.push_back(radius * (j * 4 + k - cell_count * 2));
         particle_buffer.push_back(radius * k * 4 + 2.f);
         particle_buffer.push_back(0.f);
 
@@ -1649,8 +1649,10 @@ void Engine::PrepareResources()
   const auto particle_buffer_size = particle_buffer.size() * sizeof(float);
 
   // Collision and solver size
-  const auto num_collisions = num_particles * (num_particles + 5);
-  const auto collision_pairs_size = sizeof(uint32_t) + num_collisions * (sizeof(uint32_t) * 4 + sizeof(float) * 12);
+  const auto num_collisions =
+    num_particles + 5 // walls
+    + num_particles * 10; // max 10 collisions for each sphere
+  const auto collision_pairs_size = sizeof(uint32_t) + num_collisions * (sizeof(int32_t) * 4 + sizeof(float) * 12);
   
   const auto solver_size =
     (num_collisions // lambda
