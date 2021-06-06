@@ -48,5 +48,8 @@ void main()
   float numerator = -c - alpha_tilde * lambda;
   float denominator = m0_inv * dot(Jc0, Jc0) + m1_inv * dot(Jc1, Jc1) + alpha_tilde;
 
-  solver.matrix[DeltaLambdaIndex(constraint_id)] = numerator / denominator;
+  if (c < 0.f)
+    solver.matrix[DeltaLambdaIndex(constraint_id)] = numerator / denominator;
+  else
+    solver.matrix[DeltaLambdaIndex(constraint_id)] = 0.f;
 }
