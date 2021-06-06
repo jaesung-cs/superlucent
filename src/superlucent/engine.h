@@ -215,7 +215,6 @@ private:
 
   vk::DescriptorSetLayout graphics_descriptor_set_layout_;
   vk::PipelineLayout graphics_pipeline_layout_;
-  vk::Pipeline color_pipeline_;
   vk::Pipeline floor_pipeline_;
   vk::Pipeline cell_sphere_pipeline_;
 
@@ -277,7 +276,6 @@ private:
     vk::DeviceSize index_offset;
     uint32_t num_indices;
   };
-  VertexBuffer triangle_buffer_;
   VertexBuffer floor_buffer_;
 
   struct CellsBuffer
@@ -298,11 +296,9 @@ private:
 
   vk::DeviceSize ubo_alignment_;
   CameraUbo camera_;
-  ModelUbo triangle_model_;
   LightUbo lights_;
 
   std::vector<Uniform> camera_ubos_;
-  std::vector<Uniform> triangle_model_ubos_;
   std::vector<Uniform> light_ubos_;
 
   // Transfer

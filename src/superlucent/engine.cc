@@ -54,11 +54,6 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
   CreateSampler();
   PrepareResources();
   CreateSynchronizationObjects();
-
-  // Initialize uniform values
-  triangle_model_.model = glm::mat4(1.f);
-  triangle_model_.model[3][2] = 0.1f;
-  triangle_model_.model_inverse_transpose = glm::mat3(1.f);
 }
 
 Engine::~Engine()
@@ -155,7 +150,6 @@ void Engine::Draw(std::chrono::high_resolution_clock::time_point timestamp)
 
   // Update uniforms
   std::memcpy(uniform_buffer_.map + camera_ubos_[image_index].offset, &camera_, sizeof(CameraUbo));
-  std::memcpy(uniform_buffer_.map + triangle_model_ubos_[image_index].offset, &triangle_model_, sizeof(ModelUbo));
   std::memcpy(uniform_buffer_.map + light_ubos_[image_index].offset, &lights_, sizeof(LightUbo));
 
   particle_simulation_.simulation_params.dt = dt;
@@ -332,17 +326,9 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
     .setClearValues(clear_values);
   command_buffer.beginRenderPass(render_pass_begin_info, vk::SubpassContents::eInline);
 
-  // Draw triangle model
-  command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, color_pipeline_);
-
+  // Bind a shared descriptor set
   command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, graphics_pipeline_layout_, 0u,
     graphics_descriptor_sets_[image_index], {});
-
-  command_buffer.bindVertexBuffers(0u, { triangle_buffer_.buffer }, { 0ull });
-
-  command_buffer.bindIndexBuffer(triangle_buffer_.buffer, triangle_buffer_.index_offset, vk::IndexType::eUint32);
-
-  command_buffer.drawIndexed(triangle_buffer_.num_indices, 1u, 0u, 0u, 0u);
 
   // Draw cells
   command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, cell_sphere_pipeline_);
@@ -1071,8 +1057,8 @@ void Engine::CreateGraphicsPipelines()
 
   // Shader modules
   const std::string base_dir = "C:\\workspace\\superlucent\\src\\superlucent\\shader";
-  vk::ShaderModule vert_module = CreateShaderModule(base_dir + "\\color.vert.spv");
-  vk::ShaderModule frag_module = CreateShaderModule(base_dir + "\\color.frag.spv");
+  vk::ShaderModule vert_module = CreateShaderModule(base_dir + "\\floor.vert.spv");
+  vk::ShaderModule frag_module = CreateShaderModule(base_dir + "\\floor.frag.spv");
 
   // Shader stages
   std::vector<vk::PipelineShaderStageCreateInfo> shader_stages(2);
@@ -1091,21 +1077,15 @@ void Engine::CreateGraphicsPipelines()
   vk::VertexInputBindingDescription vertex_binding_description;
   vertex_binding_description
     .setBinding(0)
-    .setStride(sizeof(float) * 6)
+    .setStride(sizeof(float) * 2)
     .setInputRate(vk::VertexInputRate::eVertex);
 
-  std::vector<vk::VertexInputAttributeDescription> vertex_attribute_descriptions(2);
+  std::vector<vk::VertexInputAttributeDescription> vertex_attribute_descriptions(1);
   vertex_attribute_descriptions[0]
     .setLocation(0)
     .setBinding(0)
     .setFormat(vk::Format::eR32G32B32Sfloat)
     .setOffset(0);
-
-  vertex_attribute_descriptions[1]
-    .setLocation(1)
-    .setBinding(0)
-    .setFormat(vk::Format::eR32G32B32Sfloat)
-    .setOffset(sizeof(float) * 3);
 
   vk::PipelineVertexInputStateCreateInfo vertex_input;
   vertex_input
@@ -1115,7 +1095,7 @@ void Engine::CreateGraphicsPipelines()
   // Input assembly
   vk::PipelineInputAssemblyStateCreateInfo input_assembly;
   input_assembly
-    .setTopology(vk::PrimitiveTopology::eTriangleList)
+    .setTopology(vk::PrimitiveTopology::eTriangleStrip)
     .setPrimitiveRestartEnable(false);
 
   // Viewport
@@ -1201,45 +1181,6 @@ void Engine::CreateGraphicsPipelines()
     .setLayout(graphics_pipeline_layout_)
     .setRenderPass(render_pass_)
     .setSubpass(0);
-  color_pipeline_ = CreateGraphicsPipeline(pipeline_create_info);
-  device_.destroyShaderModule(vert_module);
-  device_.destroyShaderModule(frag_module);
-
-  // Floor graphics pipeline
-  vert_module = CreateShaderModule(base_dir + "\\floor.vert.spv");
-  frag_module = CreateShaderModule(base_dir + "\\floor.frag.spv");
-
-  shader_stages.resize(2);
-  shader_stages[0]
-    .setStage(vk::ShaderStageFlagBits::eVertex)
-    .setModule(vert_module)
-    .setPName("main");
-
-  shader_stages[1]
-    .setStage(vk::ShaderStageFlagBits::eFragment)
-    .setModule(frag_module)
-    .setPName("main");
-
-  vertex_binding_description
-    .setBinding(0)
-    .setStride(sizeof(float) * 2)
-    .setInputRate(vk::VertexInputRate::eVertex);
-
-  vertex_attribute_descriptions.resize(1);
-  vertex_attribute_descriptions[0]
-    .setLocation(0)
-    .setBinding(0)
-    .setFormat(vk::Format::eR32G32B32Sfloat)
-    .setOffset(0);
-
-  vertex_input
-    .setVertexBindingDescriptions(vertex_binding_description)
-    .setVertexAttributeDescriptions(vertex_attribute_descriptions);
-
-  input_assembly.setTopology(vk::PrimitiveTopology::eTriangleStrip);
-
-  pipeline_create_info.setStages(shader_stages);
-
   floor_pipeline_ = CreateGraphicsPipeline(pipeline_create_info);
   device_.destroyShaderModule(vert_module);
   device_.destroyShaderModule(frag_module);
@@ -1318,7 +1259,6 @@ void Engine::CreateGraphicsPipelines()
 void Engine::DestroyGraphicsPipelines()
 {
   device_.destroyDescriptorSetLayout(graphics_descriptor_set_layout_);
-  device_.destroyPipeline(color_pipeline_);
   device_.destroyPipeline(floor_pipeline_);
   device_.destroyPipeline(cell_sphere_pipeline_);
   device_.destroyPipelineLayout(graphics_pipeline_layout_);
@@ -1488,28 +1428,6 @@ void Engine::DestroySampler()
 
 void Engine::PrepareResources()
 {
-  // Triangle vertex buffer
-  std::vector<float> triangle_vertex_buffer{
-    0.f, 0.f, 0.f, 1.f, 0.f, 0.f,
-    1.f, 0.f, 0.f, 0.f, 1.f, 0.f,
-    0.f, 1.f, 0.f, 0.f, 0.f, 1.f,
-  };
-  std::vector<uint32_t> triangle_index_buffer{
-    0, 1, 2
-  };
-  const auto triangle_vertex_buffer_size = triangle_vertex_buffer.size() * sizeof(float);
-  const auto triangle_index_buffer_size = triangle_index_buffer.size() * sizeof(uint32_t);
-  const auto triangle_buffer_size = triangle_vertex_buffer_size + triangle_index_buffer_size;
-
-  vk::BufferCreateInfo buffer_create_info;
-  buffer_create_info
-    .setSize(triangle_buffer_size)
-    .setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eIndexBuffer);
-
-  triangle_buffer_.buffer = device_.createBuffer(buffer_create_info);
-  triangle_buffer_.index_offset = triangle_vertex_buffer_size;
-  triangle_buffer_.num_indices = static_cast<uint32_t>(triangle_index_buffer.size());
-
   // Floor buffer
   constexpr float floor_range = 20.f;
   std::vector<float> floor_vertex_buffer{
@@ -1526,6 +1444,7 @@ void Engine::PrepareResources()
   const auto floor_index_buffer_size = floor_index_buffer.size() * sizeof(uint32_t);
   const auto floor_buffer_size = floor_vertex_buffer_size + floor_index_buffer_size;
 
+  vk::BufferCreateInfo buffer_create_info;
   buffer_create_info
     .setSize(floor_buffer_size)
     .setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eIndexBuffer);
@@ -1723,9 +1642,6 @@ void Engine::PrepareResources()
   particle_simulation_.dispatch_indirect = device_.createBuffer(buffer_create_info);
 
   // Memory binding
-  const auto triangle_memory = AcquireDeviceMemory(triangle_buffer_.buffer);
-  device_.bindBufferMemory(triangle_buffer_.buffer, triangle_memory.memory, triangle_memory.offset);
-
   const auto floor_memory = AcquireDeviceMemory(floor_buffer_.buffer);
   device_.bindBufferMemory(floor_buffer_.buffer, floor_memory.memory, floor_memory.offset);
 
@@ -1767,11 +1683,6 @@ void Engine::PrepareResources()
 
   // Transfer
   vk::DeviceSize staging_offset = 0ull;
-  std::memcpy(staging_buffer_.map + staging_offset, triangle_vertex_buffer.data(), triangle_vertex_buffer_size);
-  staging_offset += triangle_vertex_buffer_size;
-  std::memcpy(staging_buffer_.map + staging_offset, triangle_index_buffer.data(), triangle_index_buffer_size);
-  staging_offset += triangle_index_buffer_size;
-
   std::memcpy(staging_buffer_.map + staging_offset, floor_vertex_buffer.data(), floor_vertex_buffer_size);
   staging_offset += floor_vertex_buffer_size;
   std::memcpy(staging_buffer_.map + staging_offset, floor_index_buffer.data(), floor_index_buffer_size);
@@ -1798,23 +1709,17 @@ void Engine::PrepareResources()
   copy_region
     .setSrcOffset(0)
     .setDstOffset(0)
-    .setSize(triangle_buffer_size);
-  transient_command_buffer_.copyBuffer(staging_buffer_.buffer, triangle_buffer_.buffer, copy_region);
-
-  copy_region
-    .setSrcOffset(triangle_buffer_size)
-    .setDstOffset(0)
     .setSize(floor_buffer_size);
   transient_command_buffer_.copyBuffer(staging_buffer_.buffer, floor_buffer_.buffer, copy_region);
 
   copy_region
-    .setSrcOffset(triangle_buffer_size + floor_buffer_size)
+    .setSrcOffset(floor_buffer_size)
     .setDstOffset(0)
     .setSize(cells_vertex_buffer_size + cells_index_buffer_size);
   transient_command_buffer_.copyBuffer(staging_buffer_.buffer, cells_buffer_.vertex.buffer, copy_region);
 
   copy_region
-    .setSrcOffset(triangle_buffer_size + floor_buffer_size + cells_vertex_buffer_size + cells_index_buffer_size)
+    .setSrcOffset(floor_buffer_size + cells_vertex_buffer_size + cells_index_buffer_size)
     .setDstOffset(0)
     .setSize(particle_buffer_size);
   transient_command_buffer_.copyBuffer(staging_buffer_.buffer, particle_simulation_.particle_buffer, copy_region);
@@ -1831,7 +1736,7 @@ void Engine::PrepareResources()
 
   vk::BufferImageCopy image_copy_region;
   image_copy_region
-    .setBufferOffset(triangle_buffer_size + floor_buffer_size + cells_vertex_buffer_size + cells_index_buffer_size + particle_buffer_size)
+    .setBufferOffset(floor_buffer_size + cells_vertex_buffer_size + cells_index_buffer_size + particle_buffer_size)
     .setBufferRowLength(0)
     .setBufferImageHeight(0)
     .setImageSubresource(image_subresource_layer)
@@ -1863,14 +1768,6 @@ void Engine::PrepareResources()
     uniform_offset = align(uniform_offset + sizeof(CameraUbo), ubo_alignment_);
   }
 
-  triangle_model_ubos_.resize(swapchain_image_count_);
-  for (uint32_t i = 0; i < swapchain_image_count_; i++)
-  {
-    triangle_model_ubos_[i].offset = uniform_offset;
-    triangle_model_ubos_[i].size = sizeof(ModelUbo);
-    uniform_offset = align(uniform_offset + sizeof(ModelUbo), ubo_alignment_);
-  }
-
   light_ubos_.resize(swapchain_image_count_);
   for (uint32_t i = 0; i < swapchain_image_count_; i++)
   {
@@ -1889,18 +1786,13 @@ void Engine::PrepareResources()
 
   for (int i = 0; i < graphics_descriptor_sets_.size(); i++)
   {
-    std::vector<vk::DescriptorBufferInfo> buffer_infos(3);
+    std::vector<vk::DescriptorBufferInfo> buffer_infos(2);
     buffer_infos[0]
       .setBuffer(uniform_buffer_.buffer)
       .setOffset(camera_ubos_[i].offset)
       .setRange(camera_ubos_[i].size);
 
     buffer_infos[1]
-      .setBuffer(uniform_buffer_.buffer)
-      .setOffset(triangle_model_ubos_[i].offset)
-      .setRange(triangle_model_ubos_[i].size);
-
-    buffer_infos[2]
       .setBuffer(uniform_buffer_.buffer)
       .setOffset(light_ubos_[i].offset)
       .setRange(light_ubos_[i].size);
@@ -1911,7 +1803,7 @@ void Engine::PrepareResources()
       .setImageView(floor_texture_.image_view)
       .setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
 
-    std::vector<vk::WriteDescriptorSet> descriptor_writes(4);
+    std::vector<vk::WriteDescriptorSet> descriptor_writes(3);
     descriptor_writes[0]
       .setDstSet(graphics_descriptor_sets_[i])
       .setDstBinding(0)
@@ -1921,24 +1813,17 @@ void Engine::PrepareResources()
 
     descriptor_writes[1]
       .setDstSet(graphics_descriptor_sets_[i])
-      .setDstBinding(1)
-      .setDstArrayElement(0)
-      .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-      .setBufferInfo(buffer_infos[1]);
-
-    descriptor_writes[2]
-      .setDstSet(graphics_descriptor_sets_[i])
       .setDstBinding(2)
       .setDstArrayElement(0)
       .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
       .setImageInfo(image_infos[0]);
 
-    descriptor_writes[3]
+    descriptor_writes[2]
       .setDstSet(graphics_descriptor_sets_[i])
       .setDstBinding(3)
       .setDstArrayElement(0)
       .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-      .setBufferInfo(buffer_infos[2]);
+      .setBufferInfo(buffer_infos[1]);
 
     device_.updateDescriptorSets(descriptor_writes, {});
   }
@@ -2031,7 +1916,6 @@ void Engine::DestroyResources()
   graphics_descriptor_sets_.clear();
   particle_simulation_.descriptor_sets.clear();
 
-  device_.destroyBuffer(triangle_buffer_.buffer);
   device_.destroyBuffer(floor_buffer_.buffer);
   device_.destroyBuffer(cells_buffer_.vertex.buffer);
   device_.destroyImage(floor_texture_.image);
