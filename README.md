@@ -2,7 +2,7 @@
 
 My Vulkan compute/graphics engine for learning purpose.
 
-![](/results/particles_pbd.gif | width=800)
+<img src="/results/particles_pbd_hq.gif" width="800">
 
 ## Goals
 
