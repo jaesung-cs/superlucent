@@ -111,15 +111,10 @@ void Engine::UpdateCamera(std::shared_ptr<scene::Camera> camera)
   camera_.eye = camera->Eye();
 }
 
-void Engine::Draw(std::chrono::high_resolution_clock::time_point timestamp)
+void Engine::Draw(double time)
 {
-  double dt = 0.;
-  if (first_draw_)
-    first_draw_ = false;
-  else
-    dt = std::chrono::duration<double>(timestamp - previous_timestamp_).count();
-
-  previous_timestamp_ = timestamp;
+  auto dt = time - previous_time_;
+  previous_time_ = time;
 
   auto wait_result = device_.waitForFences(in_flight_fences_[current_frame_], true, UINT64_MAX);
 
@@ -309,7 +304,7 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
       {}, particle_buffer_memory_barrier, {});
   }
 
-  // Begin render pass
+  // Begin render pass 
   command_buffer.setViewport(0, vk::Viewport{ 0.f, 0.f, static_cast<float>(width_), static_cast<float>(height_), 0.f, 1.f });
 
   command_buffer.setScissor(0, vk::Rect2D{ {0u, 0u}, {width_, height_} });
@@ -1562,21 +1557,40 @@ void Engine::PrepareResources()
         num_particles++;
 
         // prev_position
-        particle_buffer.push_back(radius * (i * 4 + k - cell_count * 2));
-        particle_buffer.push_back(radius * (j * 4 + k - cell_count * 2));
-        particle_buffer.push_back(radius * k * 4 + 2.f);
+        /*
+        particle_buffer.push_back(0.9f * radius * (i * 3 + k - cell_count * 2));
+        particle_buffer.push_back(0.9f * radius * (j * 3 + k - cell_count * 2));
+        particle_buffer.push_back(0.9f * radius * k * 4 + 1.f);
+        particle_buffer.push_back(0.f);
+        */
+        particle_buffer.push_back(0.9f * radius * (i * 4 - cell_count * 2));
+        particle_buffer.push_back(0.9f * radius * (j * 4 - cell_count * 2));
+        particle_buffer.push_back(0.9f * radius * k * 4 + 1.f);
         particle_buffer.push_back(0.f);
 
         // position
-        particle_buffer.push_back(radius * (i * 4 + k - cell_count * 2));
-        particle_buffer.push_back(radius * (j * 4 + k - cell_count * 2));
-        particle_buffer.push_back(radius * k * 4 + 2.f);
+        /*
+        particle_buffer.push_back(0.9f * radius * (i * 3 + k - cell_count * 2));
+        particle_buffer.push_back(0.9f * radius * (j * 3 + k - cell_count * 2));
+        particle_buffer.push_back(0.9f * radius * k * 4 + 1.f);
+        particle_buffer.push_back(0.f);
+        */
+        particle_buffer.push_back(0.9f * radius * (i * 4 - cell_count * 2));
+        particle_buffer.push_back(0.9f * radius * (j * 4 - cell_count * 2));
+        particle_buffer.push_back(0.9f * radius * k * 4 + 1.f);
         particle_buffer.push_back(0.f);
 
         // velocity
-        particle_buffer.push_back(-1.f);
+        /*
+        particle_buffer.push_back(-3.f);
+        particle_buffer.push_back(3.f);
         particle_buffer.push_back(1.f);
-        particle_buffer.push_back(1.f);
+        particle_buffer.push_back(0.f);
+        */
+
+        particle_buffer.push_back(0.f);
+        particle_buffer.push_back(0.f);
+        particle_buffer.push_back(0.f);
         particle_buffer.push_back(0.f);
 
         // properties

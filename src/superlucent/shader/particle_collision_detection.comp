@@ -43,7 +43,7 @@ void main()
   // Collision against floor and virtual walls
   if (i1 == 0)
   {
-    const float wall_distance = 5.f;
+    const float wall_distance = 2.f;
 
     if (p0.x - r0 < -wall_distance)
     {

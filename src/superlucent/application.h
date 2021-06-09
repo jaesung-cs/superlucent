@@ -53,6 +53,9 @@ private:
   double mouse_last_x_ = 0.;
   double mouse_last_y_ = 0.;
   std::array<bool, 256> key_pressed_{};
+
+  // Animation
+  bool is_animated_ = false;
 };
 }
 

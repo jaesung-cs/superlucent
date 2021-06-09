@@ -121,6 +121,7 @@ void Application::Run()
   int64_t recent_seconds = 0;
   const auto start_time = Clock::now();
   Timestamp previous_time = start_time;
+  double animation_time = 0.;
   while (!glfwWindowShouldClose(window_))
   {
     glfwPollEvents();
@@ -136,9 +137,13 @@ void Application::Run()
 
     engine_->UpdateLights(lights_);
     engine_->UpdateCamera(camera_);
-    engine_->Draw(current_time);
+    engine_->Draw(animation_time);
 
     frame++;
+
+    // Update animation time
+    if (is_animated_)
+      animation_time += dt;
 
     const auto seconds = static_cast<int64_t>(Duration(Clock::now() - start_time).count());
     if (seconds > recent_seconds)
@@ -181,6 +186,11 @@ void Application::Key(int key, int scancode, int action, int mods)
     {
       glfwSetWindowShouldClose(window_, true);
       return;
+    }
+
+    if (key == GLFW_KEY_ENTER)
+    {
+      is_animated_ = !is_animated_;
     }
   }
 

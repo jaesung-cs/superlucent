@@ -1,8 +1,6 @@
 #ifndef SUPERLUCENT_ENGINE_H_
 #define SUPERLUCENT_ENGINE_H_
 
-#include <chrono>
-
 #include <vulkan/vulkan.hpp>
 
 #include <glm/glm.hpp>
@@ -67,7 +65,7 @@ public:
   void Resize(uint32_t width, uint32_t height);
   void UpdateLights(const std::vector<std::shared_ptr<scene::Light>>& lights);
   void UpdateCamera(std::shared_ptr<scene::Camera> camera);
-  void Draw(std::chrono::high_resolution_clock::time_point timestamp);
+  void Draw(double time);
 
 private:
   void RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t image_index, double dt);
@@ -140,8 +138,7 @@ private:
   uint32_t width_ = 0;
   uint32_t height_ = 0;
 
-  bool first_draw_ = true;
-  std::chrono::high_resolution_clock::time_point previous_timestamp_;
+  double previous_time_ = 0.;
 
   // Instance
   vk::Instance instance_;
