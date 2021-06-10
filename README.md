@@ -11,3 +11,8 @@ My Vulkan compute/graphics engine for learning purpose.
 ## Physics simulation
 
 - Position Based Dynamics (PBD)
+
+## Update notes
+
+- See `/notes` directory for descriptions
+- Until I lose interests...
