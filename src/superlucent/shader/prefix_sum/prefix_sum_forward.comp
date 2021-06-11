@@ -1,0 +1,18 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+#include "prefix_sum_buffer.h"
+
+// Dispatch with query.level = 0, 1, 2, 3, ...
+
+void main()
+{
+  const uint index = gl_GlobalInvocationID.x;
+  if (index >= (prefix_sum.size >> (query.level + 1)))
+    return;
+
+  const uint right_index = ((index + 1) << (query.level + 1)) - 1;
+  const uint left_index = right_index - (1 << query.level);
+  prefix_sum.data[right_index] += prefix_sum.data[left_index];
+}
