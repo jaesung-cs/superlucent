@@ -1,0 +1,11 @@
+#version 450
+
+layout (local_size_x = 1) in;
+
+#include "particle/uniform_grid.h"
+
+void main() 
+{
+  grid.cell_size = vec3(0.1f, 0.1f, 0.1f);
+  grid.num_pairs = 0;
+}
