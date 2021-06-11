@@ -180,6 +180,8 @@ python compile.py
     <ClInclude Include="..\..\src\superlucent\shader\particle\particle.h" />
     <ClInclude Include="..\..\src\superlucent\shader\particle\simulation_params.h" />
     <ClInclude Include="..\..\src\superlucent\shader\particle\solver.h" />
+    <ClInclude Include="..\..\src\superlucent\shader\particle\uniform_grid.h" />
+    <ClInclude Include="..\..\src\superlucent\shader\prefix_sum\prefix_sum_buffer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\superlucent\shader\.gitignore" />
@@ -197,6 +199,8 @@ python compile.py
     <None Include="..\..\src\superlucent\shader\particle_solve_delta_x.comp" />
     <None Include="..\..\src\superlucent\shader\particle_solve_x_lambda.comp" />
     <None Include="..\..\src\superlucent\shader\particle_velocity_update.comp" />
+    <None Include="..\..\src\superlucent\shader\prefix_sum\prefix_sum_forward.comp" />
+    <None Include="..\..\src\superlucent\shader\prefix_sum\prefix_sum_backward.comp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

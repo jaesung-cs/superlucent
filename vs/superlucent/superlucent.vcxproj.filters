@@ -19,6 +19,9 @@
     <Filter Include="src\superlucent\shader\particle">
       <UniqueIdentifier>{82520e49-8978-4bb9-afcc-f1c7a31ef3ce}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\superlucent\shader\prefix_sum">
+      <UniqueIdentifier>{9da030c1-1d6c-4c4e-bf09-95f2ebfd5b4d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cc">
@@ -71,6 +74,12 @@
     <ClInclude Include="..\..\src\superlucent\shader\particle\indirect.h">
       <Filter>src\superlucent\shader\particle</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\shader\particle\uniform_grid.h">
+      <Filter>src\superlucent\shader\particle</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\shader\prefix_sum\prefix_sum_buffer.h">
+      <Filter>src\superlucent\shader\prefix_sum</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\superlucent\shader\.gitignore">
@@ -117,6 +126,12 @@
     </None>
     <None Include="..\..\src\superlucent\shader\particle_initialize_dispatch.comp">
       <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\prefix_sum\prefix_sum_backward.comp">
+      <Filter>src\superlucent\shader\prefix_sum</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\prefix_sum\prefix_sum_forward.comp">
+      <Filter>src\superlucent\shader\prefix_sum</Filter>
     </None>
   </ItemGroup>
 </Project>
