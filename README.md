@@ -13,6 +13,8 @@ My Vulkan compute/graphics engine for learning purpose.
 
 (22^3 = 10,648 particles, collision detection with/without uniform grid)
 
+It runs ~300 fps with 40^3 = 64k particles.
+
 ## Goals
 
 - Run physics simulation and rendering 100% on GPU, without heavy CPU-GPU transfers.

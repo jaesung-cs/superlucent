@@ -23,28 +23,37 @@ void main()
   }
 
   // Iterate constraints
-  for (uint constraint_id = 0; constraint_id < Rows(); constraint_id++)
+  int pointer = collision_chain.head[particle_id].x;
+  while (pointer != -1)
   {
+    const int constraint_id = pointer;
+
     float delta_lambda = solver.matrix[DeltaLambdaIndex(constraint_id)];
 
-    if (collisions[constraint_id].ids[0] == particle_id)
-    {
-      vec3 n = collisions[constraint_id].n.xyz;
-      vec3 Jc0 = n;
+    vec3 n = collisions[constraint_id].n.xyz;
+    vec3 Jc0 = n;
 
-      // Accumulate contribution by constraint_id
-      for (int i = 0; i < 3; i++)
-        solver.matrix[DeltaXIndex(particle_id * 3 + i)] += m_inv * Jc0[i] * delta_lambda;
-    }
+    // Accumulate contribution by constraint_id
+    for (int i = 0; i < 3; i++)
+      solver.matrix[DeltaXIndex(particle_id * 3 + i)] += m_inv * Jc0[i] * delta_lambda;
 
-    if (collisions[constraint_id].ids[1] == particle_id)
-    {
-      vec3 n = collisions[constraint_id].n.xyz;
-      vec3 Jc1 = -n;
+    pointer = collisions[pointer].next.x;
+  }
+  
+  pointer = collision_chain.head[particle_id].y;
+  while (pointer != -1)
+  {
+    const int constraint_id = pointer;
 
-      // Accumulate contribution by constraint_id
-      for (int i = 0; i < 3; i++)
-        solver.matrix[DeltaXIndex(particle_id * 3 + i)] += m_inv * Jc1[i] * delta_lambda;
-    }
+    float delta_lambda = solver.matrix[DeltaLambdaIndex(constraint_id)];
+
+    vec3 n = collisions[constraint_id].n.xyz;
+    vec3 Jc1 = -n;
+
+    // Accumulate contribution by constraint_id
+    for (int i = 0; i < 3; i++)
+      solver.matrix[DeltaXIndex(particle_id * 3 + i)] += m_inv * Jc1[i] * delta_lambda;
+
+    pointer = collisions[pointer].next.y;
   }
 }

@@ -1,10 +1,17 @@
 #version 450
 
-layout (local_size_x = 1) in;
+layout (local_size_x = 256) in;
 
+#include "particle/simulation_params.h"
 #include "particle/collision_pairs.h"
 
-void main() 
+void main()
 {
-  num_collisions = 0;
+  const uint index = gl_GlobalInvocationID.x;
+
+  if (index == 0)
+    num_collisions = 0;
+
+  if (index < params.num_particles)
+    collision_chain.head[index] = ivec2(-1, -1);
 }

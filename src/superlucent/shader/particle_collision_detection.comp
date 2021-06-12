@@ -69,6 +69,12 @@ void main()
             collisions[collision_index].r[0] = vec4(-n * r0, 0.f);
             collisions[collision_index].r[1] = vec4(n * r1, 0.f);
             collisions[collision_index].n = vec4(n, 0.f);
+
+            int next0 = atomicExchange(collision_chain.head[i0].x, int(collision_index));
+            collisions[collision_index].next.x = next0;
+
+            int next1 = atomicExchange(collision_chain.head[i1].y, int(collision_index));
+            collisions[collision_index].next.y = next1;
           }
         }
       }
@@ -101,6 +107,12 @@ void main()
         collisions[collision_index].r[0] = vec4(-n * r0, 0.f);
         collisions[collision_index].r[1] = vec4(n * r1, 0.f);
         collisions[collision_index].n = vec4(n, 0.f);
+
+        int next0 = atomicExchange(collision_chain.head[i0].x, int(collision_index));
+        collisions[collision_index].next.x = next0;
+
+        int next1 = atomicExchange(collision_chain.head[i1].y, int(collision_index));
+        collisions[collision_index].next.y = next1;
       }
     }
     particles[i0].color.rgb = vec3(0.f, 0.2f, 1.f);
@@ -119,6 +131,9 @@ void main()
     collisions[collision_index].r[0] = vec4(-r0, 0.f, 0.f, 0.f);
     collisions[collision_index].r[1] = vec4(-wall_distance, p0.yz, 0.f);
     collisions[collision_index].n = vec4(1.f, 0.f, 0.f, 0.f);
+    
+    int next0 = atomicExchange(collision_chain.head[i0].x, int(collision_index));
+    collisions[collision_index].next.x = next0;
   }
 
   if (p0.x + r0 > wall_distance)
@@ -131,6 +146,9 @@ void main()
     collisions[collision_index].r[0] = vec4(r0, 0.f, 0.f, 0.f);
     collisions[collision_index].r[1] = vec4(wall_distance, p0.yz, 0.f);
     collisions[collision_index].n = vec4(-1.f, 0.f, 0.f, 0.f);
+    
+    int next0 = atomicExchange(collision_chain.head[i0].x, int(collision_index));
+    collisions[collision_index].next.x = next0;
   }
 
   if (p0.y - r0 < -wall_distance)
@@ -143,6 +161,9 @@ void main()
     collisions[collision_index].r[0] = vec4(0.f, -r0, 0.f, 0.f);
     collisions[collision_index].r[1] = vec4(p0.x, -wall_distance, p0.z, 0.f);
     collisions[collision_index].n = vec4(0.f, 1.f, 0.f, 0.f);
+    
+    int next0 = atomicExchange(collision_chain.head[i0].x, int(collision_index));
+    collisions[collision_index].next.x = next0;
   }
 
   if (p0.y + r0 > wall_distance)
@@ -155,6 +176,9 @@ void main()
     collisions[collision_index].r[0] = vec4(0.f, r0, 0.f, 0.f);
     collisions[collision_index].r[1] = vec4(p0.x, wall_distance, p0.z, 0.f);
     collisions[collision_index].n = vec4(0.f, -1.f, 0.f, 0.f);
+    
+    int next0 = atomicExchange(collision_chain.head[i0].x, int(collision_index));
+    collisions[collision_index].next.x = next0;
   }
 
   if (p0.z - r0 < 0.f)
@@ -167,5 +191,8 @@ void main()
     collisions[collision_index].r[0] = vec4(0.f, 0.f, -r0, 0.f);
     collisions[collision_index].r[1] = vec4(p0.xy, 0.f, 0.f);
     collisions[collision_index].n = vec4(0.f, 0.f, 1.f, 0.f);
+    
+    int next0 = atomicExchange(collision_chain.head[i0].x, int(collision_index));
+    collisions[collision_index].next.x = next0;
   }
 }

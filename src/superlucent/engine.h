@@ -257,6 +257,8 @@ private:
     static constexpr int num_hash_buckets = 1000003;
     vk::DeviceSize hash_table_buffer_offset;
     static constexpr vk::DeviceSize hash_table_buffer_size = num_hash_buckets * sizeof(int32_t);
+    vk::DeviceSize collision_chain_buffer_offset;
+    vk::DeviceSize collision_chain_buffer_size;
 
     // Dispatch indirect buffer
     vk::Buffer dispatch_indirect;
