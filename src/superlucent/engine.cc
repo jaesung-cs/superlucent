@@ -1569,8 +1569,8 @@ void Engine::PrepareResources()
   floor_texture_.image = device_.createImage(image_create_info);
 
   // Cells buffer
-  constexpr int sphere_segments = 16;
-  constexpr int cell_count = 22;
+  constexpr int sphere_segments = 8;
+  constexpr int cell_count = 40;
   std::vector<float> cells_buffer;
   std::vector<std::vector<uint32_t>> cells_indices;
   std::vector<uint32_t> cells_index_buffer;
@@ -1706,7 +1706,7 @@ void Engine::PrepareResources()
     + (sizeof(uint32_t) + sizeof(int32_t)) * (num_particles * 8); // object grid pairs
 
   particle_simulation_.collision_chain_buffer_size =
-    sizeof(int32_t) * num_particles;
+    (sizeof(int32_t) * 2) * num_particles;
 
   particle_simulation_.collision_pairs_buffer_offset = 0;
   particle_simulation_.solver_buffer_offset = align(particle_simulation_.collision_pairs_buffer_offset + particle_simulation_.collision_pairs_buffer_size, ssbo_alignment_);
