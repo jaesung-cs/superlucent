@@ -2,10 +2,14 @@
 
 My Vulkan compute/graphics engine for learning purpose.
 
-<img src="/results/particles_pbd_hq.gif" width="800">
+<p align="center">
+  <img src="/results/particles_pbd.gif" width="400">
+</p>
 
-<img src="/results/cd_uniform_grid.gif" width="400">
-<img src="/results/cd_n2.gif" width="400">
+<p align="center">
+  <img src="/results/cd_uniform_grid.gif" width="400">
+  <img src="/results/cd_n2.gif" width="400">
+</p>
 
 (22^3 = 10,648 particles, collision detection with/without uniform grid)
 
