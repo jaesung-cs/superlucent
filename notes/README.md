@@ -7,6 +7,8 @@ This is my playground for practicing Vulkan programming, including:
 
 ## Solver update with linked list of collision pairs (June 12, 2021)
 
+In PR #2 (commit `4815997`),
+
 The bottleneck was `solve-delta-x`: was running in O(nm), where m the number of collisions.
 Particles with same radius can have up to 12 (= k) contacts per particle.
 With linked lists the time complexity reduces from O(nm) = O(n^2 k) to O(nk).
