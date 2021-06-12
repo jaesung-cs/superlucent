@@ -252,10 +252,10 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
 
     // Initialize collision detection
     command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, particle_simulation_.initialize_collision_detection_pipeline);
-    command_buffer.dispatch(1, 1, 1);
+    command_buffer.dispatch((particle_simulation_.num_particles + 255) / 256, 1, 1);
 
-    vk::BufferMemoryBarrier collision_buffer_memory_barrier;
-    collision_buffer_memory_barrier
+    vk::BufferMemoryBarrier collision_pairs_buffer_memory_barrier;
+    collision_pairs_buffer_memory_barrier
       .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
       .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
       .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
@@ -264,15 +264,25 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
       .setOffset(particle_simulation_.collision_pairs_buffer_offset)
       .setSize(particle_simulation_.collision_pairs_buffer_size);
 
+    vk::BufferMemoryBarrier collision_chain_buffer_memory_barrier;
+    collision_chain_buffer_memory_barrier
+      .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+      .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+      .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+      .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+      .setBuffer(particle_simulation_.storage_buffer)
+      .setOffset(particle_simulation_.collision_chain_buffer_offset)
+      .setSize(particle_simulation_.collision_chain_buffer_size);
+
     command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
-      {}, { collision_buffer_memory_barrier }, {});
+      {}, { collision_pairs_buffer_memory_barrier, collision_chain_buffer_memory_barrier }, {});
 
     // Collision detection
     command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, particle_simulation_.collision_detection_pipeline);
     command_buffer.dispatch((particle_simulation_.num_particles + 255) / 256, 1, 1);
 
     command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
-      {}, collision_buffer_memory_barrier, {});
+      {}, { collision_pairs_buffer_memory_barrier, collision_chain_buffer_memory_barrier }, {});
 
     // In collision detection, particle color is written for debug purpose
     command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
@@ -1308,7 +1318,7 @@ void Engine::DestroyGraphicsPipelines()
 void Engine::CreateComputePipelines()
 {
   // Descriptor set layout
-  std::vector<vk::DescriptorSetLayoutBinding> bindings(7);
+  std::vector<vk::DescriptorSetLayoutBinding> bindings(8);
   bindings[0]
     .setBinding(0)
     .setStageFlags(vk::ShaderStageFlagBits::eCompute)
@@ -1347,6 +1357,12 @@ void Engine::CreateComputePipelines()
 
   bindings[6]
     .setBinding(6)
+    .setStageFlags(vk::ShaderStageFlagBits::eCompute)
+    .setDescriptorType(vk::DescriptorType::eStorageBuffer)
+    .setDescriptorCount(1);
+
+  bindings[7]
+    .setBinding(7)
     .setStageFlags(vk::ShaderStageFlagBits::eCompute)
     .setDescriptorType(vk::DescriptorType::eStorageBuffer)
     .setDescriptorCount(1);
@@ -1689,11 +1705,15 @@ void Engine::PrepareResources()
     16 // 4-element header
     + (sizeof(uint32_t) + sizeof(int32_t)) * (num_particles * 8); // object grid pairs
 
+  particle_simulation_.collision_chain_buffer_size =
+    sizeof(int32_t) * num_particles;
+
   particle_simulation_.collision_pairs_buffer_offset = 0;
   particle_simulation_.solver_buffer_offset = align(particle_simulation_.collision_pairs_buffer_offset + particle_simulation_.collision_pairs_buffer_size, ssbo_alignment_);
   particle_simulation_.grid_buffer_offset = align(particle_simulation_.solver_buffer_offset + particle_simulation_.solver_buffer_size, ssbo_alignment_);
   particle_simulation_.hash_table_buffer_offset = align(particle_simulation_.grid_buffer_offset + particle_simulation_.grid_buffer_size, ssbo_alignment_);
-  const auto storage_buffer_size = particle_simulation_.hash_table_buffer_offset + particle_simulation_.hash_table_buffer_size;
+  particle_simulation_.collision_chain_buffer_offset = align(particle_simulation_.hash_table_buffer_offset + particle_simulation_.hash_table_buffer_size, ssbo_alignment_);
+  const auto storage_buffer_size = particle_simulation_.collision_chain_buffer_offset + particle_simulation_.collision_chain_buffer_size;
 
   const auto dispatch_indirect_size = sizeof(uint32_t) * 8;
 
@@ -1921,7 +1941,7 @@ void Engine::PrepareResources()
 
   for (int i = 0; i < swapchain_image_count_; i++)
   {
-    std::vector<vk::DescriptorBufferInfo> buffer_infos(7);
+    std::vector<vk::DescriptorBufferInfo> buffer_infos(8);
     buffer_infos[0]
       .setBuffer(particle_simulation_.particle_buffer)
       .setOffset(0)
@@ -1957,7 +1977,12 @@ void Engine::PrepareResources()
       .setOffset(particle_simulation_.hash_table_buffer_offset)
       .setRange(particle_simulation_.hash_table_buffer_size);
 
-    std::vector<vk::WriteDescriptorSet> descriptor_writes(7);
+    buffer_infos[7]
+      .setBuffer(particle_simulation_.storage_buffer)
+      .setOffset(particle_simulation_.collision_chain_buffer_offset)
+      .setRange(particle_simulation_.collision_chain_buffer_size);
+
+    std::vector<vk::WriteDescriptorSet> descriptor_writes(8);
     descriptor_writes[0]
       .setDstSet(particle_simulation_.descriptor_sets[i])
       .setDstBinding(0)
@@ -2006,6 +2031,13 @@ void Engine::PrepareResources()
       .setDstArrayElement(0)
       .setDescriptorType(vk::DescriptorType::eStorageBuffer)
       .setBufferInfo(buffer_infos[6]);
+
+    descriptor_writes[7]
+      .setDstSet(particle_simulation_.descriptor_sets[i])
+      .setDstBinding(7)
+      .setDstArrayElement(0)
+      .setDescriptorType(vk::DescriptorType::eStorageBuffer)
+      .setBufferInfo(buffer_infos[7]);
 
     device_.updateDescriptorSets(descriptor_writes, {});
   }

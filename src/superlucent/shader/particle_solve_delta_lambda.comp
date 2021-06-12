@@ -13,7 +13,7 @@ void main()
 	if (constraint_id >= Rows())
     return;
 
-  ivec2 is = collisions[constraint_id].ids.xy;
+  ivec2 is = collisions[constraint_id].ids;
   float m0_inv = 1.f / particles[is[0]].properties.y;
 
   vec3 x0;
