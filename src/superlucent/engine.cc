@@ -117,6 +117,8 @@ void Engine::Draw(double time)
   auto dt = time - previous_time_;
   previous_time_ = time;
 
+  animation_time_ += dt;
+
   auto wait_result = device_.waitForFences(in_flight_fences_[current_frame_], true, UINT64_MAX);
 
   const auto acquire_next_image_result = device_.acquireNextImageKHR(swapchain_, UINT64_MAX, image_available_semaphores_[current_frame_]);
@@ -148,9 +150,12 @@ void Engine::Draw(double time)
   std::memcpy(uniform_buffer_.map + camera_ubos_[image_index].offset, &camera_, sizeof(CameraUbo));
   std::memcpy(uniform_buffer_.map + light_ubos_[image_index].offset, &lights_, sizeof(LightUbo));
 
+  constexpr auto wall_offset_speed = 5.;
+  constexpr auto wall_offset_magnitude = 0.5;
   particle_simulation_.simulation_params.dt = dt;
   particle_simulation_.simulation_params.num_particles = particle_simulation_.num_particles;
   particle_simulation_.simulation_params.alpha = 0.001f;
+  particle_simulation_.simulation_params.wall_offset = wall_offset_magnitude * std::sin(animation_time_ * wall_offset_speed);
   std::memcpy(uniform_buffer_.map + particle_simulation_.simulation_params_ubos[image_index].offset, &particle_simulation_.simulation_params, sizeof(SimulationParamsUbo));
 
   // Submit

@@ -55,6 +55,7 @@ private:
     alignas(16) float dt;
     int num_particles;
     float alpha; // compliance of the constraints
+    float wall_offset; // wall x direction distance is added with this value
   };
 
 public:
@@ -139,6 +140,7 @@ private:
   uint32_t height_ = 0;
 
   double previous_time_ = 0.;
+  double animation_time_ = 0.;
 
   // Instance
   vk::Instance instance_;

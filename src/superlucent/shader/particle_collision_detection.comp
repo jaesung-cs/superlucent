@@ -119,7 +119,7 @@ void main()
   }
   
   // Collision against floor and virtual walls
-  const vec2 wall_distance = vec2(3.f, 1.5f);
+  const vec2 wall_distance = vec2(3.f + params.wall_offset, 1.5f);
 
   if (p0.x - r0 < -wall_distance.x)
   {
