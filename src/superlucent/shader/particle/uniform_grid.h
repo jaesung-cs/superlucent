@@ -22,7 +22,8 @@ layout (binding = 6) buffer HashTableSsbo
 // From Particle-based Fluid Simulation based Fluid Simulation by NVidia
 uint GridHash(ivec3 cell_index)
 {
-  uvec3 ucell_index = uvec3(cell_index);
+  // TODO: why make positive?
+  uvec3 ucell_index = uvec3(cell_index + ivec3(100, 100, 100));
   const uint p1 = 73856093; // some large primes
   const uint p2 = 19349663;
   const uint p3 = 83492791;

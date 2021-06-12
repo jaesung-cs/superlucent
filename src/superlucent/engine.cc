@@ -116,9 +116,6 @@ void Engine::Draw(double time)
   auto dt = time - previous_time_;
   previous_time_ = time;
 
-  if (dt > 0.)
-    dt = 1. / 120.;
-
   auto wait_result = device_.waitForFences(in_flight_fences_[current_frame_], true, UINT64_MAX);
 
   const auto acquire_next_image_result = device_.acquireNextImageKHR(swapchain_, UINT64_MAX, image_available_semaphores_[current_frame_]);
@@ -200,7 +197,7 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
       .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
       .setBuffer(particle_simulation_.particle_buffer)
       .setOffset(0)
-      .setSize(particle_simulation_.num_particles * sizeof(float) * 20);
+      .setSize(particle_simulation_.num_particles * sizeof(float) * 24);
     command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eVertexInput, vk::PipelineStageFlagBits::eComputeShader, {},
       {}, particle_buffer_memory_barrier, {});
 
@@ -252,7 +249,7 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
 
     command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
       {}, { grid_buffer_memory_barrier, hash_table_buffer_memory_barrier }, {});
-    
+
     // Initialize collision detection
     command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, particle_simulation_.initialize_collision_detection_pipeline);
     command_buffer.dispatch(1, 1, 1);
@@ -276,6 +273,10 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
 
     command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
       {}, collision_buffer_memory_barrier, {});
+
+    // In collision detection, particle color is written for debug purpose
+    command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+      {}, particle_buffer_memory_barrier, {});
 
     // Initialize dispatch
     command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, particle_simulation_.initialize_dispatch_pipeline);
@@ -308,7 +309,7 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
       {}, solver_buffer_memory_barrier, {});
 
     // Solve
-    constexpr int solver_iterations = 10;
+    constexpr int solver_iterations = 1;
     for (int i = 0; i < solver_iterations; i++)
     {
       // Solve delta lambda
@@ -1226,8 +1227,6 @@ void Engine::CreateGraphicsPipelines()
   frag_module = CreateShaderModule(base_dir + "\\cell_sphere.frag.spv");
 
   shader_stages.resize(2);
-
-  shader_stages.resize(2);
   shader_stages[0]
     .setStage(vk::ShaderStageFlagBits::eVertex)
     .setModule(vert_module)
@@ -1247,10 +1246,10 @@ void Engine::CreateGraphicsPipelines()
   // Binding 1 shared with particle compute shader
   vertex_binding_descriptions[1]
     .setBinding(1)
-    .setStride(sizeof(float) * 20)
+    .setStride(sizeof(float) * 24)
     .setInputRate(vk::VertexInputRate::eInstance);
 
-  vertex_attribute_descriptions.resize(4);
+  vertex_attribute_descriptions.resize(5);
   vertex_attribute_descriptions[0]
     .setLocation(0)
     .setBinding(0)
@@ -1274,6 +1273,12 @@ void Engine::CreateGraphicsPipelines()
     .setBinding(1)
     .setFormat(vk::Format::eR32Sfloat)
     .setOffset(sizeof(float) * 12); // radius
+
+  vertex_attribute_descriptions[4]
+    .setLocation(4)
+    .setBinding(1)
+    .setFormat(vk::Format::eR32G32B32Sfloat)
+    .setOffset(sizeof(float) * 20); // color
 
   vertex_input
     .setVertexBindingDescriptions(vertex_binding_descriptions)
@@ -1549,7 +1554,7 @@ void Engine::PrepareResources()
 
   // Cells buffer
   constexpr int sphere_segments = 16;
-  constexpr int cell_count = 16;
+  constexpr int cell_count = 22;
   std::vector<float> cells_buffer;
   std::vector<std::vector<uint32_t>> cells_indices;
   std::vector<uint32_t> cells_index_buffer;
@@ -1633,33 +1638,14 @@ void Engine::PrepareResources()
         particle_buffer.push_back(0.9f * radius * (j * 3 + k - cell_count * 2));
         particle_buffer.push_back(0.9f * radius * k * 4 + 1.f);
         particle_buffer.push_back(0.f);
-        /*
-        particle_buffer.push_back(0.9f * radius * (i * 4 - cell_count * 2));
-        particle_buffer.push_back(0.9f * radius * (j * 4 - cell_count * 2));
-        particle_buffer.push_back(0.9f * radius * k * 4 + 1.f);
-        particle_buffer.push_back(0.f);
-        */
 
         // position
         particle_buffer.push_back(0.9f * radius * (i * 3 + k - cell_count * 2));
         particle_buffer.push_back(0.9f * radius * (j * 3 + k - cell_count * 2));
         particle_buffer.push_back(0.9f * radius * k * 4 + 1.f);
         particle_buffer.push_back(0.f);
-        /*
-        particle_buffer.push_back(0.9f * radius * (i * 4 - cell_count * 2));
-        particle_buffer.push_back(0.9f * radius * (j * 4 - cell_count * 2));
-        particle_buffer.push_back(0.9f * radius * k * 4 + 1.f);
-        particle_buffer.push_back(0.f);
-        */
 
         // velocity
-        /*
-        particle_buffer.push_back(-3.f);
-        particle_buffer.push_back(3.f);
-        particle_buffer.push_back(1.f);
-        particle_buffer.push_back(0.f);
-        */
-
         particle_buffer.push_back(0.f);
         particle_buffer.push_back(0.f);
         particle_buffer.push_back(0.f);
@@ -1675,6 +1661,12 @@ void Engine::PrepareResources()
         particle_buffer.push_back(gravity.x * mass);
         particle_buffer.push_back(gravity.y * mass);
         particle_buffer.push_back(gravity.z * mass);
+        particle_buffer.push_back(0.f);
+
+        // color
+        particle_buffer.push_back(0.5f);
+        particle_buffer.push_back(0.5f);
+        particle_buffer.push_back(0.5f);
         particle_buffer.push_back(0.f);
       }
     }
@@ -1933,7 +1925,7 @@ void Engine::PrepareResources()
     buffer_infos[0]
       .setBuffer(particle_simulation_.particle_buffer)
       .setOffset(0)
-      .setRange(particle_simulation_.num_particles * sizeof(float) * 20);
+      .setRange(particle_simulation_.num_particles * sizeof(float) * 24);
 
     buffer_infos[1]
       .setBuffer(uniform_buffer_.buffer)
