@@ -5,6 +5,13 @@ This is my playground for practicing Vulkan programming, including:
 - Rendering (hopefully ray tracing later) from compute shader results, without haevy CPU-GPU data transfers
 - Graphical user interface, object-oriented
 
+## Solver update with linked list of collision pairs (June 12, 2021)
+
+The bottleneck was `solve-delta-x`: was running in O(nm), where m the number of collisions.
+Particles with same radius can have up to 12 (= k) contacts per particle.
+With linked lists the time complexity reduces from O(nm) = O(n^2 k) to O(nk).
+Now it runs ~300 fps with 40^3 = 64k particles.
+
 ## Uniform grid (June 12, 2021)
 
 <p align="center">
