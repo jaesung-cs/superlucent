@@ -1,12 +1,23 @@
-const int num_hash_buckets = 1000003;
+struct Node
+{
+  uint object_id;
+  int next;
+};
 
 layout (binding = 5) buffer GridSsbo
 {
   vec3 cell_size;
   uint num_pairs;
 
-  uvec2 object_grid_pairs[]; // [object_id, hash]
+  Node object_grid_pairs[];
 } grid;
+
+const int num_hash_buckets = 1000003;
+
+layout (binding = 6) buffer HashTableSsbo
+{
+  int head[num_hash_buckets];
+} hash_table;
 
 // From Particle-based Fluid Simulation based Fluid Simulation by NVidia
 uint GridHash(ivec3 cell_index)
@@ -52,10 +63,15 @@ void AddSphereToGrid(uint object_id, vec3 position, float radius)
         if (dot(d, d) <= radius * radius)
         {
           ivec3 neighbor_cell_index = ivec3(cell_index.x + (x - 1), cell_index.y + (y - 1), cell_index.z + (z - 1));
-          uint hash = GridHash(neighbor_cell_index);
+          uint hash_index = GridHash(neighbor_cell_index);
 
+          // Append object-grid pair
           uint object_grid_pair_index = atomicAdd(grid.num_pairs, 1);
-          grid.object_grid_pairs[object_grid_pair_index] = uvec2(object_id, hash);
+          grid.object_grid_pairs[object_grid_pair_index].object_id = object_id;
+
+          // Exchange hash table head
+          int next = atomicExchange(hash_table.head[hash_index], int(object_grid_pair_index));
+          grid.object_grid_pairs[object_grid_pair_index].next = next;
         }
       }
     }
