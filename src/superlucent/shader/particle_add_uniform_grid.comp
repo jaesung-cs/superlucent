@@ -1,0 +1,19 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+#include "particle/particle.h"
+#include "particle/simulation_params.h"
+#include "particle/uniform_grid.h"
+
+void main()
+{
+  uint particle_id = gl_GlobalInvocationID.x;
+  if (particle_id >= params.num_particles)
+    return;
+
+  vec3 position = particles[particle_id].position.xyz;
+  float radius = particles[particle_id].properties.x;
+  
+  AddSphereToGrid(particle_id, position, radius);
+}

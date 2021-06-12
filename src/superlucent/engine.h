@@ -227,6 +227,8 @@ private:
     vk::DescriptorSetLayout descriptor_set_layout;
     vk::PipelineLayout pipeline_layout;
     vk::Pipeline forward_pipeline;
+    vk::Pipeline initialize_uniform_grid_pipeline;
+    vk::Pipeline add_uniform_grid_pipeline;
     vk::Pipeline initialize_collision_detection_pipeline;
     vk::Pipeline collision_detection_pipeline;
     vk::Pipeline initialize_dispatch_pipeline;
@@ -239,14 +241,22 @@ private:
     vk::Buffer particle_buffer;
     uint32_t num_particles;
 
-    // Collision pairs
-    vk::Buffer collision_pairs_buffer;
-    vk::DeviceSize collision_pairs_buffer_size;
     uint32_t num_collisions;
 
-    // Solver matrices: lambda, x, delta_lambda, delta_x
-    vk::Buffer solver_buffer;
+    // Storage buffer (with only storage buffer usage) has
+    // - Collision pairs
+    // - Solver matrices: lambda, x, delta_lambda, delta_x
+    // - Uniform grid
+    vk::Buffer storage_buffer;
+    vk::DeviceSize collision_pairs_buffer_offset;
+    vk::DeviceSize collision_pairs_buffer_size;
+    vk::DeviceSize solver_buffer_offset;
     vk::DeviceSize solver_buffer_size;
+    vk::DeviceSize grid_buffer_offset;
+    vk::DeviceSize grid_buffer_size;
+    static constexpr int num_hash_buckets = 1000003;
+    vk::DeviceSize hash_table_buffer_offset;
+    static constexpr vk::DeviceSize hash_table_buffer_size = num_hash_buckets * sizeof(int32_t);
 
     // Dispatch indirect buffer
     vk::Buffer dispatch_indirect;
@@ -292,6 +302,7 @@ private:
   std::vector<vk::DescriptorSet> graphics_descriptor_sets_;
 
   vk::DeviceSize ubo_alignment_;
+  vk::DeviceSize ssbo_alignment_;
   CameraUbo camera_;
   LightUbo lights_;
 

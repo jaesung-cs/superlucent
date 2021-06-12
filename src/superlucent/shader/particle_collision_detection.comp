@@ -1,108 +1,171 @@
 #version 450
 
-layout (local_size_x = 32, local_size_y = 32) in;
+layout (local_size_x = 256) in;
 
 #include "particle/particle.h"
 #include "particle/simulation_params.h"
 #include "particle/collision_pairs.h"
+#include "particle/uniform_grid.h"
 
 void main() 
 {
 	const uint i0 = gl_GlobalInvocationID.x;
-	const uint i1 = gl_GlobalInvocationID.y;
-	if (i0 >= params.num_particles || i1 >= params.num_particles)
+	if (i0 >= params.num_particles)
     return;
 
-  const float r0 = particles[i0].properties.x;
-  const float m0 = particles[i0].properties.y;
+  float r0 = particles[i0].properties.x;
   
 	vec3 p0 = particles[i0].position.xyz;
 
-  // Collision between particles
-  if (i0 < i1)
+  const bool use_uniform_grid = true;
+  
+  if (use_uniform_grid)
   {
-    vec3 p1 = particles[i1].position.xyz;
-    vec3 pd = p1 - p0;
+    // Collision between particles in uniform grid
+    ivec3 cell_index = CellIndex(p0);
+    uint hash_index = GridHash(cell_index);
 
-    float r1 = particles[i1].properties.x;
+    const int num_max_contacts = 50;
+    int num_contacts = 0;
+    uint contact_ids[num_max_contacts];
 
-    if (dot(pd, pd) <= (r0 + r1) * (r0 + r1))
+    uint num_particles_in_grid = 0;
+
+    int pointer = grid_hash_table.head[hash_index];
+    while (pointer >= 0)
     {
-      const uint collision_index = atomicAdd(num_collisions, 1);
+      uint i1 = grid.object_grid_pairs[pointer].object_id;
+    
+      if (i0 < i1)
+      {
+        vec3 p1 = particles[i1].position.xyz;
+        vec3 pd = p1 - p0;
+    
+        float r1 = particles[i1].properties.x;
 
-      vec3 n = -normalize(pd);
-      collisions[collision_index].ids[0] = int(i0);
-      collisions[collision_index].ids[1] = int(i1);
+        if (dot(pd, pd) <= (r0 + r1) * (r0 + r1))
+        {
+          bool found = false;
+          for (int i = 0; i < num_contacts; i++)
+          {
+            if (contact_ids[i] == i1)
+            {
+              found = true;
+              break;
+            }
+          }
 
-      collisions[collision_index].r[0] = vec4(-n * r0, 0.f);
-      collisions[collision_index].r[1] = vec4(n * r1, 0.f);
-      collisions[collision_index].n = vec4(n, 0.f);
+          if (!found)
+          {
+            contact_ids[num_contacts] = i1;
+            num_contacts++;
+          
+            const uint collision_index = atomicAdd(num_collisions, 1);
+
+            vec3 n = -normalize(pd);
+            collisions[collision_index].ids[0] = int(i0);
+            collisions[collision_index].ids[1] = int(i1);
+
+            collisions[collision_index].r[0] = vec4(-n * r0, 0.f);
+            collisions[collision_index].r[1] = vec4(n * r1, 0.f);
+            collisions[collision_index].n = vec4(n, 0.f);
+          }
+        }
+      }
+
+      pointer = grid.object_grid_pairs[pointer].next;
+
+      num_particles_in_grid++;
     }
+
+    particles[i0].color.rgb = vec3(num_particles_in_grid / 24.f);
+  }
+  
+  else
+  {
+    for (uint i1 = i0 + 1; i1 < params.num_particles; i1++)
+    {
+      vec3 p1 = particles[i1].position.xyz;
+      vec3 pd = p1 - p0;
+
+      float r1 = particles[i1].properties.x;
+
+      if (dot(pd, pd) <= (r0 + r1) * (r0 + r1))
+      {
+        const uint collision_index = atomicAdd(num_collisions, 1);
+
+        vec3 n = -normalize(pd);
+        collisions[collision_index].ids[0] = int(i0);
+        collisions[collision_index].ids[1] = int(i1);
+
+        collisions[collision_index].r[0] = vec4(-n * r0, 0.f);
+        collisions[collision_index].r[1] = vec4(n * r1, 0.f);
+        collisions[collision_index].n = vec4(n, 0.f);
+      }
+    }
+    particles[i0].color.rgb = vec3(0.f, 0.2f, 1.f);
+  }
+  
+  // Collision against floor and virtual walls
+  const float wall_distance = 2.f;
+
+  if (p0.x - r0 < -wall_distance)
+  {
+    const uint collision_index = atomicAdd(num_collisions, 1);
+
+    collisions[collision_index].ids[0] = int(i0);
+    collisions[collision_index].ids[1] = -1;
+
+    collisions[collision_index].r[0] = vec4(-r0, 0.f, 0.f, 0.f);
+    collisions[collision_index].r[1] = vec4(-wall_distance, p0.yz, 0.f);
+    collisions[collision_index].n = vec4(1.f, 0.f, 0.f, 0.f);
   }
 
-  // Collision against floor and virtual walls
-  if (i1 == 0)
+  if (p0.x + r0 > wall_distance)
   {
-    const float wall_distance = 2.f;
+    const uint collision_index = atomicAdd(num_collisions, 1);
 
-    if (p0.x - r0 < -wall_distance)
-    {
-      const uint collision_index = atomicAdd(num_collisions, 1);
+    collisions[collision_index].ids[0] = int(i0);
+    collisions[collision_index].ids[1] = -1;
 
-      collisions[collision_index].ids[0] = int(i0);
-      collisions[collision_index].ids[1] = -1;
+    collisions[collision_index].r[0] = vec4(r0, 0.f, 0.f, 0.f);
+    collisions[collision_index].r[1] = vec4(wall_distance, p0.yz, 0.f);
+    collisions[collision_index].n = vec4(-1.f, 0.f, 0.f, 0.f);
+  }
 
-      collisions[collision_index].r[0] = vec4(-r0, 0.f, 0.f, 0.f);
-      collisions[collision_index].r[1] = vec4(-wall_distance, p0.yz, 0.f);
-      collisions[collision_index].n = vec4(1.f, 0.f, 0.f, 0.f);
-    }
+  if (p0.y - r0 < -wall_distance)
+  {
+    const uint collision_index = atomicAdd(num_collisions, 1);
 
-    if (p0.x + r0 > wall_distance)
-    {
-      const uint collision_index = atomicAdd(num_collisions, 1);
+    collisions[collision_index].ids[0] = int(i0);
+    collisions[collision_index].ids[1] = -1;
 
-      collisions[collision_index].ids[0] = int(i0);
-      collisions[collision_index].ids[1] = -1;
+    collisions[collision_index].r[0] = vec4(0.f, -r0, 0.f, 0.f);
+    collisions[collision_index].r[1] = vec4(p0.x, -wall_distance, p0.z, 0.f);
+    collisions[collision_index].n = vec4(0.f, 1.f, 0.f, 0.f);
+  }
 
-      collisions[collision_index].r[0] = vec4(r0, 0.f, 0.f, 0.f);
-      collisions[collision_index].r[1] = vec4(wall_distance, p0.yz, 0.f);
-      collisions[collision_index].n = vec4(-1.f, 0.f, 0.f, 0.f);
-    }
+  if (p0.y + r0 > wall_distance)
+  {
+    const uint collision_index = atomicAdd(num_collisions, 1);
 
-    if (p0.y - r0 < -wall_distance)
-    {
-      const uint collision_index = atomicAdd(num_collisions, 1);
+    collisions[collision_index].ids[0] = int(i0);
+    collisions[collision_index].ids[1] = -1;
 
-      collisions[collision_index].ids[0] = int(i0);
-      collisions[collision_index].ids[1] = -1;
+    collisions[collision_index].r[0] = vec4(0.f, r0, 0.f, 0.f);
+    collisions[collision_index].r[1] = vec4(p0.x, wall_distance, p0.z, 0.f);
+    collisions[collision_index].n = vec4(0.f, -1.f, 0.f, 0.f);
+  }
 
-      collisions[collision_index].r[0] = vec4(0.f, -r0, 0.f, 0.f);
-      collisions[collision_index].r[1] = vec4(p0.x, -wall_distance, p0.z, 0.f);
-      collisions[collision_index].n = vec4(0.f, 1.f, 0.f, 0.f);
-    }
+  if (p0.z - r0 < 0.f)
+  {
+    const uint collision_index = atomicAdd(num_collisions, 1);
 
-    if (p0.y + r0 > wall_distance)
-    {
-      const uint collision_index = atomicAdd(num_collisions, 1);
+    collisions[collision_index].ids[0] = int(i0);
+    collisions[collision_index].ids[1] = -1;
 
-      collisions[collision_index].ids[0] = int(i0);
-      collisions[collision_index].ids[1] = -1;
-
-      collisions[collision_index].r[0] = vec4(0.f, r0, 0.f, 0.f);
-      collisions[collision_index].r[1] = vec4(p0.x, wall_distance, p0.z, 0.f);
-      collisions[collision_index].n = vec4(0.f, -1.f, 0.f, 0.f);
-    }
-
-    if (p0.z - r0 < 0.f)
-    {
-      const uint collision_index = atomicAdd(num_collisions, 1);
-
-      collisions[collision_index].ids[0] = int(i0);
-      collisions[collision_index].ids[1] = -1;
-
-      collisions[collision_index].r[0] = vec4(0.f, 0.f, -r0, 0.f);
-      collisions[collision_index].r[1] = vec4(p0.xy, 0.f, 0.f);
-      collisions[collision_index].n = vec4(0.f, 0.f, 1.f, 0.f);
-    }
+    collisions[collision_index].r[0] = vec4(0.f, 0.f, -r0, 0.f);
+    collisions[collision_index].r[1] = vec4(p0.xy, 0.f, 0.f);
+    collisions[collision_index].n = vec4(0.f, 0.f, 1.f, 0.f);
   }
 }

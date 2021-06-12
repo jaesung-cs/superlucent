@@ -4,6 +4,7 @@
 #include <chrono>
 #include <thread>
 #include <stdexcept>
+#include <queue>
 
 #include <vulkan/vulkan.hpp>
 
@@ -113,11 +114,13 @@ Application::~Application()
 
 void Application::Run()
 {
+  using namespace std::chrono_literals;
   using Clock = std::chrono::high_resolution_clock;
   using Duration = std::chrono::duration<double>;
   using Timestamp = Clock::time_point;
 
-  uint64_t frame = 0;
+  std::deque<Timestamp> deque;
+
   int64_t recent_seconds = 0;
   const auto start_time = Clock::now();
   Timestamp previous_time = start_time;
@@ -139,7 +142,10 @@ void Application::Run()
     engine_->UpdateCamera(camera_);
     engine_->Draw(animation_time);
 
-    frame++;
+    while (!deque.empty() && deque.front() < current_time - 1s)
+      deque.pop_front();
+
+    deque.push_back(current_time);
 
     // Update animation time
     if (is_animated_)
@@ -148,7 +154,7 @@ void Application::Run()
     const auto seconds = static_cast<int64_t>(Duration(Clock::now() - start_time).count());
     if (seconds > recent_seconds)
     {
-      const auto fps = frame / Duration(Clock::now() - start_time).count();
+      const auto fps = deque.size();
       std::cout << fps << std::endl;
 
       recent_seconds = seconds;

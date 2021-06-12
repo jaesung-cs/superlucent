@@ -180,6 +180,7 @@ python compile.py
     <ClInclude Include="..\..\src\superlucent\shader\particle\particle.h" />
     <ClInclude Include="..\..\src\superlucent\shader\particle\simulation_params.h" />
     <ClInclude Include="..\..\src\superlucent\shader\particle\solver.h" />
+    <ClInclude Include="..\..\src\superlucent\shader\particle\uniform_grid.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\superlucent\shader\.gitignore" />
@@ -188,11 +189,13 @@ python compile.py
     <None Include="..\..\src\superlucent\shader\compile.py" />
     <None Include="..\..\src\superlucent\shader\floor.frag" />
     <None Include="..\..\src\superlucent\shader\floor.vert" />
+    <None Include="..\..\src\superlucent\shader\particle_add_uniform_grid.comp" />
     <None Include="..\..\src\superlucent\shader\particle_collision_detection.comp" />
     <None Include="..\..\src\superlucent\shader\particle_forward.comp" />
     <None Include="..\..\src\superlucent\shader\particle_initialize_collision_detection.comp" />
     <None Include="..\..\src\superlucent\shader\particle_initialize_dispatch.comp" />
     <None Include="..\..\src\superlucent\shader\particle_initialize_solver.comp" />
+    <None Include="..\..\src\superlucent\shader\particle_initialize_uniform_grid.comp" />
     <None Include="..\..\src\superlucent\shader\particle_solve_delta_lambda.comp" />
     <None Include="..\..\src\superlucent\shader\particle_solve_delta_x.comp" />
     <None Include="..\..\src\superlucent\shader\particle_solve_x_lambda.comp" />

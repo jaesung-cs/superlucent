@@ -3,6 +3,7 @@
 
 layout (location = 0) in vec3 frag_position;
 layout (location = 1) in vec3 frag_normal;
+layout (location = 2) in vec3 frag_color;
 
 layout (std140, binding = 0) uniform Camera
 {
@@ -40,8 +41,8 @@ void main()
   vec3 N = normalize(frag_normal);
   vec3 V = normalize(camera.eye - frag_position);
    
-  const vec3 diffuse_color = vec3(0.f, 0.2f, 1.f);
-  const vec3 specular = vec3(1.f, 1.f, 1.f);
+  const vec3 diffuse_color = frag_color;
+  const vec3 specular = vec3(0.1f, 0.1f, 0.1f);
   const float shininess = 1.f;
 
   vec3 total_color = vec3(0.f, 0.f, 0.f);

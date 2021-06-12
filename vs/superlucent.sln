@@ -16,6 +16,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "git", "git", "{38AACBBB-C63
 		..\README.md = ..\README.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "notes", "notes", "{35A73AD5-DCFD-4AA5-BEA0-E71BF0165B92}"
+	ProjectSection(SolutionItems) = preProject
+		..\notes\README.md = ..\notes\README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -29,6 +34,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{35A73AD5-DCFD-4AA5-BEA0-E71BF0165B92} = {38AACBBB-C635-4C13-AB29-D9E734EF9527}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {E2346B71-25E5-46C0-9B36-C3F7BCF9C4A6}
