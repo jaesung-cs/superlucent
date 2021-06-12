@@ -7,6 +7,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <superlucent/utils/rng.h>
 #include <superlucent/scene/light.h>
 #include <superlucent/scene/camera.h>
 
@@ -149,7 +150,7 @@ void Engine::Draw(double time)
 
   particle_simulation_.simulation_params.dt = dt;
   particle_simulation_.simulation_params.num_particles = particle_simulation_.num_particles;
-  particle_simulation_.simulation_params.alpha = 0.1f;
+  particle_simulation_.simulation_params.alpha = 0.001f;
   std::memcpy(uniform_buffer_.map + particle_simulation_.simulation_params_ubos[image_index].offset, &particle_simulation_.simulation_params, sizeof(SimulationParamsUbo));
 
   // Submit
@@ -1633,10 +1634,16 @@ void Engine::PrepareResources()
   const auto cells_index_buffer_size = cells_index_buffer.size() * sizeof(uint32_t);
 
   // Prticles
-  constexpr float radius = 1.f / cell_count;
-  constexpr float mass = radius * radius * radius;
+  constexpr float radius = 0.03f;
+  constexpr float density = 1000.f; // water
+  constexpr float mass = radius * radius * radius * density;
+  constexpr glm::vec2 wall_distance = glm::vec2(3.f, 1.5f);
+  constexpr glm::vec3 particle_offset = glm::vec3(-wall_distance + glm::vec2(radius * 1.1f), radius * 1.1f);
+  constexpr glm::vec3 particle_stride = glm::vec3(radius * 2.2f);
 
-  std::cout << "Sphere radius: " << radius << std::endl;
+  utils::Rng rng;
+  constexpr float noise_range = 1e-2f;
+  const auto noise = [&rng, noise_range]() { return rng.Uniform(-noise_range, noise_range); };
 
   glm::vec3 gravity = glm::vec3(0.f, 0.f, -9.8f);
   std::vector<float> particle_buffer;
@@ -1650,15 +1657,15 @@ void Engine::PrepareResources()
         num_particles++;
 
         // prev_position
-        particle_buffer.push_back(0.9f * radius * (i * 3 + k - cell_count * 2));
-        particle_buffer.push_back(0.9f * radius * (j * 3 + k - cell_count * 2));
-        particle_buffer.push_back(0.9f * radius * k * 4 + 1.f);
+        particle_buffer.push_back(particle_offset.x + particle_stride.x * i + noise());
+        particle_buffer.push_back(particle_offset.y + particle_stride.y * j + noise());
+        particle_buffer.push_back(particle_offset.z + particle_stride.z * k + noise());
         particle_buffer.push_back(0.f);
 
         // position
-        particle_buffer.push_back(0.9f * radius * (i * 3 + k - cell_count * 2));
-        particle_buffer.push_back(0.9f * radius * (j * 3 + k - cell_count * 2));
-        particle_buffer.push_back(0.9f * radius * k * 4 + 1.f);
+        particle_buffer.push_back(particle_offset.x + particle_stride.x * i + noise());
+        particle_buffer.push_back(particle_offset.y + particle_stride.y * j + noise());
+        particle_buffer.push_back(particle_offset.z + particle_stride.z * k + noise());
         particle_buffer.push_back(0.f);
 
         // velocity

@@ -19,6 +19,9 @@
     <Filter Include="src\superlucent\shader\particle">
       <UniqueIdentifier>{82520e49-8978-4bb9-afcc-f1c7a31ef3ce}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\superlucent\utils">
+      <UniqueIdentifier>{bea198d4-a006-4f32-95c7-d6cbc26d476f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cc">
@@ -35,6 +38,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\superlucent\scene\camera_control.cc">
       <Filter>src\superlucent\scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\utils\rng.cc">
+      <Filter>src\superlucent\utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -73,6 +79,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\superlucent\shader\particle\uniform_grid.h">
       <Filter>src\superlucent\shader\particle</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\utils\rng.h">
+      <Filter>src\superlucent\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

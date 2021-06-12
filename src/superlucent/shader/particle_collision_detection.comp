@@ -119,9 +119,9 @@ void main()
   }
   
   // Collision against floor and virtual walls
-  const float wall_distance = 2.f;
+  const vec2 wall_distance = vec2(3.f, 1.5f);
 
-  if (p0.x - r0 < -wall_distance)
+  if (p0.x - r0 < -wall_distance.x)
   {
     const uint collision_index = atomicAdd(num_collisions, 1);
 
@@ -129,14 +129,14 @@ void main()
     collisions[collision_index].ids[1] = -1;
 
     collisions[collision_index].r[0] = vec4(-r0, 0.f, 0.f, 0.f);
-    collisions[collision_index].r[1] = vec4(-wall_distance, p0.yz, 0.f);
+    collisions[collision_index].r[1] = vec4(-wall_distance.x, p0.yz, 0.f);
     collisions[collision_index].n = vec4(1.f, 0.f, 0.f, 0.f);
     
     int next0 = atomicExchange(collision_chain.head[i0].x, int(collision_index));
     collisions[collision_index].next.x = next0;
   }
 
-  if (p0.x + r0 > wall_distance)
+  if (p0.x + r0 > wall_distance.x)
   {
     const uint collision_index = atomicAdd(num_collisions, 1);
 
@@ -144,14 +144,14 @@ void main()
     collisions[collision_index].ids[1] = -1;
 
     collisions[collision_index].r[0] = vec4(r0, 0.f, 0.f, 0.f);
-    collisions[collision_index].r[1] = vec4(wall_distance, p0.yz, 0.f);
+    collisions[collision_index].r[1] = vec4(wall_distance.x, p0.yz, 0.f);
     collisions[collision_index].n = vec4(-1.f, 0.f, 0.f, 0.f);
     
     int next0 = atomicExchange(collision_chain.head[i0].x, int(collision_index));
     collisions[collision_index].next.x = next0;
   }
 
-  if (p0.y - r0 < -wall_distance)
+  if (p0.y - r0 < -wall_distance.y)
   {
     const uint collision_index = atomicAdd(num_collisions, 1);
 
@@ -159,14 +159,14 @@ void main()
     collisions[collision_index].ids[1] = -1;
 
     collisions[collision_index].r[0] = vec4(0.f, -r0, 0.f, 0.f);
-    collisions[collision_index].r[1] = vec4(p0.x, -wall_distance, p0.z, 0.f);
+    collisions[collision_index].r[1] = vec4(p0.x, -wall_distance.y, p0.z, 0.f);
     collisions[collision_index].n = vec4(0.f, 1.f, 0.f, 0.f);
     
     int next0 = atomicExchange(collision_chain.head[i0].x, int(collision_index));
     collisions[collision_index].next.x = next0;
   }
 
-  if (p0.y + r0 > wall_distance)
+  if (p0.y + r0 > wall_distance.y)
   {
     const uint collision_index = atomicAdd(num_collisions, 1);
 
@@ -174,7 +174,7 @@ void main()
     collisions[collision_index].ids[1] = -1;
 
     collisions[collision_index].r[0] = vec4(0.f, r0, 0.f, 0.f);
-    collisions[collision_index].r[1] = vec4(p0.x, wall_distance, p0.z, 0.f);
+    collisions[collision_index].r[1] = vec4(p0.x, wall_distance.y, p0.z, 0.f);
     collisions[collision_index].n = vec4(0.f, -1.f, 0.f, 0.f);
     
     int next0 = atomicExchange(collision_chain.head[i0].x, int(collision_index));
