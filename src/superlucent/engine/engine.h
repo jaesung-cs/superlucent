@@ -5,6 +5,9 @@
 
 #include <glm/glm.hpp>
 
+#include <superlucent/engine/ubo/light_ubo.h>
+#include <superlucent/engine/ubo/camera_ubo.h>
+
 struct GLFWwindow;
 
 namespace supl
@@ -18,6 +21,7 @@ class Camera;
 namespace engine
 {
 class ParticleSimulation;
+class ParticleRenderer;
 
 class Engine
 {
@@ -26,38 +30,6 @@ public:
   {
     return (offset + alignment - 1) & ~(alignment - 1);
   }
-
-private:
-  // Binding 0
-  struct CameraUbo
-  {
-    alignas(16) glm::mat4 projection;
-    alignas(16) glm::mat4 view;
-    alignas(16) glm::vec3 eye;
-  };
-
-  // Binding 1
-  struct ModelUbo
-  {
-    alignas(16) glm::mat4 model;
-    alignas(16) glm::mat3x4 model_inverse_transpose;
-  };
-
-  // Binding 3
-  struct LightUbo
-  {
-    struct Light
-    {
-      alignas(16) glm::vec3 position;
-      alignas(16) glm::vec3 ambient;
-      alignas(16) glm::vec3 diffuse;
-      alignas(16) glm::vec3 specular;
-    };
-
-    static constexpr int max_num_lights = 8;
-    Light directional_lights[max_num_lights];
-    Light point_lights[max_num_lights];
-  };
 
 public:
   Engine() = delete;
@@ -74,10 +46,17 @@ public:
   auto DescriptorPool() const { return descriptor_pool_; }
   auto HostMemoryIndex() const { return host_index_; }
 
+  auto Rendertarget() const { return rendertarget_; }
+  auto SwapchainImageCount() const { return swapchain_image_count_; }
+  auto SwapchainImageFormat() const { return swapchain_image_format_; }
+  const auto& SwapchainImageViews() const { return swapchain_image_views_; }
   auto SsboAlignment() const { return ssbo_alignment_; }
   auto UboAlignment() const { return ubo_alignment_; }
 
   vk::ShaderModule CreateShaderModule(const std::string& filepath);
+
+  void ImageLayoutTransition(vk::CommandBuffer& command_buffer, vk::Image image, vk::ImageLayout old_layout, vk::ImageLayout new_layout, uint32_t mipmap_levels);
+  void GenerateMipmap(vk::CommandBuffer& command_buffer, vk::Image image, uint32_t width, uint32_t height, uint32_t mipmap_levels);
 
   struct Memory
   {
@@ -94,7 +73,7 @@ public:
   Memory AcquireHostMemory(vk::MemoryRequirements memory_requirements);
 
   template <typename T>
-  void ToDeviceMemory(std::vector<T> data, vk::Buffer buffer, vk::DeviceSize offset = 0)
+  void ToDeviceMemory(const std::vector<T>& data, vk::Buffer buffer, vk::DeviceSize offset = 0)
   {
     const auto byte_size = data.size() * sizeof(T);
     std::memcpy(staging_buffer_.map, data.data(), byte_size);
@@ -125,6 +104,8 @@ public:
     transient_command_buffer_.reset();
   }
 
+  void ToDeviceMemory(const std::vector<uint8_t>& data, vk::Image image, uint32_t width, uint32_t height, uint32_t mipmap_levels);
+
 private:
   void RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t image_index, double dt);
 
@@ -146,32 +127,8 @@ private:
   void CreateRendertarget();
   void DestroyRendertarget();
 
-  void CreateFramebuffer();
-  void DestroyFramebuffer();
-
-  void CreatePipelines();
-  void DestroyPipelines();
-
-  void CreateSampler();
-  void DestroySampler();
-
-  void PrepareResources();
-  void DestroyResources();
-
   void CreateSynchronizationObjects();
   void DestroySynchronizationObjects();
-
-  void CreateGraphicsPipelines();
-  void DestroyGraphicsPipelines();
-
-  void CreateComputePipelines();
-  void DestroyComputePipelines();
-
-  vk::Pipeline CreateGraphicsPipeline(vk::GraphicsPipelineCreateInfo& create_info);
-  vk::Pipeline CreateComputePipeline(vk::ComputePipelineCreateInfo& create_info);
-
-  void ImageLayoutTransition(vk::CommandBuffer& command_buffer, vk::Image image, vk::ImageLayout old_layout, vk::ImageLayout new_layout);
-  void GenerateMipmap(vk::CommandBuffer& command_buffer, vk::Image image, uint32_t width, uint32_t height, int mipmap_levels);
 
 private:
   const uint32_t max_width_;
@@ -220,16 +177,6 @@ private:
   };
   StagingBuffer staging_buffer_;
 
-  struct UniformBuffer
-  {
-    static constexpr int size = 32 * 1024 * 1024; // 32MB
-
-    vk::Buffer buffer;
-    vk::DeviceMemory memory;
-    uint8_t* map = nullptr;
-  };
-  UniformBuffer uniform_buffer_;
-
   // Swapchain
   vk::SwapchainKHR swapchain_;
   uint32_t swapchain_image_count_ = 0;
@@ -238,7 +185,7 @@ private:
   std::vector<vk::ImageView> swapchain_image_views_;
 
   // Rendertarget
-  struct Rendertarget
+  struct RendertargetImages
   {
     Memory color_memory;
     vk::Image color_image;
@@ -247,23 +194,10 @@ private:
     vk::Image depth_image;
     vk::ImageView depth_image_view;
   };
-  Rendertarget rendertarget_;
+  RendertargetImages rendertarget_;
 
-  // Pipeline
-  vk::RenderPass render_pass_;
-  std::vector<vk::Framebuffer> swapchain_framebuffers_;
-  vk::PipelineCache pipeline_cache_;
-
-  vk::DescriptorSetLayout graphics_descriptor_set_layout_;
-  vk::PipelineLayout graphics_pipeline_layout_;
-  vk::Pipeline floor_pipeline_;
-  vk::Pipeline cell_sphere_pipeline_;
-
-  struct Uniform
-  {
-    vk::DeviceSize offset;
-    vk::DeviceSize size;
-  };
+  // Renderer
+  std::unique_ptr<ParticleRenderer> particle_renderer_;
 
   // Position-based particle simulation
   std::unique_ptr<ParticleSimulation> particle_simulation_;
@@ -272,42 +206,12 @@ private:
   vk::CommandBuffer transient_command_buffer_;
   std::vector<vk::CommandBuffer> draw_command_buffers_;
 
-  // Sampler
-  const uint32_t mipmap_level_ = 3u;
-  vk::Sampler sampler_;
-
-  // Resources
-  struct VertexBuffer
-  {
-    vk::Buffer buffer;
-    vk::DeviceSize index_offset;
-    uint32_t num_indices;
-  };
-  VertexBuffer floor_buffer_;
-
-  struct CellsBuffer
-  {
-    VertexBuffer vertex;
-  };
-  CellsBuffer cells_buffer_;
-
-  struct Texture
-  {
-    vk::Image image;
-    vk::ImageView image_view;
-  };
-  Texture floor_texture_;
-
-  // Descriptor set
-  std::vector<vk::DescriptorSet> graphics_descriptor_sets_;
-
   vk::DeviceSize ubo_alignment_;
   vk::DeviceSize ssbo_alignment_;
-  CameraUbo camera_;
-  LightUbo lights_;
 
-  std::vector<Uniform> camera_ubos_;
-  std::vector<Uniform> light_ubos_;
+  // Uniforms
+  LightUbo lights_;
+  CameraUbo camera_;
 
   // Transfer
   vk::Fence transfer_fence_;

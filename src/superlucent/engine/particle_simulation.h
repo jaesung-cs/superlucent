@@ -38,8 +38,8 @@ private:
   void CreateComputePipelines();
   void DestroyComputePipelines();
 
-  void PrepareResource();
-  void DestroyResource();
+  void PrepareResources();
+  void DestroyResources();
 
   vk::Pipeline CreateComputePipeline(vk::ComputePipelineCreateInfo& create_info);
 

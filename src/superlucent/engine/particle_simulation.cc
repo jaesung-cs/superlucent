@@ -12,12 +12,12 @@ ParticleSimulation::ParticleSimulation(Engine* engine, int num_ubos)
   , num_ubos_(num_ubos)
 {
   CreateComputePipelines();
-  PrepareResource();
+  PrepareResources();
 }
 
 ParticleSimulation::~ParticleSimulation()
 {
-  DestroyResource();
+  DestroyResources();
   DestroyComputePipelines();
 }
 
@@ -385,7 +385,7 @@ void ParticleSimulation::DestroyComputePipelines()
   device.destroyPipelineCache(pipeline_cache_);
 }
 
-void ParticleSimulation::PrepareResource()
+void ParticleSimulation::PrepareResources()
 {
   const auto device = engine_->Device();
 
@@ -650,7 +650,7 @@ void ParticleSimulation::PrepareResource()
   }
 }
 
-void ParticleSimulation::DestroyResource()
+void ParticleSimulation::DestroyResources()
 {
   const auto device = engine_->Device();
 

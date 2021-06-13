@@ -25,6 +25,9 @@
     <Filter Include="src\superlucent\engine">
       <UniqueIdentifier>{1eaad613-bc67-464d-9b99-5cd4fd02d1f4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\superlucent\engine\ubo">
+      <UniqueIdentifier>{61dfbf17-c314-44a1-b534-77768580bcc3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cc">
@@ -46,6 +49,9 @@
       <Filter>src\superlucent\engine</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\superlucent\engine\engine.cc">
+      <Filter>src\superlucent\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\engine\particle_renderer.cc">
       <Filter>src\superlucent\engine</Filter>
     </ClCompile>
   </ItemGroup>
@@ -91,6 +97,15 @@
     </ClInclude>
     <ClInclude Include="..\..\src\superlucent\engine\engine.h">
       <Filter>src\superlucent\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\particle_renderer.h">
+      <Filter>src\superlucent\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\ubo\camera_ubo.h">
+      <Filter>src\superlucent\engine\ubo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\ubo\light_ubo.h">
+      <Filter>src\superlucent\engine\ubo</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
