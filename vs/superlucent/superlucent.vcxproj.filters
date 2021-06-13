@@ -22,15 +22,15 @@
     <Filter Include="src\superlucent\utils">
       <UniqueIdentifier>{bea198d4-a006-4f32-95c7-d6cbc26d476f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\superlucent\engine">
+      <UniqueIdentifier>{1eaad613-bc67-464d-9b99-5cd4fd02d1f4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cc">
       <Filter>src\superlucent</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\superlucent\application.cc">
-      <Filter>src\superlucent</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\superlucent\engine.cc">
       <Filter>src\superlucent</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\superlucent\scene\camera.cc">
@@ -42,12 +42,15 @@
     <ClCompile Include="..\..\src\superlucent\utils\rng.cc">
       <Filter>src\superlucent\utils</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\engine\particle_simulation.cc">
+      <Filter>src\superlucent\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\engine\engine.cc">
+      <Filter>src\superlucent\engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\superlucent\application.h">
-      <Filter>src\superlucent</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\engine.h">
       <Filter>src\superlucent</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\superlucent\scene\camera.h">
@@ -82,6 +85,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\superlucent\utils\rng.h">
       <Filter>src\superlucent\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\particle_simulation.h">
+      <Filter>src\superlucent\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\engine.h">
+      <Filter>src\superlucent\engine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

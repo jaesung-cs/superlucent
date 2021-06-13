@@ -1,5 +1,5 @@
-#ifndef SUPERLUCENT_ENGINE_H_
-#define SUPERLUCENT_ENGINE_H_
+#ifndef SUPERLUCENT_ENGINE_ENGINE_H_
+#define SUPERLUCENT_ENGINE_ENGINE_H_
 
 #include <vulkan/vulkan.hpp>
 
@@ -14,6 +14,10 @@ namespace scene
 class Light;
 class Camera;
 }
+
+namespace engine
+{
+class ParticleSimulation;
 
 class Engine
 {
@@ -47,15 +51,6 @@ private:
     static constexpr int max_num_lights = 8;
     Light directional_lights[max_num_lights];
     Light point_lights[max_num_lights];
-  };
-
-  // Compute binding 1
-  struct SimulationParamsUbo
-  {
-    alignas(16) float dt;
-    int num_particles;
-    float alpha; // compliance of the constraints
-    float wall_offset; // wall x direction distance is added with this value
   };
 
 public:
@@ -224,53 +219,7 @@ private:
   };
 
   // Position-based particle simulation
-  struct ParticleSimulation
-  {
-    vk::DescriptorSetLayout descriptor_set_layout;
-    vk::PipelineLayout pipeline_layout;
-    vk::Pipeline forward_pipeline;
-    vk::Pipeline initialize_uniform_grid_pipeline;
-    vk::Pipeline add_uniform_grid_pipeline;
-    vk::Pipeline initialize_collision_detection_pipeline;
-    vk::Pipeline collision_detection_pipeline;
-    vk::Pipeline initialize_dispatch_pipeline;
-    vk::Pipeline initialize_solver_pipeline;
-    vk::Pipeline solve_delta_lambda_pipeline;
-    vk::Pipeline solve_delta_x_pipeline;
-    vk::Pipeline solve_x_lambda_pipeline;
-    vk::Pipeline velocity_update_pipeline;
-
-    vk::Buffer particle_buffer;
-    uint32_t num_particles;
-
-    uint32_t num_collisions;
-
-    // Storage buffer (with only storage buffer usage) has
-    // - Collision pairs
-    // - Solver matrices: lambda, x, delta_lambda, delta_x
-    // - Uniform grid
-    vk::Buffer storage_buffer;
-    vk::DeviceSize collision_pairs_buffer_offset;
-    vk::DeviceSize collision_pairs_buffer_size;
-    vk::DeviceSize solver_buffer_offset;
-    vk::DeviceSize solver_buffer_size;
-    vk::DeviceSize grid_buffer_offset;
-    vk::DeviceSize grid_buffer_size;
-    static constexpr int num_hash_buckets = 1000003;
-    vk::DeviceSize hash_table_buffer_offset;
-    static constexpr vk::DeviceSize hash_table_buffer_size = num_hash_buckets * sizeof(int32_t);
-    vk::DeviceSize collision_chain_buffer_offset;
-    vk::DeviceSize collision_chain_buffer_size;
-
-    // Dispatch indirect buffer
-    vk::Buffer dispatch_indirect;
-
-    std::vector<vk::DescriptorSet> descriptor_sets;
-    std::vector<Uniform> simulation_params_ubos;
-
-    SimulationParamsUbo simulation_params;
-  };
-  ParticleSimulation particle_simulation_;
+  std::unique_ptr<ParticleSimulation> particle_simulation_;
 
   // Command buffers
   vk::CommandBuffer transient_command_buffer_;
@@ -324,5 +273,6 @@ private:
   std::vector<vk::Fence> images_in_flight_;
 };
 }
+}
 
-#endif // SUPERLUCENT_ENGINE_H_
+#endif // SUPERLUCENT_ENGINE_ENGINE_H_

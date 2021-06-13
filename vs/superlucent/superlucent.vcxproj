@@ -164,14 +164,16 @@ python compile.py
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cc" />
     <ClCompile Include="..\..\src\superlucent\application.cc" />
-    <ClCompile Include="..\..\src\superlucent\engine.cc" />
+    <ClCompile Include="..\..\src\superlucent\engine\engine.cc" />
+    <ClCompile Include="..\..\src\superlucent\engine\particle_simulation.cc" />
     <ClCompile Include="..\..\src\superlucent\scene\camera.cc" />
     <ClCompile Include="..\..\src\superlucent\scene\camera_control.cc" />
     <ClCompile Include="..\..\src\superlucent\utils\rng.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\superlucent\application.h" />
-    <ClInclude Include="..\..\src\superlucent\engine.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\engine.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\particle_simulation.h" />
     <ClInclude Include="..\..\src\superlucent\scene\camera.h" />
     <ClInclude Include="..\..\src\superlucent\scene\camera_control.h" />
     <ClInclude Include="..\..\src\superlucent\scene\light.h" />

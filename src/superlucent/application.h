@@ -9,7 +9,10 @@ struct GLFWwindow;
 
 namespace supl
 {
+namespace engine
+{
 class Engine;
+}
 
 namespace scene
 {
@@ -39,7 +42,7 @@ private:
   int width_ = 0;
   int height_ = 0;
 
-  std::unique_ptr<Engine> engine_;
+  std::unique_ptr<engine::Engine> engine_;
 
   // Light
   std::vector<std::shared_ptr<scene::Light>> lights_;
