@@ -21,6 +21,12 @@ class ParticleSimulation;
 
 class Engine
 {
+public:
+  static constexpr auto Align(vk::DeviceSize offset, vk::DeviceSize alignment)
+  {
+    return (offset + alignment - 1) & ~(alignment - 1);
+  }
+
 private:
   // Binding 0
   struct CameraUbo
@@ -63,6 +69,62 @@ public:
   void UpdateCamera(std::shared_ptr<scene::Camera> camera);
   void Draw(double time);
 
+  // Vulkan getters and utils
+  auto Device() const { return device_; }
+  auto DescriptorPool() const { return descriptor_pool_; }
+  auto HostMemoryIndex() const { return host_index_; }
+
+  auto SsboAlignment() const { return ssbo_alignment_; }
+  auto UboAlignment() const { return ubo_alignment_; }
+
+  vk::ShaderModule CreateShaderModule(const std::string& filepath);
+
+  struct Memory
+  {
+    vk::DeviceMemory memory;
+    vk::DeviceSize offset;
+    vk::DeviceSize size;
+  };
+
+  Memory AcquireDeviceMemory(vk::Buffer buffer);
+  Memory AcquireDeviceMemory(vk::Image image);
+  Memory AcquireDeviceMemory(vk::MemoryRequirements memory_requirements);
+  Memory AcquireHostMemory(vk::Buffer buffer);
+  Memory AcquireHostMemory(vk::Image image);
+  Memory AcquireHostMemory(vk::MemoryRequirements memory_requirements);
+
+  template <typename T>
+  void ToDeviceMemory(std::vector<T> data, vk::Buffer buffer, vk::DeviceSize offset = 0)
+  {
+    const auto byte_size = data.size() * sizeof(T);
+    std::memcpy(staging_buffer_.map, data.data(), byte_size);
+
+    // Transfer commands
+    vk::CommandBufferBeginInfo command_buffer_begin_info;
+    command_buffer_begin_info
+      .setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+    transient_command_buffer_.begin(command_buffer_begin_info);
+
+    vk::BufferCopy copy_region;
+    copy_region
+      .setSrcOffset(0)
+      .setDstOffset(offset)
+      .setSize(byte_size);
+    transient_command_buffer_.copyBuffer(staging_buffer_.buffer, buffer, copy_region);
+
+    transient_command_buffer_.end();
+
+    vk::SubmitInfo submit_info;
+    submit_info
+      .setCommandBuffers(transient_command_buffer_);
+    queue_.submit(submit_info, transfer_fence_);
+
+    // TODO: Don't wait for transfer finish!
+    const auto wait_result = device_.waitForFences(transfer_fence_, true, UINT64_MAX);
+    device_.resetFences(transfer_fence_);
+    transient_command_buffer_.reset();
+  }
+
 private:
   void RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t image_index, double dt);
 
@@ -99,22 +161,6 @@ private:
   void CreateSynchronizationObjects();
   void DestroySynchronizationObjects();
 
-  struct Memory
-  {
-    vk::DeviceMemory memory;
-    vk::DeviceSize offset;
-    vk::DeviceSize size;
-  };
-
-  Memory AcquireDeviceMemory(vk::Buffer buffer);
-  Memory AcquireDeviceMemory(vk::Image image);
-  Memory AcquireDeviceMemory(vk::MemoryRequirements memory_requirements);
-  Memory AcquireHostMemory(vk::Buffer buffer);
-  Memory AcquireHostMemory(vk::Image image);
-  Memory AcquireHostMemory(vk::MemoryRequirements memory_requirements);
-
-  vk::ShaderModule CreateShaderModule(const std::string& filepath);
-
   void CreateGraphicsPipelines();
   void DestroyGraphicsPipelines();
 
@@ -146,6 +192,7 @@ private:
   vk::PhysicalDevice physical_device_;
   vk::Device device_;
   uint32_t queue_index_ = 0;
+  uint32_t host_index_ = 0;
   vk::Queue queue_;
   vk::Queue present_queue_;
 
