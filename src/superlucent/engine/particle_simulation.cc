@@ -1,6 +1,7 @@
 #include <superlucent/engine/particle_simulation.h>
 
 #include <superlucent/engine/engine.h>
+#include <superlucent/engine/uniform_buffer.h>
 #include <superlucent/utils/rng.h>
 
 namespace supl
@@ -31,7 +32,7 @@ void ParticleSimulation::UpdateSimulationParams(double dt, double animation_time
   simulation_params_.alpha = 0.001f;
   simulation_params_.wall_offset = static_cast<float>(wall_offset_magnitude * std::sin(animation_time * wall_offset_speed));
 
-  std::memcpy(uniform_buffer_.map + simulation_params_ubos_[ubo_index].offset, &simulation_params_, sizeof(SimulationParamsUbo));
+  std::memcpy(uniform_buffer_->Map() + simulation_params_ubos_[ubo_index].offset, &simulation_params_, sizeof(SimulationParamsUbo));
 }
 
 void ParticleSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer& command_buffer, int ubo_index)
@@ -501,10 +502,7 @@ void ParticleSimulation::PrepareResources()
     .setUsage(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer);
   dispatch_indirect_ = device.createBuffer(buffer_create_info);
 
-  buffer_create_info
-    .setSize(uniform_buffer_size)
-    .setUsage(vk::BufferUsageFlagBits::eUniformBuffer);
-  uniform_buffer_.buffer = device.createBuffer(buffer_create_info);
+  uniform_buffer_ = std::make_unique<UniformBuffer>(engine_, uniform_buffer_size);
 
   // Bind to memory
   const auto particle_memory = engine_->AcquireDeviceMemory(particle_buffer_);
@@ -515,16 +513,6 @@ void ParticleSimulation::PrepareResources()
 
   const auto dispatch_indirect_memory = engine_->AcquireDeviceMemory(dispatch_indirect_);
   device.bindBufferMemory(dispatch_indirect_, dispatch_indirect_memory.memory, dispatch_indirect_memory.offset);
-
-  // Allocate and bind to memory for uniform buffer
-  vk::MemoryAllocateInfo memory_allocate_info;
-  memory_allocate_info
-    .setAllocationSize(device.getBufferMemoryRequirements(uniform_buffer_.buffer).size)
-    .setMemoryTypeIndex(engine_->HostMemoryIndex());
-  uniform_buffer_.memory = device.allocateMemory(memory_allocate_info);
-
-  device.bindBufferMemory(uniform_buffer_.buffer, uniform_buffer_.memory, 0);
-  uniform_buffer_.map = static_cast<uint8_t*>(device.mapMemory(uniform_buffer_.memory, 0, uniform_buffer_size));
 
   // Staging
   engine_->ToDeviceMemory(particle_buffer, particle_buffer_);
@@ -555,7 +543,7 @@ void ParticleSimulation::PrepareResources()
       .setRange(num_particles * sizeof(float) * 24);
 
     buffer_infos[1]
-      .setBuffer(uniform_buffer_.buffer)
+      .setBuffer(uniform_buffer_->Buffer())
       .setOffset(simulation_params_ubos_[i].offset)
       .setRange(simulation_params_ubos_[i].size);
 
@@ -659,8 +647,7 @@ void ParticleSimulation::DestroyResources()
   device.destroyBuffer(storage_buffer_);
   device.destroyBuffer(dispatch_indirect_);
 
-  device.freeMemory(uniform_buffer_.memory);
-  device.destroyBuffer(uniform_buffer_.buffer);
+  uniform_buffer_ = nullptr;
 }
 
 vk::Pipeline ParticleSimulation::CreateComputePipeline(vk::ComputePipelineCreateInfo& create_info)

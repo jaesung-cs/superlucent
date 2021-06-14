@@ -11,6 +11,7 @@ namespace supl
 namespace engine
 {
 class Engine;
+class UniformBuffer;
 
 class ParticleRenderer
 {
@@ -80,13 +81,7 @@ private:
   std::vector<vk::DescriptorSet> descriptor_sets_;
 
   // Uniform buffer
-  struct UniformBuffer
-  {
-    vk::DeviceMemory memory;
-    vk::Buffer buffer;
-    uint8_t* map = nullptr;
-  };
-  UniformBuffer uniform_buffer_;
+  std::unique_ptr<UniformBuffer> uniform_buffer_;
 
   // Ubos
   struct Uniform

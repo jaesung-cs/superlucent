@@ -54,6 +54,9 @@
     <ClCompile Include="..\..\src\superlucent\engine\particle_renderer.cc">
       <Filter>src\superlucent\engine</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\engine\uniform_buffer.cc">
+      <Filter>src\superlucent\engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\superlucent\application.h">
@@ -106,6 +109,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\superlucent\engine\ubo\light_ubo.h">
       <Filter>src\superlucent\engine\ubo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\uniform_buffer.h">
+      <Filter>src\superlucent\engine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -8,6 +8,7 @@ namespace supl
 namespace engine
 {
 class Engine;
+class UniformBuffer;
 
 class ParticleSimulation
 {
@@ -44,12 +45,6 @@ private:
   vk::Pipeline CreateComputePipeline(vk::ComputePipelineCreateInfo& create_info);
 
   Engine* const engine_;
-
-  struct Uniform
-  {
-    vk::DeviceSize offset;
-    vk::DeviceSize size;
-  };
 
   vk::DescriptorSetLayout descriptor_set_layout_;
   vk::PipelineLayout pipeline_layout_;
@@ -89,17 +84,17 @@ private:
   vk::DeviceSize collision_chain_buffer_size_;
 
   // Uniform buffer
-  int num_ubos_ = 0;
-  struct UniformBuffer
-  {
-    vk::DeviceMemory memory;
-    vk::Buffer buffer;
-    uint8_t* map = nullptr;
-  };
-  UniformBuffer uniform_buffer_;
+  uint32_t num_ubos_ = 0;
+  std::unique_ptr<UniformBuffer> uniform_buffer_;
 
   // Dispatch indirect buffer
   vk::Buffer dispatch_indirect_;
+
+  struct Uniform
+  {
+    vk::DeviceSize offset;
+    vk::DeviceSize size;
+  };
 
   std::vector<vk::DescriptorSet> descriptor_sets_;
   std::vector<Uniform> simulation_params_ubos_;

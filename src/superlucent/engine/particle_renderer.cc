@@ -3,6 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include <superlucent/engine/engine.h>
+#include <superlucent/engine/uniform_buffer.h>
 #include <superlucent/scene/camera.h>
 #include <superlucent/scene/light.h>
 
@@ -31,12 +32,12 @@ ParticleRenderer::~ParticleRenderer()
 
 void ParticleRenderer::UpdateLights(const LightUbo& lights, int image_index)
 {
-  std::memcpy(uniform_buffer_.map + light_ubos_[image_index].offset, &lights, sizeof(LightUbo));
+  std::memcpy(uniform_buffer_->Map() + light_ubos_[image_index].offset, &lights, sizeof(LightUbo));
 }
 
 void ParticleRenderer::UpdateCamera(const CameraUbo& camera, int image_index)
 {
-  std::memcpy(uniform_buffer_.map + camera_ubos_[image_index].offset, &camera, sizeof(CameraUbo));
+  std::memcpy(uniform_buffer_->Map() + camera_ubos_[image_index].offset, &camera, sizeof(CameraUbo));
 }
 
 void ParticleRenderer::RecordRenderCommands(vk::CommandBuffer command_buffer, vk::Buffer particle_buffer, uint32_t num_particles, int image_index)
@@ -632,10 +633,8 @@ void ParticleRenderer::PrepareResources()
   cells_buffer_.index_offset = cells_vertex_buffer_size;
   cells_buffer_.num_indices = cells_index_buffer.size();
 
-  buffer_create_info
-    .setSize(uniform_buffer_size)
-    .setUsage(vk::BufferUsageFlagBits::eUniformBuffer);
-  uniform_buffer_.buffer = device.createBuffer(buffer_create_info);
+  // Uniform buffer
+  uniform_buffer_ = std::make_unique<UniformBuffer>(engine_, uniform_buffer_size);
 
   // Memory binding
   const auto floor_memory = engine_->AcquireDeviceMemory(floor_buffer_.buffer);
@@ -646,16 +645,6 @@ void ParticleRenderer::PrepareResources()
 
   const auto cells_vertex_memory = engine_->AcquireDeviceMemory(cells_buffer_.buffer);
   device.bindBufferMemory(cells_buffer_.buffer, cells_vertex_memory.memory, cells_vertex_memory.offset);
-
-  // Allocate and bind to memory for uniform buffer
-  vk::MemoryAllocateInfo memory_allocate_info;
-  memory_allocate_info
-    .setAllocationSize(device.getBufferMemoryRequirements(uniform_buffer_.buffer).size)
-    .setMemoryTypeIndex(engine_->HostMemoryIndex());
-  uniform_buffer_.memory = device.allocateMemory(memory_allocate_info);
-
-  device.bindBufferMemory(uniform_buffer_.buffer, uniform_buffer_.memory, 0);
-  uniform_buffer_.map = static_cast<uint8_t*>(device.mapMemory(uniform_buffer_.memory, 0, uniform_buffer_size));
 
   // Create image view for floor texture
   vk::ImageSubresourceRange subresource_range;
@@ -714,12 +703,12 @@ void ParticleRenderer::PrepareResources()
   {
     std::vector<vk::DescriptorBufferInfo> buffer_infos(2);
     buffer_infos[0]
-      .setBuffer(uniform_buffer_.buffer)
+      .setBuffer(uniform_buffer_->Buffer())
       .setOffset(camera_ubos_[i].offset)
       .setRange(camera_ubos_[i].size);
 
     buffer_infos[1]
-      .setBuffer(uniform_buffer_.buffer)
+      .setBuffer(uniform_buffer_->Buffer())
       .setOffset(light_ubos_[i].offset)
       .setRange(light_ubos_[i].size);
 
@@ -766,8 +755,7 @@ void ParticleRenderer::DestroyResources()
   device.destroyImage(floor_texture_.image);
   device.destroyImageView(floor_texture_.image_view);
 
-  device.freeMemory(uniform_buffer_.memory);
-  device.destroyBuffer(uniform_buffer_.buffer);
+  uniform_buffer_ = nullptr;
 }
 
 vk::Pipeline ParticleRenderer::CreateGraphicsPipeline(vk::GraphicsPipelineCreateInfo& create_info)
