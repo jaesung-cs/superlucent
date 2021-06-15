@@ -11,7 +11,7 @@ namespace supl
 namespace engine
 {
 class Engine;
-class UniformBuffer;
+struct Uniform;
 
 class ParticleRenderer
 {
@@ -81,15 +81,6 @@ private:
   std::vector<vk::DescriptorSet> descriptor_sets_;
 
   // Uniform buffer
-  std::unique_ptr<UniformBuffer> uniform_buffer_;
-
-  // Ubos
-  struct Uniform
-  {
-    vk::DeviceSize offset;
-    vk::DeviceSize size;
-  };
-
   std::vector<Uniform> camera_ubos_;
   std::vector<Uniform> light_ubos_;
 };

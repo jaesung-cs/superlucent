@@ -24,6 +24,8 @@ ParticleSimulation::~ParticleSimulation()
 
 void ParticleSimulation::UpdateSimulationParams(double dt, double animation_time, int ubo_index)
 {
+  const auto uniform_buffer = engine_->UniformBuffer();
+
   constexpr auto wall_offset_speed = 5.;
   constexpr auto wall_offset_magnitude = 0.5;
 
@@ -32,7 +34,7 @@ void ParticleSimulation::UpdateSimulationParams(double dt, double animation_time
   simulation_params_.alpha = 0.001f;
   simulation_params_.wall_offset = static_cast<float>(wall_offset_magnitude * std::sin(animation_time * wall_offset_speed));
 
-  std::memcpy(uniform_buffer_->Map() + simulation_params_ubos_[ubo_index].offset, &simulation_params_, sizeof(SimulationParamsUbo));
+  std::memcpy(uniform_buffer->Map() + simulation_params_ubos_[ubo_index].offset, &simulation_params_, sizeof(SimulationParamsUbo));
 }
 
 void ParticleSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer& command_buffer, int ubo_index)
@@ -482,8 +484,6 @@ void ParticleSimulation::PrepareResources()
   
   const auto dispatch_indirect_size = sizeof(uint32_t) * 8;
 
-  const auto uniform_buffer_size = engine_->Align(sizeof(SimulationParamsUbo), engine_->UboAlignment()) * num_ubos_;
-
   // Vulkan buffers
   vk::BufferCreateInfo buffer_create_info;
   buffer_create_info
@@ -502,7 +502,7 @@ void ParticleSimulation::PrepareResources()
     .setUsage(vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer);
   dispatch_indirect_ = device.createBuffer(buffer_create_info);
 
-  uniform_buffer_ = std::make_unique<UniformBuffer>(engine_, uniform_buffer_size);
+  const auto uniform_buffer = engine_->UniformBuffer();
 
   // Bind to memory
   const auto particle_memory = engine_->AcquireDeviceMemory(particle_buffer_);
@@ -519,13 +519,7 @@ void ParticleSimulation::PrepareResources()
 
   // Particle descriptor set
   vk::DeviceSize uniform_offset = 0;
-  simulation_params_ubos_.resize(num_ubos_);
-  for (int i = 0; i < num_ubos_; i++)
-  {
-    simulation_params_ubos_[i].offset = uniform_offset;
-    simulation_params_ubos_[i].size = sizeof(SimulationParamsUbo);
-    uniform_offset = engine_->Align(uniform_offset + sizeof(SimulationParamsUbo), engine_->UboAlignment());
-  }
+  simulation_params_ubos_ = uniform_buffer->Allocate(sizeof(SimulationParamsUbo), num_ubos_);
 
   std::vector<vk::DescriptorSetLayout> set_layouts(num_ubos_, descriptor_set_layout_);
   vk::DescriptorSetAllocateInfo descriptor_set_allocate_info;
@@ -543,7 +537,7 @@ void ParticleSimulation::PrepareResources()
       .setRange(num_particles * sizeof(float) * 24);
 
     buffer_infos[1]
-      .setBuffer(uniform_buffer_->Buffer())
+      .setBuffer(uniform_buffer->Buffer())
       .setOffset(simulation_params_ubos_[i].offset)
       .setRange(simulation_params_ubos_[i].size);
 
@@ -646,8 +640,6 @@ void ParticleSimulation::DestroyResources()
   device.destroyBuffer(particle_buffer_);
   device.destroyBuffer(storage_buffer_);
   device.destroyBuffer(dispatch_indirect_);
-
-  uniform_buffer_ = nullptr;
 }
 
 vk::Pipeline ParticleSimulation::CreateComputePipeline(vk::ComputePipelineCreateInfo& create_info)

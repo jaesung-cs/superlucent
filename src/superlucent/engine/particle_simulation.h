@@ -8,7 +8,7 @@ namespace supl
 namespace engine
 {
 class Engine;
-class UniformBuffer;
+struct Uniform;
 
 class ParticleSimulation
 {
@@ -83,22 +83,13 @@ private:
   vk::DeviceSize collision_chain_buffer_offset_;
   vk::DeviceSize collision_chain_buffer_size_;
 
-  // Uniform buffer
-  uint32_t num_ubos_ = 0;
-  std::unique_ptr<UniformBuffer> uniform_buffer_;
-
-  // Dispatch indirect buffer
+    // Dispatch indirect buffer
   vk::Buffer dispatch_indirect_;
 
-  struct Uniform
-  {
-    vk::DeviceSize offset;
-    vk::DeviceSize size;
-  };
-
+  // Uniform buffer
+  uint32_t num_ubos_ = 0;
   std::vector<vk::DescriptorSet> descriptor_sets_;
   std::vector<Uniform> simulation_params_ubos_;
-
   SimulationParamsUbo simulation_params_;
 };
 }

@@ -32,12 +32,16 @@ ParticleRenderer::~ParticleRenderer()
 
 void ParticleRenderer::UpdateLights(const LightUbo& lights, int image_index)
 {
-  std::memcpy(uniform_buffer_->Map() + light_ubos_[image_index].offset, &lights, sizeof(LightUbo));
+  const auto uniform_buffer = engine_->UniformBuffer();
+
+  std::memcpy(uniform_buffer->Map() + light_ubos_[image_index].offset, &lights, sizeof(LightUbo));
 }
 
 void ParticleRenderer::UpdateCamera(const CameraUbo& camera, int image_index)
 {
-  std::memcpy(uniform_buffer_->Map() + camera_ubos_[image_index].offset, &camera, sizeof(CameraUbo));
+  const auto uniform_buffer = engine_->UniformBuffer();
+
+  std::memcpy(uniform_buffer->Map() + camera_ubos_[image_index].offset, &camera, sizeof(CameraUbo));
 }
 
 void ParticleRenderer::RecordRenderCommands(vk::CommandBuffer command_buffer, vk::Buffer particle_buffer, uint32_t num_particles, int image_index)
@@ -621,20 +625,12 @@ void ParticleRenderer::PrepareResources()
   }
   const auto cells_index_buffer_size = cells_index_buffer.size() * sizeof(uint32_t);
 
-  const auto uniform_buffer_size = 
-    (engine_->Align(sizeof(CameraUbo), engine_->UboAlignment())
-      + engine_->Align(sizeof(LightUbo), engine_->UboAlignment())
-      ) * swapchain_image_count;
-
   buffer_create_info
     .setSize(cells_vertex_buffer_size + cells_index_buffer_size)
     .setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eIndexBuffer);
   cells_buffer_.buffer = device.createBuffer(buffer_create_info);
   cells_buffer_.index_offset = cells_vertex_buffer_size;
   cells_buffer_.num_indices = cells_index_buffer.size();
-
-  // Uniform buffer
-  uniform_buffer_ = std::make_unique<UniformBuffer>(engine_, uniform_buffer_size);
 
   // Memory binding
   const auto floor_memory = engine_->AcquireDeviceMemory(floor_buffer_.buffer);
@@ -673,23 +669,10 @@ void ParticleRenderer::PrepareResources()
 
   engine_->ToDeviceMemory(floor_texture, floor_texture_.image, floor_texture_length, floor_texture_length, mipmap_level_);
 
-  // Calculate uniform buffer offset and ranges in uniform buffer
-  vk::DeviceSize uniform_offset = 0ull;
-  camera_ubos_.resize(swapchain_image_count);
-  for (uint32_t i = 0; i < swapchain_image_count; i++)
-  {
-    camera_ubos_[i].offset = uniform_offset;
-    camera_ubos_[i].size = sizeof(CameraUbo);
-    uniform_offset = engine_->Align(uniform_offset + sizeof(CameraUbo), engine_->UboAlignment());
-  }
-
-  light_ubos_.resize(swapchain_image_count);
-  for (uint32_t i = 0; i < swapchain_image_count; i++)
-  {
-    light_ubos_[i].offset = uniform_offset;
-    light_ubos_[i].size = sizeof(LightUbo);
-    uniform_offset = engine_->Align(uniform_offset + sizeof(LightUbo), engine_->UboAlignment());
-  }
+  // Allocate uniform memory ranges
+  const auto uniform_buffer = engine_->UniformBuffer();
+  camera_ubos_ = uniform_buffer->Allocate(sizeof(CameraUbo), swapchain_image_count);
+  light_ubos_ = uniform_buffer->Allocate(sizeof(LightUbo), swapchain_image_count);
 
   // Descriptor set
   std::vector<vk::DescriptorSetLayout> set_layouts(swapchain_image_count, descriptor_set_layout_);
@@ -703,12 +686,12 @@ void ParticleRenderer::PrepareResources()
   {
     std::vector<vk::DescriptorBufferInfo> buffer_infos(2);
     buffer_infos[0]
-      .setBuffer(uniform_buffer_->Buffer())
+      .setBuffer(uniform_buffer->Buffer())
       .setOffset(camera_ubos_[i].offset)
       .setRange(camera_ubos_[i].size);
 
     buffer_infos[1]
-      .setBuffer(uniform_buffer_->Buffer())
+      .setBuffer(uniform_buffer->Buffer())
       .setOffset(light_ubos_[i].offset)
       .setRange(light_ubos_[i].size);
 
@@ -754,8 +737,6 @@ void ParticleRenderer::DestroyResources()
   device.destroyBuffer(cells_buffer_.buffer);
   device.destroyImage(floor_texture_.image);
   device.destroyImageView(floor_texture_.image_view);
-
-  uniform_buffer_ = nullptr;
 }
 
 vk::Pipeline ParticleRenderer::CreateGraphicsPipeline(vk::GraphicsPipelineCreateInfo& create_info)

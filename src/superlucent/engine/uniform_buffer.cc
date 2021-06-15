@@ -35,5 +35,24 @@ UniformBuffer::~UniformBuffer()
   device.freeMemory(memory_);
   device.destroyBuffer(buffer_);
 }
+
+Uniform UniformBuffer::Allocate(vk::DeviceSize size)
+{
+  Uniform uniform;
+  uniform.offset = allocation_offset_;
+  uniform.size = size;
+
+  allocation_offset_ = engine_->Align(allocation_offset_ + size, engine_->UboAlignment());
+
+  return uniform;
+}
+
+std::vector<Uniform> UniformBuffer::Allocate(vk::DeviceSize size, int count)
+{
+  std::vector<Uniform> uniforms;
+  for (int i = 0; i < count; i++)
+    uniforms.emplace_back(Allocate(size));
+  return uniforms;
+}
 }
 }

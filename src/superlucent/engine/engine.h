@@ -22,9 +22,13 @@ namespace engine
 {
 class ParticleSimulation;
 class ParticleRenderer;
+class UniformBuffer;
 
 class Engine
 {
+private:
+  using UniformBufferType = typename UniformBuffer;
+
 public:
   static constexpr auto Align(vk::DeviceSize offset, vk::DeviceSize alignment)
   {
@@ -45,6 +49,8 @@ public:
   auto Device() const { return device_; }
   auto DescriptorPool() const { return descriptor_pool_; }
   auto HostMemoryIndex() const { return host_index_; }
+
+  const auto UniformBuffer() const { return uniform_buffer_; }
 
   auto Rendertarget() const { return rendertarget_; }
   auto SwapchainImageCount() const { return swapchain_image_count_; }
@@ -176,6 +182,8 @@ private:
     uint8_t* map = nullptr;
   };
   StagingBuffer staging_buffer_;
+
+  std::shared_ptr<UniformBufferType> uniform_buffer_;
 
   // Swapchain
   vk::SwapchainKHR swapchain_;

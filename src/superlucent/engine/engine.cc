@@ -9,6 +9,7 @@
 
 #include <superlucent/engine/particle_simulation.h>
 #include <superlucent/engine/particle_renderer.h>
+#include <superlucent/engine/uniform_buffer.h>
 #include <superlucent/scene/light.h>
 #include <superlucent/scene/camera.h>
 
@@ -568,6 +569,10 @@ void Engine::PreallocateMemory()
   device_.bindBufferMemory(staging_buffer_.buffer, staging_buffer_.memory, 0);
   staging_buffer_.map = static_cast<uint8_t*>(device_.mapMemory(staging_buffer_.memory, 0, staging_buffer_.size));
 
+  // Persistently mapped uniform buffer
+  constexpr uint64_t uniform_buffer_size = 32 * 1024 * 1024; // 32MB
+  uniform_buffer_ = std::make_shared<UniformBufferType>(this, uniform_buffer_size);
+
   // Preallocate framebuffer memory
   vk::ImageCreateInfo image_create_info;
   image_create_info
@@ -643,6 +648,8 @@ void Engine::FreeMemory()
   device_.unmapMemory(staging_buffer_.memory);
   device_.freeMemory(staging_buffer_.memory);
   device_.destroyBuffer(staging_buffer_.buffer);
+
+  uniform_buffer_ = nullptr;
 
   device_.freeMemory(device_memory_);
   device_.freeMemory(host_memory_);
