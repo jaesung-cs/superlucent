@@ -564,73 +564,73 @@ void ParticleRenderer::PrepareResources()
 
   // Cells buffer
   constexpr int sphere_segments = 8;
-  std::vector<float> cells_buffer;
-  std::vector<std::vector<uint32_t>> cells_indices;
-  std::vector<uint32_t> cells_index_buffer;
+  std::vector<float> sphere_buffer;
+  std::vector<std::vector<uint32_t>> sphere_indices;
+  std::vector<uint32_t> sphere_index_buffer;
 
-  cells_buffer.push_back(0.f);
-  cells_buffer.push_back(0.f);
-  cells_buffer.push_back(1.f);
-  cells_buffer.push_back(0.f);
-  cells_buffer.push_back(0.f);
-  cells_buffer.push_back(1.f);
+  sphere_buffer.push_back(0.f);
+  sphere_buffer.push_back(0.f);
+  sphere_buffer.push_back(1.f);
+  sphere_buffer.push_back(0.f);
+  sphere_buffer.push_back(0.f);
+  sphere_buffer.push_back(1.f);
 
-  cells_buffer.push_back(0.f);
-  cells_buffer.push_back(0.f);
-  cells_buffer.push_back(-1.f);
-  cells_buffer.push_back(0.f);
-  cells_buffer.push_back(0.f);
-  cells_buffer.push_back(-1.f);
+  sphere_buffer.push_back(0.f);
+  sphere_buffer.push_back(0.f);
+  sphere_buffer.push_back(-1.f);
+  sphere_buffer.push_back(0.f);
+  sphere_buffer.push_back(0.f);
+  sphere_buffer.push_back(-1.f);
 
-  uint32_t cell_index = 2;
+  uint32_t sphere_index = 2;
 
-  cells_indices.resize(sphere_segments);
+  sphere_indices.resize(sphere_segments);
   constexpr auto pi = glm::pi<float>();
   for (int i = 0; i < sphere_segments; i++)
   {
-    cells_indices[i].resize(sphere_segments);
+    sphere_indices[i].resize(sphere_segments);
 
     const auto theta = static_cast<float>(i) / sphere_segments * 2.f * pi;
     const auto cos_theta = std::cos(theta);
     const auto sin_theta = std::sin(theta);
     for (int j = 1; j < sphere_segments; j++)
     {
-      cells_indices[i][j] = cell_index++;
+      sphere_indices[i][j] = sphere_index++;
 
       const auto phi = (0.5f - static_cast<float>(j) / sphere_segments) * pi;
       const auto cos_phi = std::cos(phi);
       const auto sin_phi = std::sin(phi);
 
-      cells_buffer.push_back(cos_theta * cos_phi);
-      cells_buffer.push_back(sin_theta * cos_phi);
-      cells_buffer.push_back(sin_phi);
-      cells_buffer.push_back(cos_theta * cos_phi);
-      cells_buffer.push_back(sin_theta * cos_phi);
-      cells_buffer.push_back(sin_phi);
+      sphere_buffer.push_back(cos_theta * cos_phi);
+      sphere_buffer.push_back(sin_theta * cos_phi);
+      sphere_buffer.push_back(sin_phi);
+      sphere_buffer.push_back(cos_theta * cos_phi);
+      sphere_buffer.push_back(sin_theta * cos_phi);
+      sphere_buffer.push_back(sin_phi);
     }
   }
-  const auto cells_vertex_buffer_size = cells_buffer.size() * sizeof(float);
+  const auto sphere_vertex_buffer_size = sphere_buffer.size() * sizeof(float);
 
   // Sphere indices
   for (int i = 0; i < sphere_segments; i++)
   {
-    cells_index_buffer.push_back(0);
+    sphere_index_buffer.push_back(0);
     for (int j = 1; j < sphere_segments; j++)
     {
-      cells_index_buffer.push_back(cells_indices[i][j]);
-      cells_index_buffer.push_back(cells_indices[(i + 1) % sphere_segments][j]);
+      sphere_index_buffer.push_back(sphere_indices[i][j]);
+      sphere_index_buffer.push_back(sphere_indices[(i + 1) % sphere_segments][j]);
     }
-    cells_index_buffer.push_back(1);
-    cells_index_buffer.push_back(-1);
+    sphere_index_buffer.push_back(1);
+    sphere_index_buffer.push_back(-1);
   }
-  const auto cells_index_buffer_size = cells_index_buffer.size() * sizeof(uint32_t);
+  const auto sphere_index_buffer_size = sphere_index_buffer.size() * sizeof(uint32_t);
 
   buffer_create_info
-    .setSize(cells_vertex_buffer_size + cells_index_buffer_size)
+    .setSize(sphere_vertex_buffer_size + sphere_index_buffer_size)
     .setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eIndexBuffer);
   cells_buffer_.buffer = device.createBuffer(buffer_create_info);
-  cells_buffer_.index_offset = cells_vertex_buffer_size;
-  cells_buffer_.num_indices = cells_index_buffer.size();
+  cells_buffer_.index_offset = sphere_vertex_buffer_size;
+  cells_buffer_.num_indices = sphere_index_buffer.size();
 
   // Memory binding
   const auto floor_memory = engine_->AcquireDeviceMemory(floor_buffer_.buffer);
@@ -664,8 +664,8 @@ void ParticleRenderer::PrepareResources()
   engine_->ToDeviceMemory(floor_vertex_buffer, floor_buffer_.buffer);
   engine_->ToDeviceMemory(floor_index_buffer, floor_buffer_.buffer, floor_vertex_buffer_size);
 
-  engine_->ToDeviceMemory(cells_buffer, cells_buffer_.buffer);
-  engine_->ToDeviceMemory(cells_index_buffer, cells_buffer_.buffer, cells_vertex_buffer_size);
+  engine_->ToDeviceMemory(sphere_buffer, cells_buffer_.buffer);
+  engine_->ToDeviceMemory(sphere_index_buffer, cells_buffer_.buffer, sphere_vertex_buffer_size);
 
   engine_->ToDeviceMemory(floor_texture, floor_texture_.image, floor_texture_length, floor_texture_length, mipmap_level_);
 
