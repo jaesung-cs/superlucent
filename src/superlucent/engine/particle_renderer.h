@@ -25,7 +25,7 @@ public:
   void UpdateLights(const LightUbo& lights, int image_index);
   void UpdateCamera(const CameraUbo& camera, int image_index);
 
-  void RecordRenderCommands(vk::CommandBuffer command_buffer, vk::Buffer particle_buffer, uint32_t num_particles, int image_index);
+  void RecordRenderCommands(vk::CommandBuffer command_buffer, vk::Buffer particle_buffer, uint32_t num_particles, float radius, int image_index);
 
 private:
   void CreateSampler();

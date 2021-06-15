@@ -188,7 +188,7 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
   if (dt > 0.)
     particle_simulation_->RecordComputeWithGraphicsBarriers(command_buffer, image_index);
 
-  particle_renderer_->RecordRenderCommands(command_buffer, particle_simulation_->ParticleBuffer(), particle_simulation_->NumParticles(), image_index);
+  particle_renderer_->RecordRenderCommands(command_buffer, particle_simulation_->ParticleBuffer(), particle_simulation_->NumParticles(), particle_simulation_->SimulationParams().radius, image_index);
 }
 
 Engine::Memory Engine::AcquireDeviceMemory(vk::Buffer buffer)

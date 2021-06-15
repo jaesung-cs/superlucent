@@ -394,13 +394,15 @@ void ParticleSimulation::PrepareResources()
   const auto device = engine_->Device();
 
   // Prticles
+  simulation_params_.radius = 0.03f;
+
   constexpr int cell_count = 40;
-  constexpr float radius = 0.03f;
+  const float radius = simulation_params_.radius;
   constexpr float density = 1000.f; // water
-  constexpr float mass = radius * radius * radius * density;
+  const float mass = radius * radius * radius * density;
   constexpr glm::vec2 wall_distance = glm::vec2(3.f, 1.5f);
-  constexpr glm::vec3 particle_offset = glm::vec3(-wall_distance + glm::vec2(radius * 1.1f), radius * 1.1f);
-  constexpr glm::vec3 particle_stride = glm::vec3(radius * 2.2f);
+  const glm::vec3 particle_offset = glm::vec3(-wall_distance + glm::vec2(radius * 1.1f), radius * 1.1f);
+  const glm::vec3 particle_stride = glm::vec3(radius * 2.2f);
 
   utils::Rng rng;
   constexpr float noise_range = 1e-2f;
@@ -421,7 +423,7 @@ void ParticleSimulation::PrepareResources()
           0.f
         };
         glm::vec4 velocity{ 0.f };
-        glm::vec4 properties{ radius, mass, 0.f, 0.f };
+        glm::vec4 properties{ mass, 0.f, 0.f, 0.f };
         glm::vec4 external_force{
           gravity.x * mass,
           gravity.y * mass,

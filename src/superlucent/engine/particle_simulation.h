@@ -3,6 +3,8 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include <superlucent/engine/ubo/simulation_params.h>
+
 namespace supl
 {
 namespace engine
@@ -12,16 +14,6 @@ class Uniform;
 
 class ParticleSimulation
 {
-private:
-  // Binding 1
-  struct SimulationParamsUbo
-  {
-    alignas(16) float dt;
-    int num_particles;
-    float alpha; // compliance of the constraints
-    float wall_offset; // wall x direction distance is added with this value
-  };
-
 public:
   ParticleSimulation() = delete;
 
@@ -29,6 +21,7 @@ public:
 
   ~ParticleSimulation();
 
+  const auto& SimulationParams() const { return simulation_params_; }
   auto ParticleBuffer() const { return particle_buffer_; }
   auto NumParticles() const { return num_particles_; }
 
@@ -55,8 +48,7 @@ private:
   vk::Pipeline initialize_collision_detection_pipeline_;
   vk::Pipeline collision_detection_pipeline_;
   vk::Pipeline initialize_dispatch_pipeline_;
-  vk::Pipeline initialize_solver_pipeline_;
-  vk::Pipeline solve_delta_lambda_pipeline_;
+  vk::Pipeline initialize_solver_pipeline_;vk::Pipeline solve_delta_lambda_pipeline_;
   vk::Pipeline solve_delta_x_pipeline_;
   vk::Pipeline solve_x_lambda_pipeline_;
   vk::Pipeline velocity_update_pipeline_;

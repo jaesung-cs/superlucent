@@ -29,8 +29,8 @@ void main()
   // Update position
   particles[index].position.xyz = solver_position;
 
-  const float radius = particles[index].properties.x;
-  const float mass = particles[index].properties.y;
+  const float radius = params.radius;
+  const float mass = particles[index].properties.x;
 
   vec4 prev_velocity = particles[index].velocity;
   vec4 velocity = (particles[index].position - particles[index].prev_position) / params.dt;

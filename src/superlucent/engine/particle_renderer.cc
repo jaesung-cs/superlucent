@@ -45,7 +45,7 @@ void ParticleRenderer::UpdateCamera(const CameraUbo& camera, int image_index)
   camera_ubos_[image_index] = camera;
 }
 
-void ParticleRenderer::RecordRenderCommands(vk::CommandBuffer command_buffer, vk::Buffer particle_buffer, uint32_t num_particles, int image_index)
+void ParticleRenderer::RecordRenderCommands(vk::CommandBuffer command_buffer, vk::Buffer particle_buffer, uint32_t num_particles, float radius, int image_index)
 {
   // Begin render pass 
   command_buffer.setViewport(0, vk::Viewport{ 0.f, 0.f, static_cast<float>(width_), static_cast<float>(height_), 0.f, 1.f });
@@ -70,6 +70,8 @@ void ParticleRenderer::RecordRenderCommands(vk::CommandBuffer command_buffer, vk
 
   // Draw cells
   command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, cell_sphere_pipeline_);
+
+  command_buffer.pushConstants<float>(pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0, radius);
 
   command_buffer.bindVertexBuffers(0u,
     { cells_buffer_.buffer, particle_buffer },
@@ -281,9 +283,16 @@ void ParticleRenderer::CreateGraphicsPipelines()
   descriptor_set_layout_ = device.createDescriptorSetLayout(descriptor_set_layout_create_info);
 
   // Pipeline layout
+  vk::PushConstantRange push_constant_range;
+  push_constant_range
+    .setStageFlags(vk::ShaderStageFlagBits::eVertex)
+    .setOffset(0)
+    .setSize(sizeof(float));
+
   vk::PipelineLayoutCreateInfo pipeline_layout_create_info;
   pipeline_layout_create_info
-    .setSetLayouts(descriptor_set_layout_);
+    .setSetLayouts(descriptor_set_layout_)
+    .setPushConstantRanges(push_constant_range);
   pipeline_layout_ = device.createPipelineLayout(pipeline_layout_create_info);
 
   // Shader modules
@@ -443,7 +452,7 @@ void ParticleRenderer::CreateGraphicsPipelines()
     .setStride(sizeof(float) * 24)
     .setInputRate(vk::VertexInputRate::eInstance);
 
-  vertex_attribute_descriptions.resize(5);
+  vertex_attribute_descriptions.resize(4);
   vertex_attribute_descriptions[0]
     .setLocation(0)
     .setBinding(0)
@@ -464,12 +473,6 @@ void ParticleRenderer::CreateGraphicsPipelines()
 
   vertex_attribute_descriptions[3]
     .setLocation(3)
-    .setBinding(1)
-    .setFormat(vk::Format::eR32Sfloat)
-    .setOffset(offsetof(Particle, properties));
-
-  vertex_attribute_descriptions[4]
-    .setLocation(4)
     .setBinding(1)
     .setFormat(vk::Format::eR32G32B32Sfloat)
     .setOffset(offsetof(Particle, color));
