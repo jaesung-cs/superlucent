@@ -22,15 +22,21 @@
     <Filter Include="src\superlucent\utils">
       <UniqueIdentifier>{bea198d4-a006-4f32-95c7-d6cbc26d476f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\superlucent\engine">
+      <UniqueIdentifier>{1eaad613-bc67-464d-9b99-5cd4fd02d1f4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\superlucent\engine\ubo">
+      <UniqueIdentifier>{61dfbf17-c314-44a1-b534-77768580bcc3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\superlucent\engine\data">
+      <UniqueIdentifier>{7df2aa14-0d81-4b79-8785-5bdef34e7d5c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cc">
       <Filter>src\superlucent</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\superlucent\application.cc">
-      <Filter>src\superlucent</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\superlucent\engine.cc">
       <Filter>src\superlucent</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\superlucent\scene\camera.cc">
@@ -42,12 +48,21 @@
     <ClCompile Include="..\..\src\superlucent\utils\rng.cc">
       <Filter>src\superlucent\utils</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\engine\particle_simulation.cc">
+      <Filter>src\superlucent\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\engine\engine.cc">
+      <Filter>src\superlucent\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\engine\particle_renderer.cc">
+      <Filter>src\superlucent\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\engine\uniform_buffer.cc">
+      <Filter>src\superlucent\engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\superlucent\application.h">
-      <Filter>src\superlucent</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\engine.h">
       <Filter>src\superlucent</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\superlucent\scene\camera.h">
@@ -62,26 +77,50 @@
     <ClInclude Include="..\..\src\superlucent\shader\core\light.h">
       <Filter>src\superlucent\shader\core</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\shader\particle\collision_pairs.h">
+    <ClInclude Include="..\..\src\superlucent\shader\particle\collision_pairs.glsl">
       <Filter>src\superlucent\shader\particle</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\shader\particle\particle.h">
+    <ClInclude Include="..\..\src\superlucent\shader\particle\particle.glsl">
       <Filter>src\superlucent\shader\particle</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\shader\particle\simulation_params.h">
+    <ClInclude Include="..\..\src\superlucent\shader\particle\simulation_params.glsl">
       <Filter>src\superlucent\shader\particle</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\shader\particle\solver.h">
+    <ClInclude Include="..\..\src\superlucent\shader\particle\solver.glsl">
       <Filter>src\superlucent\shader\particle</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\shader\particle\indirect.h">
+    <ClInclude Include="..\..\src\superlucent\shader\particle\indirect.glsl">
       <Filter>src\superlucent\shader\particle</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\shader\particle\uniform_grid.h">
+    <ClInclude Include="..\..\src\superlucent\shader\particle\uniform_grid.glsl">
       <Filter>src\superlucent\shader\particle</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\superlucent\utils\rng.h">
       <Filter>src\superlucent\utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\particle_simulation.h">
+      <Filter>src\superlucent\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\engine.h">
+      <Filter>src\superlucent\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\particle_renderer.h">
+      <Filter>src\superlucent\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\ubo\camera_ubo.h">
+      <Filter>src\superlucent\engine\ubo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\ubo\light_ubo.h">
+      <Filter>src\superlucent\engine\ubo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\uniform_buffer.h">
+      <Filter>src\superlucent\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\data\particle.h">
+      <Filter>src\superlucent\engine\data</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\ubo\simulation_params.h">
+      <Filter>src\superlucent\engine\ubo</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -164,24 +164,34 @@ python compile.py
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cc" />
     <ClCompile Include="..\..\src\superlucent\application.cc" />
-    <ClCompile Include="..\..\src\superlucent\engine.cc" />
+    <ClCompile Include="..\..\src\superlucent\engine\engine.cc" />
+    <ClCompile Include="..\..\src\superlucent\engine\particle_renderer.cc" />
+    <ClCompile Include="..\..\src\superlucent\engine\particle_simulation.cc" />
+    <ClCompile Include="..\..\src\superlucent\engine\uniform_buffer.cc" />
     <ClCompile Include="..\..\src\superlucent\scene\camera.cc" />
     <ClCompile Include="..\..\src\superlucent\scene\camera_control.cc" />
     <ClCompile Include="..\..\src\superlucent\utils\rng.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\superlucent\application.h" />
-    <ClInclude Include="..\..\src\superlucent\engine.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\data\particle.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\engine.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\particle_renderer.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\particle_simulation.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\ubo\camera_ubo.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\ubo\light_ubo.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\ubo\simulation_params.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\uniform_buffer.h" />
     <ClInclude Include="..\..\src\superlucent\scene\camera.h" />
     <ClInclude Include="..\..\src\superlucent\scene\camera_control.h" />
     <ClInclude Include="..\..\src\superlucent\scene\light.h" />
     <ClInclude Include="..\..\src\superlucent\shader\core\light.h" />
-    <ClInclude Include="..\..\src\superlucent\shader\particle\collision_pairs.h" />
-    <ClInclude Include="..\..\src\superlucent\shader\particle\indirect.h" />
-    <ClInclude Include="..\..\src\superlucent\shader\particle\particle.h" />
-    <ClInclude Include="..\..\src\superlucent\shader\particle\simulation_params.h" />
-    <ClInclude Include="..\..\src\superlucent\shader\particle\solver.h" />
-    <ClInclude Include="..\..\src\superlucent\shader\particle\uniform_grid.h" />
+    <ClInclude Include="..\..\src\superlucent\shader\particle\collision_pairs.glsl" />
+    <ClInclude Include="..\..\src\superlucent\shader\particle\indirect.glsl" />
+    <ClInclude Include="..\..\src\superlucent\shader\particle\particle.glsl" />
+    <ClInclude Include="..\..\src\superlucent\shader\particle\simulation_params.glsl" />
+    <ClInclude Include="..\..\src\superlucent\shader\particle\solver.glsl" />
+    <ClInclude Include="..\..\src\superlucent\shader\particle\uniform_grid.glsl" />
     <ClInclude Include="..\..\src\superlucent\utils\rng.h" />
   </ItemGroup>
   <ItemGroup>

@@ -22,7 +22,7 @@ struct Light
 };
 
 const int MAX_NUM_LIGHTS = 8;
-layout (std140, binding = 3) uniform LightUbo
+layout (std140, binding = 1) uniform LightUbo
 {
   Light directional_lights[MAX_NUM_LIGHTS];
   Light point_lights[MAX_NUM_LIGHTS];

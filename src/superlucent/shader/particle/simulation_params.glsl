@@ -4,4 +4,6 @@ layout (binding = 1) uniform SimulationParamsUbo
 	int num_particles;
   float alpha;
   float wall_offset;
+
+  float radius;
 } params;

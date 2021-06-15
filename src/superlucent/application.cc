@@ -10,7 +10,7 @@
 
 #include <GLFW/glfw3.h>
 
-#include <superlucent/engine.h>
+#include <superlucent/engine/engine.h>
 #include <superlucent/scene/light.h>
 #include <superlucent/scene/camera.h>
 #include <superlucent/scene/camera_control.h>
@@ -76,7 +76,7 @@ Application::Application()
 
   glfwSetWindowPos(window_, 100, 100);
 
-  engine_ = std::make_unique<Engine>(window_, max_width, max_height);
+  engine_ = std::make_unique<engine::Engine>(window_, max_width, max_height);
 
   camera_ = std::make_shared<scene::Camera>();
   camera_->SetScreenSize(width_, height_);

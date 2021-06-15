@@ -2,10 +2,10 @@
 
 layout (local_size_x = 256) in;
 
-#include "particle/particle.h"
-#include "particle/simulation_params.h"
-#include "particle/collision_pairs.h"
-#include "particle/uniform_grid.h"
+#include "particle/particle.glsl"
+#include "particle/simulation_params.glsl"
+#include "particle/collision_pairs.glsl"
+#include "particle/uniform_grid.glsl"
 
 void main() 
 {
@@ -13,7 +13,7 @@ void main()
 	if (i0 >= params.num_particles)
     return;
 
-  float r0 = particles[i0].properties.x;
+  float r0 = params.radius;
   
 	vec3 p0 = particles[i0].position.xyz;
 
@@ -41,7 +41,7 @@ void main()
         vec3 p1 = particles[i1].position.xyz;
         vec3 pd = p1 - p0;
     
-        float r1 = particles[i1].properties.x;
+        float r1 = params.radius;
 
         if (dot(pd, pd) <= (r0 + r1) * (r0 + r1))
         {
@@ -94,7 +94,7 @@ void main()
       vec3 p1 = particles[i1].position.xyz;
       vec3 pd = p1 - p0;
 
-      float r1 = particles[i1].properties.x;
+      float r1 = params.radius;
 
       if (dot(pd, pd) <= (r0 + r1) * (r0 + r1))
       {

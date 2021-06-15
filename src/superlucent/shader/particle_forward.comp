@@ -2,8 +2,8 @@
 
 layout (local_size_x = 256) in;
 
-#include "particle/particle.h"
-#include "particle/simulation_params.h"
+#include "particle/particle.glsl"
+#include "particle/simulation_params.glsl"
 
 void main() 
 {
@@ -11,8 +11,8 @@ void main()
 	if (index >= params.num_particles)
     return;
 
-  const float radius = particles[index].properties.x;
-  const float mass = particles[index].properties.y;
+  const float radius = params.radius;
+  const float mass = particles[index].properties.x;
 
   particles[index].prev_position = particles[index].position;
   particles[index].velocity += params.dt * particles[index].external_force / mass;
