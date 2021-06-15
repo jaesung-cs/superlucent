@@ -180,7 +180,7 @@ python compile.py
     <ClInclude Include="..\..\src\superlucent\engine\particle_simulation.h" />
     <ClInclude Include="..\..\src\superlucent\engine\ubo\camera_ubo.h" />
     <ClInclude Include="..\..\src\superlucent\engine\ubo\light_ubo.h" />
-    <ClInclude Include="..\..\src\superlucent\engine\ubo\simulation_params.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\ubo\particle_simulation_params.h" />
     <ClInclude Include="..\..\src\superlucent\engine\uniform_buffer.h" />
     <ClInclude Include="..\..\src\superlucent\scene\camera.h" />
     <ClInclude Include="..\..\src\superlucent\scene\camera_control.h" />

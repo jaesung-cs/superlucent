@@ -503,7 +503,7 @@ void ParticleSimulation::PrepareResources()
 
   // Particle descriptor set
   vk::DeviceSize uniform_offset = 0;
-  simulation_params_ubos_ = uniform_buffer->Allocate<SimulationParamsUbo>(num_ubos_);
+  simulation_params_ubos_ = uniform_buffer->Allocate<ParticleSimulationParamsUbo>(num_ubos_);
 
   std::vector<vk::DescriptorSetLayout> set_layouts(num_ubos_, descriptor_set_layout_);
   vk::DescriptorSetAllocateInfo descriptor_set_allocate_info;

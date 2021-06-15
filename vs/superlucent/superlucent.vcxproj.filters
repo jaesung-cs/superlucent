@@ -119,7 +119,7 @@
     <ClInclude Include="..\..\src\superlucent\engine\data\particle.h">
       <Filter>src\superlucent\engine\data</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\engine\ubo\simulation_params.h">
+    <ClInclude Include="..\..\src\superlucent\engine\ubo\particle_simulation_params.h">
       <Filter>src\superlucent\engine\ubo</Filter>
     </ClInclude>
   </ItemGroup>
