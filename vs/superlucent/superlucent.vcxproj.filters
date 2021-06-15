@@ -28,6 +28,9 @@
     <Filter Include="src\superlucent\engine\ubo">
       <UniqueIdentifier>{61dfbf17-c314-44a1-b534-77768580bcc3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\superlucent\engine\data">
+      <UniqueIdentifier>{7df2aa14-0d81-4b79-8785-5bdef34e7d5c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cc">
@@ -112,6 +115,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\superlucent\engine\uniform_buffer.h">
       <Filter>src\superlucent\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\data\particle.h">
+      <Filter>src\superlucent\engine\data</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -2,6 +2,7 @@
 
 #include <superlucent/engine/engine.h>
 #include <superlucent/engine/uniform_buffer.h>
+#include <superlucent/engine/data/particle.h>
 #include <superlucent/utils/rng.h>
 
 namespace supl
@@ -406,55 +407,36 @@ void ParticleSimulation::PrepareResources()
   const auto noise = [&rng, noise_range]() { return rng.Uniform(-noise_range, noise_range); };
 
   glm::vec3 gravity = glm::vec3(0.f, 0.f, -9.8f);
-  std::vector<float> particle_buffer;
-  uint32_t num_particles = 0;
+  std::vector<Particle> particle_buffer;
   for (int i = 0; i < cell_count; i++)
   {
     for (int j = 0; j < cell_count; j++)
     {
       for (int k = 0; k < cell_count; k++)
       {
-        num_particles++;
+        glm::vec4 position{
+          particle_offset.x + particle_stride.x * i + noise(),
+          particle_offset.y + particle_stride.y * j + noise(),
+          particle_offset.z + particle_stride.z * k + noise(),
+          0.f
+        };
+        glm::vec4 velocity{ 0.f };
+        glm::vec4 properties{ radius, mass, 0.f, 0.f };
+        glm::vec4 external_force{
+          gravity.x * mass,
+          gravity.y * mass,
+          gravity.z * mass,
+          0.f
+        };
+        glm::vec4 color{ 0.5f, 0.5f, 0.5f, 0.f };
 
-        // prev_position
-        particle_buffer.push_back(particle_offset.x + particle_stride.x * i + noise());
-        particle_buffer.push_back(particle_offset.y + particle_stride.y * j + noise());
-        particle_buffer.push_back(particle_offset.z + particle_stride.z * k + noise());
-        particle_buffer.push_back(0.f);
-
-        // position
-        particle_buffer.push_back(particle_offset.x + particle_stride.x * i + noise());
-        particle_buffer.push_back(particle_offset.y + particle_stride.y * j + noise());
-        particle_buffer.push_back(particle_offset.z + particle_stride.z * k + noise());
-        particle_buffer.push_back(0.f);
-
-        // velocity
-        particle_buffer.push_back(0.f);
-        particle_buffer.push_back(0.f);
-        particle_buffer.push_back(0.f);
-        particle_buffer.push_back(0.f);
-
-        // properties
-        particle_buffer.push_back(radius);
-        particle_buffer.push_back(mass);
-        particle_buffer.push_back(0.f);
-        particle_buffer.push_back(0.f);
-
-        // external_force
-        particle_buffer.push_back(gravity.x * mass);
-        particle_buffer.push_back(gravity.y * mass);
-        particle_buffer.push_back(gravity.z * mass);
-        particle_buffer.push_back(0.f);
-
-        // color
-        particle_buffer.push_back(0.5f);
-        particle_buffer.push_back(0.5f);
-        particle_buffer.push_back(0.5f);
-        particle_buffer.push_back(0.f);
+        // Struct initialization
+        particle_buffer.push_back({ position, position, velocity, properties, external_force, color });
       }
     }
   }
-  const auto particle_buffer_size = particle_buffer.size() * sizeof(float);
+  const auto particle_buffer_size = particle_buffer.size() * sizeof(Particle);
+  const auto num_particles = particle_buffer.size();
 
   // Collision and solver size
   num_collisions_ =

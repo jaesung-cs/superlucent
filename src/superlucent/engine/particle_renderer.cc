@@ -4,6 +4,7 @@
 
 #include <superlucent/engine/engine.h>
 #include <superlucent/engine/uniform_buffer.h>
+#include <superlucent/engine/data/particle.h>
 #include <superlucent/scene/camera.h>
 #include <superlucent/scene/light.h>
 
@@ -459,19 +460,19 @@ void ParticleRenderer::CreateGraphicsPipelines()
     .setLocation(2)
     .setBinding(1)
     .setFormat(vk::Format::eR32G32B32Sfloat)
-    .setOffset(sizeof(float) * 4); // position offset
+    .setOffset(offsetof(Particle, position));
 
   vertex_attribute_descriptions[3]
     .setLocation(3)
     .setBinding(1)
     .setFormat(vk::Format::eR32Sfloat)
-    .setOffset(sizeof(float) * 12); // radius
+    .setOffset(offsetof(Particle, properties));
 
   vertex_attribute_descriptions[4]
     .setLocation(4)
     .setBinding(1)
     .setFormat(vk::Format::eR32G32B32Sfloat)
-    .setOffset(sizeof(float) * 20); // color
+    .setOffset(offsetof(Particle, color));
 
   vertex_input
     .setVertexBindingDescriptions(vertex_binding_descriptions)
