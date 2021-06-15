@@ -174,11 +174,13 @@ python compile.py
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\superlucent\application.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\data\fluid_particle.h" />
     <ClInclude Include="..\..\src\superlucent\engine\data\particle.h" />
     <ClInclude Include="..\..\src\superlucent\engine\engine.h" />
     <ClInclude Include="..\..\src\superlucent\engine\particle_renderer.h" />
     <ClInclude Include="..\..\src\superlucent\engine\particle_simulation.h" />
     <ClInclude Include="..\..\src\superlucent\engine\ubo\camera_ubo.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\ubo\fluid_simulation_params.h" />
     <ClInclude Include="..\..\src\superlucent\engine\ubo\light_ubo.h" />
     <ClInclude Include="..\..\src\superlucent\engine\ubo\particle_simulation_params.h" />
     <ClInclude Include="..\..\src\superlucent\engine\uniform_buffer.h" />

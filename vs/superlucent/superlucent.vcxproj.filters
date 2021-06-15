@@ -122,6 +122,12 @@
     <ClInclude Include="..\..\src\superlucent\engine\ubo\particle_simulation_params.h">
       <Filter>src\superlucent\engine\ubo</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\ubo\fluid_simulation_params.h">
+      <Filter>src\superlucent\engine\ubo</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\data\fluid_particle.h">
+      <Filter>src\superlucent\engine\data</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\superlucent\shader\.gitignore">
