@@ -2,10 +2,10 @@
 
 layout (local_size_x = 256) in;
 
-#include "particle/particle.h"
-#include "particle/simulation_params.h"
-#include "particle/collision_pairs.h"
-#include "particle/uniform_grid.h"
+#include "particle/particle.glsl"
+#include "particle/simulation_params.glsl"
+#include "particle/collision_pairs.glsl"
+#include "particle/uniform_grid.glsl"
 
 void main() 
 {

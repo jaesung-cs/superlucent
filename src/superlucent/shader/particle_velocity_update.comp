@@ -2,10 +2,10 @@
 
 layout (local_size_x = 256) in;
 
-#include "particle/particle.h"
-#include "particle/collision_pairs.h"
-#include "particle/simulation_params.h"
-#include "particle/solver.h"
+#include "particle/particle.glsl"
+#include "particle/collision_pairs.glsl"
+#include "particle/simulation_params.glsl"
+#include "particle/solver.glsl"
 
 vec3 computeRestitutionUpdate(vec3 normal, vec4 velocity, vec4 prev_velocity, float resilience)
 {

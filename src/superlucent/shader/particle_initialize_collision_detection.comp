@@ -2,8 +2,8 @@
 
 layout (local_size_x = 256) in;
 
-#include "particle/simulation_params.h"
-#include "particle/collision_pairs.h"
+#include "particle/simulation_params.glsl"
+#include "particle/collision_pairs.glsl"
 
 void main()
 {

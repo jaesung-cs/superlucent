@@ -77,22 +77,22 @@
     <ClInclude Include="..\..\src\superlucent\shader\core\light.h">
       <Filter>src\superlucent\shader\core</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\shader\particle\collision_pairs.h">
+    <ClInclude Include="..\..\src\superlucent\shader\particle\collision_pairs.glsl">
       <Filter>src\superlucent\shader\particle</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\shader\particle\particle.h">
+    <ClInclude Include="..\..\src\superlucent\shader\particle\particle.glsl">
       <Filter>src\superlucent\shader\particle</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\shader\particle\simulation_params.h">
+    <ClInclude Include="..\..\src\superlucent\shader\particle\simulation_params.glsl">
       <Filter>src\superlucent\shader\particle</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\shader\particle\solver.h">
+    <ClInclude Include="..\..\src\superlucent\shader\particle\solver.glsl">
       <Filter>src\superlucent\shader\particle</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\shader\particle\indirect.h">
+    <ClInclude Include="..\..\src\superlucent\shader\particle\indirect.glsl">
       <Filter>src\superlucent\shader\particle</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\shader\particle\uniform_grid.h">
+    <ClInclude Include="..\..\src\superlucent\shader\particle\uniform_grid.glsl">
       <Filter>src\superlucent\shader\particle</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\superlucent\utils\rng.h">
