@@ -34,14 +34,14 @@ void ParticleRenderer::UpdateLights(const LightUbo& lights, int image_index)
 {
   const auto uniform_buffer = engine_->UniformBuffer();
 
-  std::memcpy(uniform_buffer->Map() + light_ubos_[image_index].offset, &lights, sizeof(LightUbo));
+  light_ubos_[image_index] = lights;
 }
 
 void ParticleRenderer::UpdateCamera(const CameraUbo& camera, int image_index)
 {
   const auto uniform_buffer = engine_->UniformBuffer();
 
-  std::memcpy(uniform_buffer->Map() + camera_ubos_[image_index].offset, &camera, sizeof(CameraUbo));
+  camera_ubos_[image_index] = camera;
 }
 
 void ParticleRenderer::RecordRenderCommands(vk::CommandBuffer command_buffer, vk::Buffer particle_buffer, uint32_t num_particles, int image_index)
@@ -671,8 +671,8 @@ void ParticleRenderer::PrepareResources()
 
   // Allocate uniform memory ranges
   const auto uniform_buffer = engine_->UniformBuffer();
-  camera_ubos_ = uniform_buffer->Allocate(sizeof(CameraUbo), swapchain_image_count);
-  light_ubos_ = uniform_buffer->Allocate(sizeof(LightUbo), swapchain_image_count);
+  camera_ubos_ = uniform_buffer->Allocate<CameraUbo>(swapchain_image_count);
+  light_ubos_ = uniform_buffer->Allocate<LightUbo>(swapchain_image_count);
 
   // Descriptor set
   std::vector<vk::DescriptorSetLayout> set_layouts(swapchain_image_count, descriptor_set_layout_);

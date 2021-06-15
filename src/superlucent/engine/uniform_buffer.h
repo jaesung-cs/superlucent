@@ -3,16 +3,33 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include <superlucent/engine/engine.h>
+
 namespace supl
 {
 namespace engine
 {
-class Engine;
+class UniformBuffer;
 
-struct Uniform
+class Uniform
 {
+public:
+  Uniform() = delete;
+
+  Uniform(UniformBuffer* uniform_buffer)
+    : uniform_buffer_(uniform_buffer)
+  {
+  }
+
+  template <typename T>
+  Uniform& operator = (const T& rhs);
+
+  // Public members
   vk::DeviceSize offset;
   vk::DeviceSize size;
+
+private:
+  UniformBuffer* const uniform_buffer_;
 };
 
 class UniformBuffer
@@ -27,8 +44,26 @@ public:
   auto Buffer() const { return buffer_; }
   uint8_t* Map() const { return map_; }
 
-  Uniform Allocate(vk::DeviceSize size);
-  std::vector<Uniform> Allocate(vk::DeviceSize size, int count);
+  template <typename T>
+  Uniform Allocate()
+  {
+    Uniform uniform{ this };
+    uniform.offset = allocation_offset_;
+    uniform.size = sizeof(T);
+
+    allocation_offset_ = engine_->Align(uniform.offset + uniform.size, engine_->UboAlignment());
+
+    return uniform;
+  }
+
+  template <typename T>
+  std::vector<Uniform> Allocate(int count)
+  {
+    std::vector<Uniform> uniforms;
+    for (int i = 0; i < count; i++)
+      uniforms.emplace_back(Allocate<T>());
+    return uniforms;
+  }
 
 private:
   Engine* const engine_;
@@ -39,6 +74,13 @@ private:
 
   vk::DeviceSize allocation_offset_ = 0;
 };
+
+template <typename T>
+Uniform& Uniform::operator = (const T& rhs)
+{
+  std::memcpy(uniform_buffer_->Map() + offset, &rhs, sizeof(T));
+  return *this;
+}
 }
 }
 

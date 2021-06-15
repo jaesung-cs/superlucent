@@ -34,7 +34,7 @@ void ParticleSimulation::UpdateSimulationParams(double dt, double animation_time
   simulation_params_.alpha = 0.001f;
   simulation_params_.wall_offset = static_cast<float>(wall_offset_magnitude * std::sin(animation_time * wall_offset_speed));
 
-  std::memcpy(uniform_buffer->Map() + simulation_params_ubos_[ubo_index].offset, &simulation_params_, sizeof(SimulationParamsUbo));
+  simulation_params_ubos_[ubo_index] = simulation_params_;
 }
 
 void ParticleSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer& command_buffer, int ubo_index)
@@ -519,7 +519,7 @@ void ParticleSimulation::PrepareResources()
 
   // Particle descriptor set
   vk::DeviceSize uniform_offset = 0;
-  simulation_params_ubos_ = uniform_buffer->Allocate(sizeof(SimulationParamsUbo), num_ubos_);
+  simulation_params_ubos_ = uniform_buffer->Allocate<SimulationParamsUbo>(num_ubos_);
 
   std::vector<vk::DescriptorSetLayout> set_layouts(num_ubos_, descriptor_set_layout_);
   vk::DescriptorSetAllocateInfo descriptor_set_allocate_info;

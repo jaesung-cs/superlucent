@@ -8,7 +8,7 @@ namespace supl
 namespace engine
 {
 class Engine;
-struct Uniform;
+class Uniform;
 
 class ParticleSimulation
 {
