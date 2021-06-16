@@ -7,6 +7,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <superlucent/engine/fluid_simulation.h>
 #include <superlucent/engine/particle_simulation.h>
 #include <superlucent/engine/particle_renderer.h>
 #include <superlucent/engine/uniform_buffer.h>
@@ -53,6 +54,7 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
   // Create particle renderer and simulator
   particle_renderer_ = std::make_unique<ParticleRenderer>(this, width_, height_);
   particle_simulation_ = std::make_unique<ParticleSimulation>(this, swapchain_image_count_);
+  fluid_simulation_ = std::make_unique<FluidSimulation>(this, swapchain_image_count_);
 
   CreateSynchronizationObjects();
 }
@@ -63,6 +65,7 @@ Engine::~Engine()
 
   DestroySynchronizationObjects();
 
+  fluid_simulation_ = nullptr;
   particle_simulation_ = nullptr;
   particle_renderer_ = nullptr;
 
