@@ -30,6 +30,8 @@ private:
   void PrepareResources();
   void DestroyResources();
 
+  vk::Pipeline CreateComputePipeline(vk::ComputePipelineCreateInfo& create_info);
+
   Engine* const engine_;
   const int num_ubos_;
 
