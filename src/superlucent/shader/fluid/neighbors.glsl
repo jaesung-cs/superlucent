@@ -1,19 +1,17 @@
 struct Neighbor
 {
   int index;
-  float r; // distance between particles
-
   int next; // index in neighbors[] pointing next neighbor
-  int pad;
+  ivec2 pad;
 };
 
-layout (binding = 2) uniform NeighborsSsbo
+layout (binding = 2) buffer NeighborsSsbo
 {
-  int neighbors_count;
+  int num_neighbors;
   Neighbor neighbors[];
 };
 
-layout (binding = 3) uniform NeighborsHeadsSsbo
+layout (binding = 3) buffer NeighborsHeadsSsbo
 {
   int neighbors_heads[];
 };

@@ -1,0 +1,43 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+#include "fluid/particle.glsl"
+#include "fluid/simulation_params.glsl"
+#include "fluid/neighbors.glsl"
+#include "uniform_grid/uniform_grid.glsl"
+
+void main()
+{
+  uint i = gl_GlobalInvocationID.x;
+  if (i >= params.num_particles)
+    return;
+
+  vec3 pi = particles[i].position.xyz;
+
+  const float h = params.h;
+
+  // Collision between particles in uniform grid
+  ivec3 cell_index = CellIndex(pi);
+  uint hash_index = GridHash(cell_index);
+
+  int pointer = grid_hash_table.head[hash_index];
+  while (pointer >= 0)
+  {
+    uint j = grid.object_grid_pairs[pointer].object_id;
+    
+    vec3 pj = particles[j].position.xyz;
+    vec3 r = pi - pj;
+    
+    if (dot(r, r) <= h * h)
+    {
+      const uint neighbor_index = atomicAdd(num_neighbors, 1);
+      neighbors[neighbor_index].index = int(j);
+
+      int next = atomicExchange(neighbors_heads[i], int(neighbor_index));
+      neighbors[neighbor_index].next = next;
+    }
+
+    pointer = grid.object_grid_pairs[pointer].next;
+  }
+}
