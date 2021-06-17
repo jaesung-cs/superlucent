@@ -184,9 +184,6 @@
     <None Include="..\..\src\superlucent\shader\particle_add_uniform_grid.comp">
       <Filter>src\superlucent\shader</Filter>
     </None>
-    <None Include="..\..\src\superlucent\shader\particle_initialize_uniform_grid.comp">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
     <None Include="..\..\src\superlucent\shader\fluid\kernel.glsl">
       <Filter>src\superlucent\shader\fluid</Filter>
     </None>
@@ -201,6 +198,33 @@
     </None>
     <None Include="..\..\src\superlucent\shader\uniform_grid\uniform_grid.glsl">
       <Filter>src\superlucent\shader\uniform_grid</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\fluid\solver.glsl">
+      <Filter>src\superlucent\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\fluid_forward.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\fluid_add_uniform_grid.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\fluid_initialize_uniform_grid.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle_initialize_uniform_grid.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\fluid_find_neighbors.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\fluid_initialize_neighbors.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\fluid_calculate_lambda.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\fluid_calculate_dp_collision_response.comp">
+      <Filter>src\superlucent\shader</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -207,6 +207,14 @@ python compile.py
     <None Include="..\..\src\superlucent\shader\fluid\neighbors.glsl" />
     <None Include="..\..\src\superlucent\shader\fluid\particle.glsl" />
     <None Include="..\..\src\superlucent\shader\fluid\simulation_params.glsl" />
+    <None Include="..\..\src\superlucent\shader\fluid\solver.glsl" />
+    <None Include="..\..\src\superlucent\shader\fluid_add_uniform_grid.comp" />
+    <None Include="..\..\src\superlucent\shader\fluid_calculate_dp_collision_response.comp" />
+    <None Include="..\..\src\superlucent\shader\fluid_calculate_lambda.comp" />
+    <None Include="..\..\src\superlucent\shader\fluid_find_neighbors.comp" />
+    <None Include="..\..\src\superlucent\shader\fluid_forward.comp" />
+    <None Include="..\..\src\superlucent\shader\fluid_initialize_neighbors.comp" />
+    <None Include="..\..\src\superlucent\shader\fluid_initialize_uniform_grid.comp" />
     <None Include="..\..\src\superlucent\shader\particle_add_uniform_grid.comp" />
     <None Include="..\..\src\superlucent\shader\particle_collision_detection.comp" />
     <None Include="..\..\src\superlucent\shader\particle_forward.comp" />

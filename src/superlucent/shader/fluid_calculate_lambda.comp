@@ -7,7 +7,7 @@ layout (local_size_x = 256) in;
 #include "fluid/neighbors.glsl"
 #include "uniform_grid/uniform_grid.glsl"
 #include "fluid/kernel.glsl"
-#include "fluid/lambda.glsl"
+#include "fluid/solver.glsl"
 
 void main()
 {
@@ -49,5 +49,5 @@ void main()
   const float c = rho / rho0 - 1.f;
   sum_dc2 += dot(d_pk_ci, d_pk_ci);
 
-  lambdas[i] = -c / (sum_dc2 + params.epsilon);
+  solver[i].lambda = -c / (sum_dc2 + params.epsilon);
 }
