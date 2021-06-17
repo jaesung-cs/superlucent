@@ -215,6 +215,8 @@ python compile.py
     <None Include="..\..\src\superlucent\shader\fluid_forward.comp" />
     <None Include="..\..\src\superlucent\shader\fluid_initialize_neighbors.comp" />
     <None Include="..\..\src\superlucent\shader\fluid_initialize_uniform_grid.comp" />
+    <None Include="..\..\src\superlucent\shader\fluid_update_p.comp" />
+    <None Include="..\..\src\superlucent\shader\fluid_update_v.comp" />
     <None Include="..\..\src\superlucent\shader\particle_add_uniform_grid.comp" />
     <None Include="..\..\src\superlucent\shader\particle_collision_detection.comp" />
     <None Include="..\..\src\superlucent\shader\particle_forward.comp" />

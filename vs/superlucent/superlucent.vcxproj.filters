@@ -226,5 +226,11 @@
     <None Include="..\..\src\superlucent\shader\fluid_calculate_dp_collision_response.comp">
       <Filter>src\superlucent\shader</Filter>
     </None>
+    <None Include="..\..\src\superlucent\shader\fluid_update_p.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\fluid_update_v.comp">
+      <Filter>src\superlucent\shader</Filter>
+    </None>
   </ItemGroup>
 </Project>
