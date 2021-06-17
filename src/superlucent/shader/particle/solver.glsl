@@ -3,7 +3,6 @@ layout (binding = 3) buffer SolverSsbo
   // rows = num_collisions
   // cols = num_particles * 3
   // J: [rows * cols], C: [cols], lambda: [rows], x: [cols]
-  // Pack by vec4
   float matrix[];
 } solver;
 
