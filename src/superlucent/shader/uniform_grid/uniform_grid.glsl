@@ -48,13 +48,11 @@ mat2x3 Bound(vec3 position)
   return bound;
 }
 
-void AddSphereToGrid(uint object_id, vec3 position, float radius)
+void AddSphereToGrid(uint object_id, vec3 position, float d)
 {
   ivec3 cell_index = CellIndex(position);
   mat2x3 bound = Bound(position);
   mat3 nearests = mat3(bound[0], position, bound[1]);
-
-  float r = radius * 2.f; // Minkowski sum
 
   for (int x = 0; x < 3; x++)
   {
@@ -63,8 +61,8 @@ void AddSphereToGrid(uint object_id, vec3 position, float radius)
       for (int z = 0; z < 3; z++)
       {
         vec3 nearest = vec3(nearests[x].x, nearests[y].y, nearests[z].z);
-        vec3 d = position - nearest;
-        if (dot(d, d) <= r * r)
+        vec3 dist = position - nearest;
+        if (dot(dist, dist) <= d * d)
         {
           ivec3 neighbor_cell_index = cell_index + ivec3(x - 1, y - 1, z - 1);
           uint hash_index = GridHash(neighbor_cell_index);

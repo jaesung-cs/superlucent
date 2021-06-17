@@ -3,7 +3,7 @@
 layout (local_size_x = 256) in;
 
 #include "particle/simulation_params.glsl"
-#include "particle/uniform_grid.glsl"
+#include "uniform_grid/uniform_grid.glsl"
 
 void main() 
 {

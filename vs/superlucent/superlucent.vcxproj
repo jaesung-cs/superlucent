@@ -194,7 +194,6 @@ python compile.py
     <ClInclude Include="..\..\src\superlucent\shader\particle\particle.glsl" />
     <ClInclude Include="..\..\src\superlucent\shader\particle\simulation_params.glsl" />
     <ClInclude Include="..\..\src\superlucent\shader\particle\solver.glsl" />
-    <ClInclude Include="..\..\src\superlucent\shader\particle\uniform_grid.glsl" />
     <ClInclude Include="..\..\src\superlucent\utils\rng.h" />
   </ItemGroup>
   <ItemGroup>
@@ -204,6 +203,10 @@ python compile.py
     <None Include="..\..\src\superlucent\shader\compile.py" />
     <None Include="..\..\src\superlucent\shader\floor.frag" />
     <None Include="..\..\src\superlucent\shader\floor.vert" />
+    <None Include="..\..\src\superlucent\shader\fluid\kernel.glsl" />
+    <None Include="..\..\src\superlucent\shader\fluid\neighbors.glsl" />
+    <None Include="..\..\src\superlucent\shader\fluid\particle.glsl" />
+    <None Include="..\..\src\superlucent\shader\fluid\simulation_params.glsl" />
     <None Include="..\..\src\superlucent\shader\particle_add_uniform_grid.comp" />
     <None Include="..\..\src\superlucent\shader\particle_collision_detection.comp" />
     <None Include="..\..\src\superlucent\shader\particle_forward.comp" />
@@ -215,6 +218,7 @@ python compile.py
     <None Include="..\..\src\superlucent\shader\particle_solve_delta_x.comp" />
     <None Include="..\..\src\superlucent\shader\particle_solve_x_lambda.comp" />
     <None Include="..\..\src\superlucent\shader\particle_velocity_update.comp" />
+    <None Include="..\..\src\superlucent\shader\uniform_grid\uniform_grid.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
