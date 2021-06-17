@@ -1,0 +1,53 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+#include "fluid/particle.glsl"
+#include "fluid/simulation_params.glsl"
+#include "fluid/neighbors.glsl"
+#include "uniform_grid/uniform_grid.glsl"
+#include "fluid/kernel.glsl"
+#include "fluid/lambda.glsl"
+
+void main()
+{
+  uint i = gl_GlobalInvocationID.x;
+  if (i >= params.num_particles)
+    return;
+
+  const float h = params.h;
+  const float rho0 = params.rest_density;
+
+  const float mi = particles[i].properties.x;
+  const vec3 pi = particles[i].position.xyz;
+
+  float rho = mi * KernelPoly6(0.f, h);
+  vec3 d_pk_ci = vec3(0.f);
+  float sum_dc2 = 0.f;
+
+  int pointer = neighbors_heads[i];
+  while (pointer >= 0)
+  {
+    int j = neighbors[pointer].index;
+
+    const float mj = particles[j].properties.x;
+    const vec3 pj = particles[j].position.xyz;
+
+    const float r = distance(pi, pj);
+    const vec3 n = (pi - pj) / r;
+
+    rho += mj * KernelPoly6(r, h);
+
+    d_pk_ci += mj / rho0 * DKernelSpiky(r, h);
+
+    const vec3 dc = -mj / rho0 * DKernelSpiky(r, h) * n;
+    sum_dc2 += dot(dc, dc);
+
+    pointer = neighbors[pointer].next;
+  }
+
+  const float c = rho / rho0 - 1.f;
+  sum_dc2 += dot(d_pk_ci, d_pk_ci);
+
+  lambdas[i] = -c / (sum_dc2 + params.epsilon);
+}

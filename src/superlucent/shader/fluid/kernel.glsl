@@ -33,6 +33,11 @@ float KernelSpiky(float r, float h)
   return r <= h ? 15.f / (SUPERLUCENT_PI * pow6(h)) * pow3(h - r) : 0.f;
 }
 
+float DKernelSpiky(float r, float h)
+{
+  return r <= h ? -45.f / (SUPERLUCENT_PI * pow6(h)) * pow2(h - r) : 0.f;
+}
+
 float KernelViscosity(float r, float h)
 {
   return r <= h ? 15.f / (2.f * SUPERLUCENT_PI * pow3(h)) * (-pow3(r) / (2.f * pow3(h)) + pow2(r) / pow2(h) + h / (2.f * r) - 1.f) : 0.f;
