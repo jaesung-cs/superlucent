@@ -38,10 +38,38 @@ private:
   vk::PipelineLayout pipeline_layout_;
   vk::PipelineCache pipeline_cache_;
   vk::Pipeline forward_pipeline_;
+  vk::Pipeline initialize_uniform_grid_pipeline_;
+  vk::Pipeline add_uniform_grid_pipeline_;
+  vk::Pipeline initialize_neighbors_pipeline_;
+  vk::Pipeline find_neighbors_pipeline_;
+  vk::Pipeline calculate_lambda_pipeline_;
+  vk::Pipeline calculate_dp_collision_response_pipeline_;
+  vk::Pipeline update_p_pipeline_;
+  vk::Pipeline update_v_pipeline_;
 
   // Resources
+  struct Buffer
+  {
+    vk::DeviceSize offset;
+    vk::DeviceSize size;
+  };
+
+  // Binding 0: simulation params
+  // Binding 1: particles
+  // Binding 2: neighbors
+  // Binding 3: neighbor heads
+  // Binding 4: solver
+  // Binding 5: grid
+  // Binding 6: hash table heads
+
   vk::Buffer particle_buffer_;
   vk::Buffer storage_buffer_;
+  Buffer neighbors_buffer;
+  Buffer neighbors_heads_buffer;
+  Buffer solver_buffer;
+  Buffer grid_buffer;
+  static constexpr uint32_t num_hash_buckets = 1000003;
+  Buffer hash_table_buffer;
 
   std::vector<Uniform> fluid_simulation_params_ubos_;
   FluidSimulationParamsUbo fluid_simulation_params_;
