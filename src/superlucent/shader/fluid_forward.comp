@@ -11,7 +11,9 @@ void main()
   if (index >= params.num_particles)
     return;
 
-  particles[index].velocity += params.dt * particles[index].external_force;
+  const float mass = particles[index].properties.x;
+
+  particles[index].velocity += params.dt * particles[index].external_force / mass;
   particles[index].prev_position = particles[index].position;
   particles[index].position += params.dt * particles[index].velocity;
 }
