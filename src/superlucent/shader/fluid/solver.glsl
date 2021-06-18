@@ -1,7 +1,7 @@
 struct SolverComponent
 {
-  float lambda;
   vec3 dp;
+  float lambda;
 };
 
 layout (binding = 4) buffer SolverSsbo
