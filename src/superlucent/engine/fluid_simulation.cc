@@ -120,14 +120,11 @@ void FluidSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer& comma
     {}, { neighbors_barrier, neighbors_heads_barrier }, {});
 
   // Find neighbors
-  /*
   command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, find_neighbors_pipeline_);
-  // command_buffer.dispatch((NumParticles() + 255) / 256, 1, 1);
-  command_buffer.dispatch(1, 1, 1);
+  command_buffer.dispatch((NumParticles() + 255) / 256, 1, 1);
 
   command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
     {}, { neighbors_barrier, neighbors_heads_barrier }, {});
-    */
 
   // Update v
   command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, update_v_pipeline_);

@@ -44,8 +44,8 @@ void main()
         else
           break;
       }
-
-      pointer = grid.object_grid_pairs[pointer].next;
     }
+
+    pointer = grid.object_grid_pairs[pointer].next;
   }
 }
