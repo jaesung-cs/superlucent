@@ -25,6 +25,45 @@ FluidSimulation::~FluidSimulation()
 
 void FluidSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer& command_buffer, int ubo_index)
 {
+  // Barrier to make sure previous rendering command
+  // TODO: triple buffering as well as for particle buffers
+  vk::BufferMemoryBarrier particle_buffer_memory_barrier;
+  particle_buffer_memory_barrier
+    .setSrcAccessMask(vk::AccessFlagBits::eVertexAttributeRead)
+    .setDstAccessMask(vk::AccessFlagBits::eShaderWrite)
+    .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setBuffer(particle_buffer_)
+    .setOffset(0)
+    .setSize(NumParticles() * sizeof(float) * 24);
+  command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eVertexInput, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, particle_buffer_memory_barrier, {});
+
+  // Prepare compute shaders
+  command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipeline_layout_, 0u,
+    descriptor_sets_[ubo_index], {});
+
+  // Forward
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, forward_pipeline_);
+  command_buffer.dispatch((NumParticles() + 255) / 256, 1, 1);
+
+  particle_buffer_memory_barrier
+    .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+    .setDstAccessMask(vk::AccessFlagBits::eShaderRead);
+
+  command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, particle_buffer_memory_barrier, {});
+
+  // Update v
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, update_v_pipeline_);
+  command_buffer.dispatch((NumParticles() + 255) / 256, 1, 1);
+
+  particle_buffer_memory_barrier
+    .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+    .setDstAccessMask(vk::AccessFlagBits::eVertexAttributeRead);
+
+  command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eVertexInput, {},
+    {}, particle_buffer_memory_barrier, {});
 }
 
 void FluidSimulation::UpdateSimulationParams(double dt, double animation_time, int ubo_index)
