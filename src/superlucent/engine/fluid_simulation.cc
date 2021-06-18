@@ -29,6 +29,14 @@ void FluidSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer& comma
 
 void FluidSimulation::UpdateSimulationParams(double dt, double animation_time, int ubo_index)
 {
+  constexpr auto wall_offset_speed = 5.;
+  constexpr auto wall_offset_magnitude = 0.5;
+
+  fluid_simulation_params_.dt = dt;
+  fluid_simulation_params_.epsilon = 1e-6f;
+  fluid_simulation_params_.wall_offset = static_cast<float>(wall_offset_magnitude * std::sin(animation_time * wall_offset_speed));
+
+  fluid_simulation_params_ubos_[ubo_index] = fluid_simulation_params_;
 }
 
 void FluidSimulation::CreatePipelines()
@@ -230,22 +238,22 @@ void FluidSimulation::PrepareResources()
     }
   }
   const auto particle_buffer_size = particle_buffer.size() * sizeof(Particle);
-  const auto num_particles = particle_buffer.size();
+  fluid_simulation_params_.num_particles = particle_buffer.size();
 
   constexpr auto max_num_neighbors_per_perticle = 30;
-  fluid_simulation_params_.max_num_neighbors = max_num_neighbors_per_perticle * num_particles;
+  fluid_simulation_params_.max_num_neighbors = max_num_neighbors_per_perticle * fluid_simulation_params_.num_particles;
   neighbors_buffer_.offset = 0;
   neighbors_buffer_.size = sizeof(uint32_t) + sizeof(glm::vec4) * fluid_simulation_params_.max_num_neighbors;
 
   const auto ssbo_alignment = engine_->SsboAlignment();
   neighbors_heads_buffer_.offset = engine_->Align(neighbors_buffer_.offset + neighbors_buffer_.size, ssbo_alignment);
-  neighbors_heads_buffer_.size = sizeof(uint32_t) * num_particles;
+  neighbors_heads_buffer_.size = sizeof(uint32_t) * fluid_simulation_params_.num_particles;
 
   solver_buffer_.offset = engine_->Align(neighbors_heads_buffer_.offset + neighbors_heads_buffer_.size, ssbo_alignment);
-  solver_buffer_.size = sizeof(glm::vec4) * num_particles;
+  solver_buffer_.size = sizeof(glm::vec4) * fluid_simulation_params_.num_particles;
 
   grid_buffer_.offset = engine_->Align(solver_buffer_.offset + solver_buffer_.size, ssbo_alignment);
-  grid_buffer_.size = sizeof(glm::vec4) + sizeof(glm::vec2) * num_particles * 8;
+  grid_buffer_.size = sizeof(glm::vec4) + sizeof(glm::vec2) * fluid_simulation_params_.num_particles * 8;
 
   hash_table_buffer_.offset = engine_->Align(grid_buffer_.offset + grid_buffer_.size, ssbo_alignment);
   hash_table_buffer_.size = sizeof(int32_t) * num_hash_buckets;
@@ -296,7 +304,7 @@ void FluidSimulation::PrepareResources()
     buffer_infos[1]
       .setBuffer(particle_buffer_)
       .setOffset(0)
-      .setRange(num_particles * sizeof(Particle));
+      .setRange(fluid_simulation_params_.num_particles * sizeof(Particle));
 
     buffer_infos[2]
       .setBuffer(storage_buffer_)

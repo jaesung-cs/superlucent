@@ -21,6 +21,10 @@ public:
 
   ~FluidSimulation();
 
+  auto ParticleBuffer() const { return particle_buffer_; }
+  auto NumParticles() const { return fluid_simulation_params_.num_particles; }
+  const auto& SimulationParams() const { return fluid_simulation_params_; }
+
   void RecordComputeWithGraphicsBarriers(vk::CommandBuffer& command_buffer, int ubo_index);
   void UpdateSimulationParams(double dt, double animation_time, int ubo_index);
 

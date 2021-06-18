@@ -25,8 +25,6 @@ ParticleSimulation::~ParticleSimulation()
 
 void ParticleSimulation::UpdateSimulationParams(double dt, double animation_time, int ubo_index)
 {
-  const auto uniform_buffer = engine_->UniformBuffer();
-
   constexpr auto wall_offset_speed = 5.;
   constexpr auto wall_offset_magnitude = 0.5;
 
