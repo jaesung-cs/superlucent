@@ -66,12 +66,14 @@ private:
 
   vk::Buffer particle_buffer_;
   vk::Buffer storage_buffer_;
-  Buffer neighbors_buffer;
-  Buffer neighbors_heads_buffer;
-  Buffer solver_buffer;
-  Buffer grid_buffer;
+  Buffer neighbors_buffer_;
+  Buffer neighbors_heads_buffer_;
+  Buffer solver_buffer_;
+  Buffer grid_buffer_;
   static constexpr uint32_t num_hash_buckets = 1000003;
-  Buffer hash_table_buffer;
+  Buffer hash_table_buffer_;
+
+  std::vector<vk::DescriptorSet> descriptor_sets_;
 
   std::vector<Uniform> fluid_simulation_params_ubos_;
   FluidSimulationParamsUbo fluid_simulation_params_;

@@ -2,6 +2,8 @@
 
 #include <superlucent/engine/engine.h>
 #include <superlucent/engine/uniform_buffer.h>
+#include <superlucent/engine/data/particle.h>
+#include <superlucent/utils/rng.h>
 
 namespace supl
 {
@@ -181,11 +183,214 @@ void FluidSimulation::DestroyPipelines()
 void FluidSimulation::PrepareResources()
 {
   const auto device = engine_->Device();
+
+  // Prticles
+  fluid_simulation_params_.radius = 0.03f;
+  fluid_simulation_params_.h = 0.15f;
+
+  constexpr int cell_count = 40;
+  const float radius = fluid_simulation_params_.radius;
+  constexpr float density = 1000.f; // water
+  const float mass = radius * radius * radius * density;
+  constexpr glm::vec2 wall_distance = glm::vec2(3.f, 1.5f);
+  const glm::vec3 particle_offset = glm::vec3(-wall_distance + glm::vec2(radius * 1.1f), radius * 1.1f);
+  const glm::vec3 particle_stride = glm::vec3(radius * 2.2f);
+
+  utils::Rng rng;
+  constexpr float noise_range = 1e-2f;
+  const auto noise = [&rng, noise_range]() { return rng.Uniform(-noise_range, noise_range); };
+
+  glm::vec3 gravity = glm::vec3(0.f, 0.f, -9.8f);
+  std::vector<Particle> particle_buffer;
+  for (int i = 0; i < cell_count; i++)
+  {
+    for (int j = 0; j < cell_count; j++)
+    {
+      for (int k = 0; k < cell_count; k++)
+      {
+        glm::vec4 position{
+          particle_offset.x + particle_stride.x * i + noise(),
+          particle_offset.y + particle_stride.y * j + noise(),
+          particle_offset.z + particle_stride.z * k + noise(),
+          0.f
+        };
+        glm::vec4 velocity{ 0.f };
+        glm::vec4 properties{ mass, 0.f, 0.f, 0.f };
+        glm::vec4 external_force{
+          gravity.x * mass,
+          gravity.y * mass,
+          gravity.z * mass,
+          0.f
+        };
+        glm::vec4 color{ 0.5f, 0.5f, 0.5f, 0.f };
+
+        // Struct initialization
+        particle_buffer.push_back({ position, position, velocity, properties, external_force, color });
+      }
+    }
+  }
+  const auto particle_buffer_size = particle_buffer.size() * sizeof(Particle);
+  const auto num_particles = particle_buffer.size();
+
+  constexpr auto max_num_neighbors_per_perticle = 30;
+  fluid_simulation_params_.max_num_neighbors = max_num_neighbors_per_perticle * num_particles;
+  neighbors_buffer_.offset = 0;
+  neighbors_buffer_.size = sizeof(uint32_t) + sizeof(glm::vec4) * fluid_simulation_params_.max_num_neighbors;
+
+  const auto ssbo_alignment = engine_->SsboAlignment();
+  neighbors_heads_buffer_.offset = engine_->Align(neighbors_buffer_.offset + neighbors_buffer_.size, ssbo_alignment);
+  neighbors_heads_buffer_.size = sizeof(uint32_t) * num_particles;
+
+  solver_buffer_.offset = engine_->Align(neighbors_heads_buffer_.offset + neighbors_heads_buffer_.size, ssbo_alignment);
+  solver_buffer_.size = sizeof(glm::vec4) * num_particles;
+
+  grid_buffer_.offset = engine_->Align(solver_buffer_.offset + solver_buffer_.size, ssbo_alignment);
+  grid_buffer_.size = sizeof(glm::vec4) + sizeof(glm::vec2) * num_particles * 8;
+
+  hash_table_buffer_.offset = engine_->Align(grid_buffer_.offset + grid_buffer_.size, ssbo_alignment);
+  hash_table_buffer_.size = sizeof(int32_t) * num_hash_buckets;
+
+  const auto storage_buffer_size = hash_table_buffer_.offset + hash_table_buffer_.size;
+
+  // Buffers
+  vk::BufferCreateInfo buffer_create_info;
+  buffer_create_info
+    .setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eStorageBuffer)
+    .setSize(particle_buffer_size);
+  particle_buffer_ = device.createBuffer(buffer_create_info);
+
+  buffer_create_info
+    .setUsage(vk::BufferUsageFlagBits::eStorageBuffer)
+    .setSize(storage_buffer_size);
+  storage_buffer_ = device.createBuffer(buffer_create_info);
+
+  // Memory binding
+  const auto particle_buffer_memory = engine_->AcquireDeviceMemory(particle_buffer_);
+  device.bindBufferMemory(particle_buffer_, particle_buffer_memory.memory, particle_buffer_memory.offset);
+
+  const auto storage_buffer_memory = engine_->AcquireDeviceMemory(storage_buffer_);
+  device.bindBufferMemory(storage_buffer_, storage_buffer_memory.memory, storage_buffer_memory.offset);
+
+  // Staging
+  engine_->ToDeviceMemory(particle_buffer, particle_buffer_);
+
+  // Descriptor set
+  const auto uniform_buffer = engine_->UniformBuffer();
+  fluid_simulation_params_ubos_ = uniform_buffer->Allocate<FluidSimulationParamsUbo>(num_ubos_);
+
+  std::vector<vk::DescriptorSetLayout> layouts(num_ubos_, descriptor_set_layout_);
+  vk::DescriptorSetAllocateInfo decriptor_set_allocate_info;
+  decriptor_set_allocate_info
+    .setDescriptorPool(engine_->DescriptorPool())
+    .setSetLayouts(layouts);
+  descriptor_sets_ = device.allocateDescriptorSets(decriptor_set_allocate_info);
+
+  for (int i = 0; i < num_ubos_; i++)
+  {
+    std::vector<vk::DescriptorBufferInfo> buffer_infos(7);
+    buffer_infos[0]
+      .setBuffer(uniform_buffer->Buffer())
+      .setOffset(fluid_simulation_params_ubos_[i].offset)
+      .setRange(fluid_simulation_params_ubos_[i].size);
+
+    buffer_infos[1]
+      .setBuffer(particle_buffer_)
+      .setOffset(0)
+      .setRange(num_particles * sizeof(Particle));
+
+    buffer_infos[2]
+      .setBuffer(storage_buffer_)
+      .setOffset(neighbors_buffer_.offset)
+      .setRange(neighbors_buffer_.size);
+
+    buffer_infos[3]
+      .setBuffer(storage_buffer_)
+      .setOffset(neighbors_heads_buffer_.offset)
+      .setRange(neighbors_heads_buffer_.size);
+
+    buffer_infos[4]
+      .setBuffer(storage_buffer_)
+      .setOffset(solver_buffer_.offset)
+      .setRange(solver_buffer_.size);
+
+    buffer_infos[5]
+      .setBuffer(storage_buffer_)
+      .setOffset(grid_buffer_.offset)
+      .setRange(grid_buffer_.size);
+
+    buffer_infos[6]
+      .setBuffer(storage_buffer_)
+      .setOffset(hash_table_buffer_.offset)
+      .setRange(hash_table_buffer_.size);
+
+    std::vector<vk::WriteDescriptorSet> descriptor_writes(7);
+    descriptor_writes[0]
+      .setDstSet(descriptor_sets_[i])
+      .setDstBinding(0)
+      .setBufferInfo(buffer_infos[0])
+      .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+      .setDstArrayElement(0)
+      .setDescriptorCount(1);
+
+    descriptor_writes[1]
+      .setDstSet(descriptor_sets_[i])
+      .setDstBinding(1)
+      .setBufferInfo(buffer_infos[1])
+      .setDescriptorType(vk::DescriptorType::eStorageBuffer)
+      .setDstArrayElement(0)
+      .setDescriptorCount(1);
+
+    descriptor_writes[2]
+      .setDstSet(descriptor_sets_[i])
+      .setDstBinding(2)
+      .setBufferInfo(buffer_infos[2])
+      .setDescriptorType(vk::DescriptorType::eStorageBuffer)
+      .setDstArrayElement(0)
+      .setDescriptorCount(1);
+
+    descriptor_writes[3]
+      .setDstSet(descriptor_sets_[i])
+      .setDstBinding(3)
+      .setBufferInfo(buffer_infos[3])
+      .setDescriptorType(vk::DescriptorType::eStorageBuffer)
+      .setDstArrayElement(0)
+      .setDescriptorCount(1);
+
+    descriptor_writes[4]
+      .setDstSet(descriptor_sets_[i])
+      .setDstBinding(4)
+      .setBufferInfo(buffer_infos[4])
+      .setDescriptorType(vk::DescriptorType::eStorageBuffer)
+      .setDstArrayElement(0)
+      .setDescriptorCount(1);
+
+    descriptor_writes[5]
+      .setDstSet(descriptor_sets_[i])
+      .setDstBinding(5)
+      .setBufferInfo(buffer_infos[5])
+      .setDescriptorType(vk::DescriptorType::eStorageBuffer)
+      .setDstArrayElement(0)
+      .setDescriptorCount(1);
+
+    descriptor_writes[6]
+      .setDstSet(descriptor_sets_[i])
+      .setDstBinding(6)
+      .setBufferInfo(buffer_infos[6])
+      .setDescriptorType(vk::DescriptorType::eStorageBuffer)
+      .setDstArrayElement(0)
+      .setDescriptorCount(1);
+
+    device.updateDescriptorSets(descriptor_writes, {});
+  }
 }
 
 void FluidSimulation::DestroyResources()
 {
   const auto device = engine_->Device();
+
+  descriptor_sets_.clear();
+  device.destroyBuffer(particle_buffer_);
+  device.destroyBuffer(storage_buffer_);
 }
 
 vk::Pipeline FluidSimulation::CreateComputePipeline(vk::ComputePipelineCreateInfo& create_info)

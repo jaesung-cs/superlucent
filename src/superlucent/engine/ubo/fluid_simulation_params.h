@@ -19,6 +19,7 @@ struct FluidSimulationParamsUbo
 
   float k; // used in smoothing kernel, typically 0.1
   int n; // used in smoothing kernel, typically 4
+  int max_num_neighbors;
 };
 }
 }

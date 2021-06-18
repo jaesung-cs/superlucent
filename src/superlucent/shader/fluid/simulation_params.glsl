@@ -12,4 +12,5 @@ layout (binding = 0) uniform FluidSimulatinoParamsSsbo
 
   float k;
   int n;
+  int max_num_neighbors;
 } params;

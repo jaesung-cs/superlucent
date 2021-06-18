@@ -34,10 +34,15 @@ void main()
       if (dot(r, r) <= h * h)
       {
         const uint neighbor_index = atomicAdd(num_neighbors, 1);
-        neighbors[neighbor_index].index = int(j);
+        if (neighbor_index < params.max_num_neighbors)
+        {
+          neighbors[neighbor_index].index = int(j);
 
-        int next = atomicExchange(neighbors_heads[i], int(neighbor_index));
-        neighbors[neighbor_index].next = next;
+          int next = atomicExchange(neighbors_heads[i], int(neighbor_index));
+          neighbors[neighbor_index].next = next;
+        }
+        else
+          break;
       }
 
       pointer = grid.object_grid_pairs[pointer].next;
