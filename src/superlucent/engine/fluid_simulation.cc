@@ -126,6 +126,37 @@ void FluidSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer& comma
   command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
     {}, { neighbors_barrier, neighbors_heads_barrier }, {});
 
+  // Calculate lambda
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, calculate_lambda_pipeline_);
+  command_buffer.dispatch((NumParticles() + 255) / 256, 1, 1);
+
+  vk::BufferMemoryBarrier solver_barrier;
+  solver_barrier
+    .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+    .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+    .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setBuffer(storage_buffer_)
+    .setOffset(solver_buffer_.offset)
+    .setSize(solver_buffer_.size);
+
+  command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, solver_barrier, {});
+
+  // Calculate dp and collision response
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, calculate_dp_collision_response_pipeline_);
+  command_buffer.dispatch((NumParticles() + 255) / 256, 1, 1);
+
+  command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, solver_barrier, {});
+
+  // Update p
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, update_p_pipeline_);
+  command_buffer.dispatch((NumParticles() + 255) / 256, 1, 1);
+
+  command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, particle_buffer_memory_barrier, {});
+
   // Update v
   command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, update_v_pipeline_);
   command_buffer.dispatch((NumParticles() + 255) / 256, 1, 1);
