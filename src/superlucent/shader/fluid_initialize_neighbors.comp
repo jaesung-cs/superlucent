@@ -8,7 +8,7 @@ layout (local_size_x = 256) in;
 void main()
 {
   uint index = gl_GlobalInvocationID.x;
-  if (index >= params.num_particles)
+  if (index >= params.max_num_neighbors)
     return;
 
   if (index == 0)

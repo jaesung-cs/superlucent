@@ -54,6 +54,81 @@ void FluidSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer& comma
   command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
     {}, particle_buffer_memory_barrier, {});
 
+  // Initialize uniform grid
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, initialize_uniform_grid_pipeline_);
+  command_buffer.dispatch((num_hash_buckets + 255) / 256, 1, 1);
+
+  vk::BufferMemoryBarrier grid_barrier;
+  grid_barrier
+    .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+    .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+    .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setBuffer(storage_buffer_)
+    .setOffset(grid_buffer_.offset)
+    .setSize(grid_buffer_.size);
+
+  vk::BufferMemoryBarrier hash_table_barrier;
+  hash_table_barrier
+    .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+    .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+    .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setBuffer(storage_buffer_)
+    .setOffset(hash_table_buffer_.offset)
+    .setSize(hash_table_buffer_.size);
+
+  command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, { grid_barrier, hash_table_barrier }, {});
+
+  // Add uniform grid
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, add_uniform_grid_pipeline_);
+  command_buffer.dispatch((NumParticles() + 255) / 256, 1, 1);
+
+  command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, { grid_barrier, hash_table_barrier }, {});
+
+  // DEBUG particle color changed
+  command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, particle_buffer_memory_barrier, {});
+
+  // Initialize neighbors
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, initialize_neighbors_pipeline_);
+  command_buffer.dispatch((fluid_simulation_params_.max_num_neighbors + 255) / 256, 1, 1);
+
+  vk::BufferMemoryBarrier neighbors_barrier;
+  neighbors_barrier
+    .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+    .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+    .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setBuffer(storage_buffer_)
+    .setOffset(neighbors_buffer_.offset)
+    .setSize(neighbors_buffer_.size);
+
+  vk::BufferMemoryBarrier neighbors_heads_barrier;
+  neighbors_heads_barrier
+    .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+    .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+    .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setBuffer(storage_buffer_)
+    .setOffset(neighbors_heads_buffer_.offset)
+    .setSize(neighbors_heads_buffer_.size);
+
+  command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, { neighbors_barrier, neighbors_heads_barrier }, {});
+
+  // Find neighbors
+  /*
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, find_neighbors_pipeline_);
+  // command_buffer.dispatch((NumParticles() + 255) / 256, 1, 1);
+  command_buffer.dispatch(1, 1, 1);
+
+  command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, { neighbors_barrier, neighbors_heads_barrier }, {});
+    */
+
   // Update v
   command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, update_v_pipeline_);
   command_buffer.dispatch((NumParticles() + 255) / 256, 1, 1);
@@ -231,7 +306,7 @@ void FluidSimulation::PrepareResources()
 {
   const auto device = engine_->Device();
 
-  // Prticles
+  // Particles
   fluid_simulation_params_.radius = 0.03f;
   fluid_simulation_params_.h = 0.15f;
 
@@ -242,6 +317,8 @@ void FluidSimulation::PrepareResources()
   constexpr glm::vec2 wall_distance = glm::vec2(3.f, 1.5f);
   const glm::vec3 particle_offset = glm::vec3(-wall_distance + glm::vec2(radius * 1.1f), radius * 1.1f);
   const glm::vec3 particle_stride = glm::vec3(radius * 2.2f);
+
+  fluid_simulation_params_.rest_density = density;
 
   utils::Rng rng;
   constexpr float noise_range = 1e-2f;
