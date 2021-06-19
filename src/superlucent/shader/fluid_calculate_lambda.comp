@@ -24,6 +24,8 @@ void main()
   vec3 d_pk_ci = vec3(0.f);
   float sum_dc2 = 0.f;
 
+  int num_neighbors = 0;
+
   int pointer = neighbors_heads[i];
   while (pointer >= 0)
   {
@@ -33,7 +35,12 @@ void main()
     const vec3 pj = particles[j].position.xyz;
 
     const float r = distance(pi, pj);
-    const vec3 n = (pi - pj) / r;
+
+    vec3 n;
+    if (r > 0.f)
+      n = (pi - pj) / (r + params.epsilon);
+    else
+      n = vec3(0.f, 0.f, 1.f);
 
     rho += mj * KernelPoly6(r, h);
 
@@ -43,10 +50,15 @@ void main()
     sum_dc2 += dot(dc, dc);
 
     pointer = neighbors[pointer].next;
+
+    num_neighbors++;
   }
 
   const float c = rho / rho0 - 1.f;
   sum_dc2 += dot(d_pk_ci, d_pk_ci);
 
   solver[i].lambda = -c / (sum_dc2 + params.epsilon);
+  
+  // DEBUG particle color
+  particles[i].color.rgb = vec3(rho / rho0);
 }

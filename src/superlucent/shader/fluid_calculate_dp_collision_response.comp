@@ -32,7 +32,12 @@ void main()
     const vec3 pj = particles[j].position.xyz;
     const float r = distance(pi, pj);
 
-    const vec3 n = (pi - pj) / r;
+    vec3 n;
+    if (r > 0.f)
+      n = (pi - pj) / (r + params.epsilon);
+    else
+      n = vec3(0.f, 0.f, 1.f);
+
     dp += 1.f / rho0 * (lambda_i + lambda_j) * DKernelSpiky(r, h) * n;
 
     pointer = neighbors[pointer].next;

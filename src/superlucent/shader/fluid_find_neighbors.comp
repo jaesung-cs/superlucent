@@ -17,9 +17,11 @@ void main()
 
   const float h = params.h;
 
-  // Collision between particles in uniform grid
+  // Find neighbors in uniform grid
   ivec3 cell_index = CellIndex(pi);
   uint hash_index = GridHash(cell_index);
+
+  int num_particle_neighbors = 0;
 
   int pointer = grid_hash_table.head[hash_index];
   while (pointer >= 0)
@@ -40,12 +42,16 @@ void main()
 
           int next = atomicExchange(neighbors_heads[i], int(neighbor_index));
           neighbors[neighbor_index].next = next;
+
+          num_particle_neighbors++;
         }
-        else
-          break;
       }
     }
 
     pointer = grid.object_grid_pairs[pointer].next;
   }
+  
+  // DEBUG particle color
+  // particles[i].color.rgb = vec3(0.f, 0.f, float(num_particle_neighbors - 5));
+  // particles[i].color.rgb = vec3(0.f, 0.f, float(hash_index) / num_hash_buckets);
 }

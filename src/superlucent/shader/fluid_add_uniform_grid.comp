@@ -15,10 +15,4 @@ void main()
   vec3 position = particles[particle_id].position.xyz;
   
   AddSphereToGrid(particle_id, position, params.h);
-
-  // DEBUG: particle color
-  ivec3 cell_index = CellIndex(position);
-  uint hash_index = GridHash(cell_index);
-  float grayscale = float(hash_index) / num_hash_buckets;
-  particles[particle_id].color.rgb = vec3(grayscale);
 }

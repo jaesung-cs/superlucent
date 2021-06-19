@@ -1,5 +1,7 @@
 #include <superlucent/engine/fluid_simulation.h>
 
+#include <iostream>
+
 #include <superlucent/engine/engine.h>
 #include <superlucent/engine/uniform_buffer.h>
 #include <superlucent/engine/data/particle.h>
@@ -88,10 +90,6 @@ void FluidSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer& comma
   command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
     {}, { grid_barrier, hash_table_barrier }, {});
 
-  // DEBUG particle color changed
-  command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
-    {}, particle_buffer_memory_barrier, {});
-
   // Initialize neighbors
   command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, initialize_neighbors_pipeline_);
   command_buffer.dispatch((fluid_simulation_params_.max_num_neighbors + 255) / 256, 1, 1);
@@ -126,6 +124,10 @@ void FluidSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer& comma
   command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
     {}, { neighbors_barrier, neighbors_heads_barrier }, {});
 
+  // DEBUG particle color
+  command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, particle_buffer_memory_barrier, {});
+
   // Calculate lambda
   command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, calculate_lambda_pipeline_);
   command_buffer.dispatch((NumParticles() + 255) / 256, 1, 1);
@@ -142,6 +144,10 @@ void FluidSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer& comma
 
   command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
     {}, solver_barrier, {});
+
+  // DEBUG particle color
+  command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, particle_buffer_memory_barrier, {});
 
   // Calculate dp and collision response
   command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, calculate_dp_collision_response_pipeline_);
@@ -342,6 +348,9 @@ void FluidSimulation::PrepareResources()
   const float radius = fluid_simulation_params_.radius;
   constexpr float density = 1000.f; // water
   const float mass = radius * radius * radius * density;
+
+  std::cout << "Mass: " << mass << std::endl;
+
   constexpr glm::vec2 wall_distance = glm::vec2(3.f, 1.5f);
   const glm::vec3 particle_offset = glm::vec3(-wall_distance + glm::vec2(radius * 1.1f), radius * 1.1f);
   const glm::vec3 particle_stride = glm::vec3(radius * 2.2f);
@@ -391,7 +400,7 @@ void FluidSimulation::PrepareResources()
 
   const auto ssbo_alignment = engine_->SsboAlignment();
   neighbors_heads_buffer_.offset = engine_->Align(neighbors_buffer_.offset + neighbors_buffer_.size, ssbo_alignment);
-  neighbors_heads_buffer_.size = sizeof(uint32_t) * fluid_simulation_params_.num_particles;
+  neighbors_heads_buffer_.size = sizeof(uint32_t) * fluid_simulation_params_.max_num_neighbors;
 
   solver_buffer_.offset = engine_->Align(neighbors_heads_buffer_.offset + neighbors_heads_buffer_.size, ssbo_alignment);
   solver_buffer_.size = sizeof(glm::vec4) * fluid_simulation_params_.num_particles;
