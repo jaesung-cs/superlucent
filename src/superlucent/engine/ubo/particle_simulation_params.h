@@ -1,11 +1,11 @@
-#ifndef SUPERLUCENT_ENGINE_UBO_SIMULATION_PARAMS_H_
-#define SUPERLUCENT_ENGINE_UBO_SIMULATION_PARAMS_H_
+#ifndef SUPERLUCENT_ENGINE_UBO_PARTICLE_SIMULATION_PARAMS_H_
+#define SUPERLUCENT_ENGINE_UBO_PARTICLE_SIMULATION_PARAMS_H_
 
 namespace supl
 {
 namespace engine
 {
-struct SimulationParamsUbo
+struct ParticleSimulationParamsUbo
 {
   alignas(16) float dt;
   int num_particles;
@@ -17,4 +17,4 @@ struct SimulationParamsUbo
 }
 }
 
-#endif // SUPERLUCENT_ENGINE_UBO_SIMULATION_PARAMS_H_
+#endif // SUPERLUCENT_ENGINE_UBO_PARTICLE_SIMULATION_PARAMS_H_

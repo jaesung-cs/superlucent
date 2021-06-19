@@ -3,7 +3,7 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include <superlucent/engine/ubo/simulation_params.h>
+#include <superlucent/engine/ubo/particle_simulation_params.h>
 
 namespace supl
 {
@@ -82,7 +82,7 @@ private:
   uint32_t num_ubos_ = 0;
   std::vector<vk::DescriptorSet> descriptor_sets_;
   std::vector<Uniform> simulation_params_ubos_;
-  SimulationParamsUbo simulation_params_;
+  ParticleSimulationParamsUbo simulation_params_;
 };
 }
 }

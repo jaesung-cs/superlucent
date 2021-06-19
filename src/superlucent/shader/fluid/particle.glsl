@@ -8,7 +8,7 @@ struct Particle
   vec4 color; // [r, g, b, 0]
 };
 
-layout(std140, binding = 0) buffer ParticleSsbo
+layout (binding = 1) buffer ParticleSsbo
 {
   Particle particles[];
 };

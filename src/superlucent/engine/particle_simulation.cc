@@ -25,8 +25,6 @@ ParticleSimulation::~ParticleSimulation()
 
 void ParticleSimulation::UpdateSimulationParams(double dt, double animation_time, int ubo_index)
 {
-  const auto uniform_buffer = engine_->UniformBuffer();
-
   constexpr auto wall_offset_speed = 5.;
   constexpr auto wall_offset_magnitude = 0.5;
 
@@ -502,8 +500,7 @@ void ParticleSimulation::PrepareResources()
   engine_->ToDeviceMemory(particle_buffer, particle_buffer_);
 
   // Particle descriptor set
-  vk::DeviceSize uniform_offset = 0;
-  simulation_params_ubos_ = uniform_buffer->Allocate<SimulationParamsUbo>(num_ubos_);
+  simulation_params_ubos_ = uniform_buffer->Allocate<ParticleSimulationParamsUbo>(num_ubos_);
 
   std::vector<vk::DescriptorSetLayout> set_layouts(num_ubos_, descriptor_set_layout_);
   vk::DescriptorSetAllocateInfo descriptor_set_allocate_info;

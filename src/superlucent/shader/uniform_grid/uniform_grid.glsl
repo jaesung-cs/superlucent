@@ -22,8 +22,7 @@ layout (binding = 6) buffer HashTableSsbo
 // From Particle-based Fluid Simulation based Fluid Simulation by NVidia
 uint GridHash(ivec3 cell_index)
 {
-  // TODO: why make positive?
-  uvec3 ucell_index = uvec3(cell_index + ivec3(100, 100, 100));
+  uvec3 ucell_index = uvec3(cell_index);
   const uint p1 = 73856093; // some large primes
   const uint p2 = 19349663;
   const uint p3 = 83492791;
@@ -36,7 +35,8 @@ uint GridHash(ivec3 cell_index)
 
 ivec3 CellIndex(vec3 position)
 {
-  return ivec3(floor(position / grid.cell_size));
+  // TODO: why make positive?
+  return ivec3(floor(position / grid.cell_size + vec3(100.f, 100.f, 100.f)));
 }
 
 mat2x3 Bound(vec3 position)
@@ -48,13 +48,11 @@ mat2x3 Bound(vec3 position)
   return bound;
 }
 
-void AddSphereToGrid(uint object_id, vec3 position, float radius)
+void AddSphereToGrid(uint object_id, vec3 position, float d)
 {
   ivec3 cell_index = CellIndex(position);
   mat2x3 bound = Bound(position);
   mat3 nearests = mat3(bound[0], position, bound[1]);
-
-  float r = radius * 2.f; // Minkowski sum
 
   for (int x = 0; x < 3; x++)
   {
@@ -63,8 +61,8 @@ void AddSphereToGrid(uint object_id, vec3 position, float radius)
       for (int z = 0; z < 3; z++)
       {
         vec3 nearest = vec3(nearests[x].x, nearests[y].y, nearests[z].z);
-        vec3 d = position - nearest;
-        if (dot(d, d) <= r * r)
+        vec3 dist = position - nearest;
+        if (dot(dist, dist) <= d * d)
         {
           ivec3 neighbor_cell_index = cell_index + ivec3(x - 1, y - 1, z - 1);
           uint hash_index = GridHash(neighbor_cell_index);

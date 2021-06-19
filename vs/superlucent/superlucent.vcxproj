@@ -165,6 +165,7 @@ python compile.py
     <ClCompile Include="..\..\src\main.cc" />
     <ClCompile Include="..\..\src\superlucent\application.cc" />
     <ClCompile Include="..\..\src\superlucent\engine\engine.cc" />
+    <ClCompile Include="..\..\src\superlucent\engine\fluid_simulation.cc" />
     <ClCompile Include="..\..\src\superlucent\engine\particle_renderer.cc" />
     <ClCompile Include="..\..\src\superlucent\engine\particle_simulation.cc" />
     <ClCompile Include="..\..\src\superlucent\engine\uniform_buffer.cc" />
@@ -176,11 +177,13 @@ python compile.py
     <ClInclude Include="..\..\src\superlucent\application.h" />
     <ClInclude Include="..\..\src\superlucent\engine\data\particle.h" />
     <ClInclude Include="..\..\src\superlucent\engine\engine.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\fluid_simulation.h" />
     <ClInclude Include="..\..\src\superlucent\engine\particle_renderer.h" />
     <ClInclude Include="..\..\src\superlucent\engine\particle_simulation.h" />
     <ClInclude Include="..\..\src\superlucent\engine\ubo\camera_ubo.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\ubo\fluid_simulation_params.h" />
     <ClInclude Include="..\..\src\superlucent\engine\ubo\light_ubo.h" />
-    <ClInclude Include="..\..\src\superlucent\engine\ubo\simulation_params.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\ubo\particle_simulation_params.h" />
     <ClInclude Include="..\..\src\superlucent\engine\uniform_buffer.h" />
     <ClInclude Include="..\..\src\superlucent\scene\camera.h" />
     <ClInclude Include="..\..\src\superlucent\scene\camera_control.h" />
@@ -191,7 +194,6 @@ python compile.py
     <ClInclude Include="..\..\src\superlucent\shader\particle\particle.glsl" />
     <ClInclude Include="..\..\src\superlucent\shader\particle\simulation_params.glsl" />
     <ClInclude Include="..\..\src\superlucent\shader\particle\solver.glsl" />
-    <ClInclude Include="..\..\src\superlucent\shader\particle\uniform_grid.glsl" />
     <ClInclude Include="..\..\src\superlucent\utils\rng.h" />
   </ItemGroup>
   <ItemGroup>
@@ -201,6 +203,20 @@ python compile.py
     <None Include="..\..\src\superlucent\shader\compile.py" />
     <None Include="..\..\src\superlucent\shader\floor.frag" />
     <None Include="..\..\src\superlucent\shader\floor.vert" />
+    <None Include="..\..\src\superlucent\shader\fluid\kernel.glsl" />
+    <None Include="..\..\src\superlucent\shader\fluid\neighbors.glsl" />
+    <None Include="..\..\src\superlucent\shader\fluid\particle.glsl" />
+    <None Include="..\..\src\superlucent\shader\fluid\simulation_params.glsl" />
+    <None Include="..\..\src\superlucent\shader\fluid\solver.glsl" />
+    <None Include="..\..\src\superlucent\shader\fluid_add_uniform_grid.comp" />
+    <None Include="..\..\src\superlucent\shader\fluid_calculate_dp_collision_response.comp" />
+    <None Include="..\..\src\superlucent\shader\fluid_calculate_lambda.comp" />
+    <None Include="..\..\src\superlucent\shader\fluid_find_neighbors.comp" />
+    <None Include="..\..\src\superlucent\shader\fluid_forward.comp" />
+    <None Include="..\..\src\superlucent\shader\fluid_initialize_neighbors.comp" />
+    <None Include="..\..\src\superlucent\shader\fluid_initialize_uniform_grid.comp" />
+    <None Include="..\..\src\superlucent\shader\fluid_update_p.comp" />
+    <None Include="..\..\src\superlucent\shader\fluid_update_v.comp" />
     <None Include="..\..\src\superlucent\shader\particle_add_uniform_grid.comp" />
     <None Include="..\..\src\superlucent\shader\particle_collision_detection.comp" />
     <None Include="..\..\src\superlucent\shader\particle_forward.comp" />
@@ -212,6 +228,7 @@ python compile.py
     <None Include="..\..\src\superlucent\shader\particle_solve_delta_x.comp" />
     <None Include="..\..\src\superlucent\shader\particle_solve_x_lambda.comp" />
     <None Include="..\..\src\superlucent\shader\particle_velocity_update.comp" />
+    <None Include="..\..\src\superlucent\shader\uniform_grid\uniform_grid.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

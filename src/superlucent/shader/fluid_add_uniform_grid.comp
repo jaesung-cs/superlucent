@@ -2,8 +2,8 @@
 
 layout (local_size_x = 256) in;
 
-#include "particle/particle.glsl"
-#include "particle/simulation_params.glsl"
+#include "fluid/particle.glsl"
+#include "fluid/simulation_params.glsl"
 #include "uniform_grid/uniform_grid.glsl"
 
 void main()
@@ -13,7 +13,6 @@ void main()
     return;
 
   vec3 position = particles[particle_id].position.xyz;
-  float radius = params.radius;
   
-  AddSphereToGrid(particle_id, position, 2.f * radius);
+  AddSphereToGrid(particle_id, position, params.h);
 }
