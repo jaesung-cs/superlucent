@@ -12,12 +12,25 @@ class Sync
 public:
   Sync() = delete;
 
-  explicit Sync(vk::Device device);
+  explicit Sync(vk::PhysicalDevice physical_device, vk::Device device);
 
   auto Device() const { return device_; }
 
 private:
-  vk::Device device_;
+  vk::DeviceSize SsboAlign(vk::DeviceSize offset) const;
+  vk::DeviceSize UboAlign(vk::DeviceSize offset) const;
+
+  const vk::PhysicalDevice physical_device_;
+  const vk::Device device_;
+
+  vk::DeviceSize ubo_alignment_;
+  vk::DeviceSize ssbo_alignment_;
+
+  vk::DeviceMemory device_memory_;
+  vk::DeviceMemory host_memory_;
+
+  vk::DeviceSize storage_offset_ = 0;
+  vk::DeviceSize uniform_offset_ = 0;
 };
 }
 }

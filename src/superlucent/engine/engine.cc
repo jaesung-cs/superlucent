@@ -13,6 +13,7 @@
 #include <superlucent/engine/uniform_buffer.h>
 #include <superlucent/scene/light.h>
 #include <superlucent/scene/camera.h>
+#include <superlucent/vksync/sync.h>
 
 namespace supl
 {
@@ -46,6 +47,9 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
   // Prepare vulkan resources
   CreateInstance(window);
   CreateDevice();
+
+  sync_ = std::unique_ptr<vksync::Sync>();
+
   CreateSwapchain();
   PreallocateMemory();
   AllocateCommandBuffers();
@@ -283,6 +287,11 @@ void Engine::ToDeviceMemory(const std::vector<uint8_t>& data, vk::Image image, u
 
 void Engine::CreateInstance(GLFWwindow* window)
 {
+  const auto instance_extensions = vk::enumerateInstanceExtensionProperties();
+  std::cout << "Instance extensions:" << std::endl;
+  for (int i = 0; i < instance_extensions.size(); i++)
+    std::cout << "  " << instance_extensions[i].extensionName << std::endl;
+
   // App
   vk::ApplicationInfo app_info;
   app_info
@@ -354,6 +363,12 @@ void Engine::CreateDevice()
 {
   // Choose the first GPU
   physical_device_ = instance_.enumeratePhysicalDevices()[0];
+
+  // Available extensions
+  const auto device_extensions = physical_device_.enumerateDeviceExtensionProperties();
+  std::cout << "Device extensions:" << std::endl;
+  for (int i = 0; i < device_extensions.size(); i++)
+    std::cout << "  " << device_extensions[i].extensionName << std::endl;
 
   // Device properties
   ubo_alignment_ = physical_device_.getProperties().limits.minUniformBufferOffsetAlignment;

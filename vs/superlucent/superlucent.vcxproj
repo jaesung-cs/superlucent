@@ -172,6 +172,7 @@ python compile.py
     <ClCompile Include="..\..\src\superlucent\scene\camera.cc" />
     <ClCompile Include="..\..\src\superlucent\scene\camera_control.cc" />
     <ClCompile Include="..\..\src\superlucent\utils\rng.cc" />
+    <ClCompile Include="..\..\src\superlucent\vksync\sync.cc" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\superlucent\application.h" />
@@ -195,6 +196,8 @@ python compile.py
     <ClInclude Include="..\..\src\superlucent\shader\particle\simulation_params.glsl" />
     <ClInclude Include="..\..\src\superlucent\shader\particle\solver.glsl" />
     <ClInclude Include="..\..\src\superlucent\utils\rng.h" />
+    <ClInclude Include="..\..\src\superlucent\vksync\buffer.h" />
+    <ClInclude Include="..\..\src\superlucent\vksync\sync.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\superlucent\shader\.gitignore" />

@@ -18,6 +18,11 @@ class Light;
 class Camera;
 }
 
+namespace vksync
+{
+class Sync;
+}
+
 namespace engine
 {
 class FluidSimulation;
@@ -159,6 +164,9 @@ private:
   uint32_t host_index_ = 0;
   vk::Queue queue_;
   vk::Queue present_queue_;
+
+  // Sync
+  std::unique_ptr<vksync::Sync> sync_;
 
   // Command pools
   vk::CommandPool command_pool_;

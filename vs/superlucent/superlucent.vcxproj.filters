@@ -37,6 +37,9 @@
     <Filter Include="src\superlucent\shader\uniform_grid">
       <UniqueIdentifier>{0376c1f7-1adf-4bb3-86f9-ba8804d609e7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\superlucent\vksync">
+      <UniqueIdentifier>{155ab7d8-3cb6-4730-9b06-543ea217c4a5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cc">
@@ -68,6 +71,9 @@
     </ClCompile>
     <ClCompile Include="..\..\src\superlucent\engine\fluid_simulation.cc">
       <Filter>src\superlucent\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\vksync\sync.cc">
+      <Filter>src\superlucent\vksync</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -133,6 +139,12 @@
     </ClInclude>
     <ClInclude Include="..\..\src\superlucent\engine\fluid_simulation.h">
       <Filter>src\superlucent\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\vksync\sync.h">
+      <Filter>src\superlucent\vksync</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\vksync\buffer.h">
+      <Filter>src\superlucent\vksync</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
