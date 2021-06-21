@@ -33,7 +33,7 @@ layout (constant_id = 1) const uint num_point_lights = 1U;
 
 layout (location = 0) out vec4 out_color;
 
-#include "core/light.h"
+#include "../core/light.glsl"
 
 void main()
 {

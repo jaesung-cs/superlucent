@@ -2,11 +2,11 @@
 
 layout (local_size_x = 256) in;
 
-#include "fluid/particle.glsl"
-#include "fluid/simulation_params.glsl"
-#include "fluid/neighbors.glsl"
-#include "fluid/kernel.glsl"
-#include "fluid/solver.glsl"
+#include "particle.glsl"
+#include "simulation_params.glsl"
+#include "neighbors.glsl"
+#include "kernel.glsl"
+#include "solver.glsl"
 
 void main()
 {

@@ -250,7 +250,7 @@ void FluidSimulation::CreatePipelines()
   pipeline_layout_ = device.createPipelineLayout(pipeline_layout_create_info);
 
   // Pipelines
-  const std::string base_directory = "C:\\workspace\\superlucent\\src\\superlucent\\shader\\";
+  const std::string base_directory = "C:\\workspace\\superlucent\\src\\superlucent\\shader\\fluid\\";
   auto forward_module = engine_->CreateShaderModule(base_directory + "fluid_forward.comp.spv");
   auto initialize_uniform_grid_module = engine_->CreateShaderModule(base_directory + "fluid_initialize_uniform_grid.comp.spv");
   auto add_uniform_grid_module = engine_->CreateShaderModule(base_directory + "fluid_add_uniform_grid.comp.spv");

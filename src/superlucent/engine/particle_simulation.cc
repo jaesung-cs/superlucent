@@ -275,7 +275,7 @@ void ParticleSimulation::CreateComputePipelines()
   pipeline_layout_ = device.createPipelineLayout(pipeline_layout_create_info);
 
   // Shader modules
-  const std::string base_dir = "C:\\workspace\\superlucent\\src\\superlucent\\shader";
+  const std::string base_dir = "C:\\workspace\\superlucent\\src\\superlucent\\shader\\particle";
   vk::ShaderModule particle_forward_module = engine_->CreateShaderModule(base_dir + "\\particle_forward.comp.spv");
   vk::ShaderModule particle_initialize_uniform_grid_module = engine_->CreateShaderModule(base_dir + "\\particle_initialize_uniform_grid.comp.spv");
   vk::ShaderModule particle_add_uniform_grid_module = engine_->CreateShaderModule(base_dir + "\\particle_add_uniform_grid.comp.spv");

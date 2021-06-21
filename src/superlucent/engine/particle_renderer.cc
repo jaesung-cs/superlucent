@@ -296,7 +296,7 @@ void ParticleRenderer::CreateGraphicsPipelines()
   pipeline_layout_ = device.createPipelineLayout(pipeline_layout_create_info);
 
   // Shader modules
-  const std::string base_dir = "C:\\workspace\\superlucent\\src\\superlucent\\shader";
+  const std::string base_dir = "C:\\workspace\\superlucent\\src\\superlucent\\shader\\rendering";
   vk::ShaderModule vert_module = engine_->CreateShaderModule(base_dir + "\\floor.vert.spv");
   vk::ShaderModule frag_module = engine_->CreateShaderModule(base_dir + "\\floor.frag.spv");
 

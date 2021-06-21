@@ -2,9 +2,9 @@
 
 layout (local_size_x = 1) in;
 
-#include "particle/collision_pairs.glsl"
-#include "particle/simulation_params.glsl"
-#include "particle/indirect.glsl"
+#include "collision_pairs.glsl"
+#include "simulation_params.glsl"
+#include "indirect.glsl"
 
 void main() 
 {

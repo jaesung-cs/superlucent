@@ -40,6 +40,9 @@
     <Filter Include="src\superlucent\vksync">
       <UniqueIdentifier>{155ab7d8-3cb6-4730-9b06-543ea217c4a5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\superlucent\shader\rendering">
+      <UniqueIdentifier>{d1617805-fd97-45bb-bb1a-8223322c7884}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cc">
@@ -89,7 +92,7 @@
     <ClInclude Include="..\..\src\superlucent\scene\light.h">
       <Filter>src\superlucent\scene</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\shader\core\light.h">
+    <ClInclude Include="..\..\src\superlucent\shader\core\light.glsl">
       <Filter>src\superlucent\shader\core</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\superlucent\shader\particle\collision_pairs.glsl">
@@ -166,36 +169,6 @@
     <None Include="..\..\src\superlucent\shader\cell_sphere.frag">
       <Filter>src\superlucent\shader</Filter>
     </None>
-    <None Include="..\..\src\superlucent\shader\particle_forward.comp">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
-    <None Include="..\..\src\superlucent\shader\particle_velocity_update.comp">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
-    <None Include="..\..\src\superlucent\shader\particle_collision_detection.comp">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
-    <None Include="..\..\src\superlucent\shader\particle_initialize_collision_detection.comp">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
-    <None Include="..\..\src\superlucent\shader\particle_solve_delta_lambda.comp">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
-    <None Include="..\..\src\superlucent\shader\particle_initialize_solver.comp">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
-    <None Include="..\..\src\superlucent\shader\particle_solve_delta_x.comp">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
-    <None Include="..\..\src\superlucent\shader\particle_solve_x_lambda.comp">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
-    <None Include="..\..\src\superlucent\shader\particle_initialize_dispatch.comp">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
-    <None Include="..\..\src\superlucent\shader\particle_add_uniform_grid.comp">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
     <None Include="..\..\src\superlucent\shader\fluid\kernel.glsl">
       <Filter>src\superlucent\shader\fluid</Filter>
     </None>
@@ -214,35 +187,77 @@
     <None Include="..\..\src\superlucent\shader\fluid\solver.glsl">
       <Filter>src\superlucent\shader\fluid</Filter>
     </None>
-    <None Include="..\..\src\superlucent\shader\fluid_forward.comp">
-      <Filter>src\superlucent\shader</Filter>
+    <None Include="..\..\src\superlucent\shader\rendering\cell_sphere.frag">
+      <Filter>src\superlucent\shader\rendering</Filter>
     </None>
-    <None Include="..\..\src\superlucent\shader\fluid_add_uniform_grid.comp">
-      <Filter>src\superlucent\shader</Filter>
+    <None Include="..\..\src\superlucent\shader\rendering\cell_sphere.vert">
+      <Filter>src\superlucent\shader\rendering</Filter>
     </None>
-    <None Include="..\..\src\superlucent\shader\fluid_initialize_uniform_grid.comp">
-      <Filter>src\superlucent\shader</Filter>
+    <None Include="..\..\src\superlucent\shader\rendering\floor.frag">
+      <Filter>src\superlucent\shader\rendering</Filter>
     </None>
-    <None Include="..\..\src\superlucent\shader\particle_initialize_uniform_grid.comp">
-      <Filter>src\superlucent\shader</Filter>
+    <None Include="..\..\src\superlucent\shader\rendering\floor.vert">
+      <Filter>src\superlucent\shader\rendering</Filter>
     </None>
-    <None Include="..\..\src\superlucent\shader\fluid_find_neighbors.comp">
-      <Filter>src\superlucent\shader</Filter>
+    <None Include="..\..\src\superlucent\shader\fluid\fluid_add_uniform_grid.comp">
+      <Filter>src\superlucent\shader\fluid</Filter>
     </None>
-    <None Include="..\..\src\superlucent\shader\fluid_initialize_neighbors.comp">
-      <Filter>src\superlucent\shader</Filter>
+    <None Include="..\..\src\superlucent\shader\fluid\fluid_calculate_dp_collision_response.comp">
+      <Filter>src\superlucent\shader\fluid</Filter>
     </None>
-    <None Include="..\..\src\superlucent\shader\fluid_calculate_lambda.comp">
-      <Filter>src\superlucent\shader</Filter>
+    <None Include="..\..\src\superlucent\shader\fluid\fluid_calculate_lambda.comp">
+      <Filter>src\superlucent\shader\fluid</Filter>
     </None>
-    <None Include="..\..\src\superlucent\shader\fluid_calculate_dp_collision_response.comp">
-      <Filter>src\superlucent\shader</Filter>
+    <None Include="..\..\src\superlucent\shader\fluid\fluid_find_neighbors.comp">
+      <Filter>src\superlucent\shader\fluid</Filter>
     </None>
-    <None Include="..\..\src\superlucent\shader\fluid_update_p.comp">
-      <Filter>src\superlucent\shader</Filter>
+    <None Include="..\..\src\superlucent\shader\fluid\fluid_forward.comp">
+      <Filter>src\superlucent\shader\fluid</Filter>
     </None>
-    <None Include="..\..\src\superlucent\shader\fluid_update_v.comp">
-      <Filter>src\superlucent\shader</Filter>
+    <None Include="..\..\src\superlucent\shader\fluid\fluid_initialize_neighbors.comp">
+      <Filter>src\superlucent\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\fluid\fluid_initialize_uniform_grid.comp">
+      <Filter>src\superlucent\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\fluid\fluid_update_p.comp">
+      <Filter>src\superlucent\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\fluid\fluid_update_v.comp">
+      <Filter>src\superlucent\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle\particle_add_uniform_grid.comp">
+      <Filter>src\superlucent\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle\particle_collision_detection.comp">
+      <Filter>src\superlucent\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle\particle_forward.comp">
+      <Filter>src\superlucent\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle\particle_initialize_collision_detection.comp">
+      <Filter>src\superlucent\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle\particle_initialize_dispatch.comp">
+      <Filter>src\superlucent\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle\particle_initialize_solver.comp">
+      <Filter>src\superlucent\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle\particle_initialize_uniform_grid.comp">
+      <Filter>src\superlucent\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle\particle_solve_delta_lambda.comp">
+      <Filter>src\superlucent\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle\particle_solve_delta_x.comp">
+      <Filter>src\superlucent\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle\particle_solve_x_lambda.comp">
+      <Filter>src\superlucent\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\particle\particle_velocity_update.comp">
+      <Filter>src\superlucent\shader\particle</Filter>
     </None>
   </ItemGroup>
 </Project>

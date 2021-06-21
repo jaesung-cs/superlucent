@@ -2,8 +2,8 @@
 
 layout (local_size_x = 256) in;
 
-#include "particle/particle.glsl"
-#include "particle/simulation_params.glsl"
+#include "particle.glsl"
+#include "simulation_params.glsl"
 
 void main() 
 {
