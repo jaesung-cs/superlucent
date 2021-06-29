@@ -7,8 +7,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <superlucent/engine/gpu_fluid_simulation.h>
-#include <superlucent/engine/gpu_particle_simulation.h>
+#include <superlucent/engine/particle_simulation.h>
 #include <superlucent/engine/particle_renderer.h>
 #include <superlucent/engine/uniform_buffer.h>
 #include <superlucent/scene/light.h>
@@ -57,7 +56,7 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
 
   // Create particle renderer and simulator
   particle_renderer_ = std::make_unique<ParticleRenderer>(this, width_, height_);
-  gpu_fluid_simulation_ = std::make_unique<GpuFluidSimulation>(this, swapchain_image_count_);
+  particle_simulation_ = std::make_unique<ParticleSimulation>();
 
   CreateSynchronizationObjects();
 }
@@ -68,7 +67,7 @@ Engine::~Engine()
 
   DestroySynchronizationObjects();
 
-  gpu_fluid_simulation_ = nullptr;
+  particle_simulation_ = nullptr;
   particle_renderer_ = nullptr;
 
   DestroyRendertarget();
@@ -155,7 +154,7 @@ void Engine::Draw(double time)
   particle_renderer_->UpdateLights(lights_, image_index);
   particle_renderer_->UpdateCamera(camera_, image_index);
 
-  gpu_fluid_simulation_->UpdateSimulationParams(dt, animation_time_, image_index);
+  particle_simulation_->UpdateSimulationParams(dt, animation_time_);
 
   // Submit
   std::vector<vk::PipelineStageFlags> stages{
@@ -191,9 +190,10 @@ void Engine::Draw(double time)
 void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t image_index, double dt)
 {
   if (dt > 0.)
-    gpu_fluid_simulation_->RecordComputeWithGraphicsBarriers(command_buffer, image_index);
+    particle_simulation_->Forward();
 
-  particle_renderer_->RecordRenderCommands(command_buffer, gpu_fluid_simulation_->ParticleBuffer(), gpu_fluid_simulation_->NumParticles(), gpu_fluid_simulation_->SimulationParams().radius, image_index);
+  // TODO: render particles
+  particle_renderer_->RecordFloorRenderCommands(command_buffer, image_index);
 }
 
 Engine::Memory Engine::AcquireDeviceMemory(vk::Buffer buffer)

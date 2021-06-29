@@ -78,6 +78,9 @@
     <ClCompile Include="..\..\src\superlucent\vksync\sync.cc">
       <Filter>src\superlucent\vksync</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\engine\particle_simulation.cc">
+      <Filter>src\superlucent\engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\superlucent\application.h">
@@ -148,6 +151,9 @@
     </ClInclude>
     <ClInclude Include="..\..\src\superlucent\vksync\buffer.h">
       <Filter>src\superlucent\vksync</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\particle_simulation.h">
+      <Filter>src\superlucent\engine</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

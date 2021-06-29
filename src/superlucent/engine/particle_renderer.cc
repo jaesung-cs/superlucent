@@ -45,9 +45,9 @@ void ParticleRenderer::UpdateCamera(const CameraUbo& camera, int image_index)
   camera_ubos_[image_index] = camera;
 }
 
-void ParticleRenderer::RecordRenderCommands(vk::CommandBuffer command_buffer, vk::Buffer particle_buffer, uint32_t num_particles, float radius, int image_index)
+void ParticleRenderer::RecordRenderCommands(vk::CommandBuffer& command_buffer, vk::Buffer particle_buffer, uint32_t num_particles, float radius, int image_index)
 {
-  // Begin render pass 
+  // Begin render pass
   command_buffer.setViewport(0, vk::Viewport{ 0.f, 0.f, static_cast<float>(width_), static_cast<float>(height_), 0.f, 1.f });
 
   command_buffer.setScissor(0, vk::Rect2D{ {0u, 0u}, {width_, height_} });
@@ -80,6 +80,42 @@ void ParticleRenderer::RecordRenderCommands(vk::CommandBuffer command_buffer, vk
   command_buffer.bindIndexBuffer(cells_buffer_.buffer, cells_buffer_.index_offset, vk::IndexType::eUint32);
 
   command_buffer.drawIndexed(cells_buffer_.num_indices, num_particles, 0u, 0u, 0u);
+
+  // Draw floor model
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, floor_pipeline_);
+
+  command_buffer.bindVertexBuffers(0u, { floor_buffer_.buffer }, { 0ull });
+
+  command_buffer.bindIndexBuffer(floor_buffer_.buffer, floor_buffer_.index_offset, vk::IndexType::eUint32);
+
+  command_buffer.drawIndexed(floor_buffer_.num_indices, 1u, 0u, 0u, 0u);
+
+  command_buffer.endRenderPass();
+}
+
+void ParticleRenderer::RecordFloorRenderCommands(vk::CommandBuffer& command_buffer, int image_index)
+{
+  // TODO: don't begin render pass here. Add a render pass begin function instead.
+  // Begin render pass
+  command_buffer.setViewport(0, vk::Viewport{ 0.f, 0.f, static_cast<float>(width_), static_cast<float>(height_), 0.f, 1.f });
+
+  command_buffer.setScissor(0, vk::Rect2D{ {0u, 0u}, {width_, height_} });
+
+  std::vector<vk::ClearValue> clear_values{
+    vk::ClearColorValue{ std::array<float, 4>{0.8f, 0.8f, 0.8f, 1.f} },
+    vk::ClearDepthStencilValue{ 1.f, 0u }
+  };
+  vk::RenderPassBeginInfo render_pass_begin_info;
+  render_pass_begin_info
+    .setRenderPass(render_pass_)
+    .setFramebuffer(swapchain_framebuffers_[image_index])
+    .setRenderArea(vk::Rect2D{ {0u, 0u}, {width_, height_} })
+    .setClearValues(clear_values);
+  command_buffer.beginRenderPass(render_pass_begin_info, vk::SubpassContents::eInline);
+
+  // Bind a shared descriptor set
+  command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_layout_, 0u,
+    descriptor_sets_[image_index], {});
 
   // Draw floor model
   command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, floor_pipeline_);

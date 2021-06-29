@@ -25,8 +25,7 @@ class Sync;
 
 namespace engine
 {
-class GpuFluidSimulation;
-class GpuParticleSimulation;
+class ParticleSimulation;
 class ParticleRenderer;
 class UniformBuffer;
 
@@ -216,11 +215,8 @@ private:
   // Renderer
   std::unique_ptr<ParticleRenderer> particle_renderer_;
 
-  // Position-based particle simulation
-  std::unique_ptr<GpuParticleSimulation> gpu_particle_simulation_;
-
-  // Position-based fluid simulation
-  std::unique_ptr<GpuFluidSimulation> gpu_fluid_simulation_;
+  // Position-based particle simulation in CPU
+  std::unique_ptr<ParticleSimulation> particle_simulation_;
 
   // Command buffers
   vk::CommandBuffer transient_command_buffer_;

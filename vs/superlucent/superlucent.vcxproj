@@ -168,6 +168,7 @@ python compile.py
     <ClCompile Include="..\..\src\superlucent\engine\gpu_fluid_simulation.cc" />
     <ClCompile Include="..\..\src\superlucent\engine\particle_renderer.cc" />
     <ClCompile Include="..\..\src\superlucent\engine\gpu_particle_simulation.cc" />
+    <ClCompile Include="..\..\src\superlucent\engine\particle_simulation.cc" />
     <ClCompile Include="..\..\src\superlucent\engine\uniform_buffer.cc" />
     <ClCompile Include="..\..\src\superlucent\scene\camera.cc" />
     <ClCompile Include="..\..\src\superlucent\scene\camera_control.cc" />
@@ -181,6 +182,7 @@ python compile.py
     <ClInclude Include="..\..\src\superlucent\engine\gpu_fluid_simulation.h" />
     <ClInclude Include="..\..\src\superlucent\engine\particle_renderer.h" />
     <ClInclude Include="..\..\src\superlucent\engine\gpu_particle_simulation.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\particle_simulation.h" />
     <ClInclude Include="..\..\src\superlucent\engine\ubo\camera_ubo.h" />
     <ClInclude Include="..\..\src\superlucent\engine\ubo\fluid_simulation_params.h" />
     <ClInclude Include="..\..\src\superlucent\engine\ubo\light_ubo.h" />
