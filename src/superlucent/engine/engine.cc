@@ -192,8 +192,10 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
   if (dt > 0.)
     particle_simulation_->Forward();
 
+  particle_renderer_->Begin(command_buffer, image_index);
   // TODO: render particles
-  particle_renderer_->RecordFloorRenderCommands(command_buffer, image_index);
+  particle_renderer_->RecordFloorRenderCommands(command_buffer);
+  particle_renderer_->End(command_buffer);
 }
 
 Engine::Memory Engine::AcquireDeviceMemory(vk::Buffer buffer)
