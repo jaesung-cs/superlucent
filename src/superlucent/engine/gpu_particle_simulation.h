@@ -1,5 +1,5 @@
-#ifndef SUPERLUCENT_ENGINE_PARTICLE_SIMULATION_H_
-#define SUPERLUCENT_ENGINE_PARTICLE_SIMULATION_H_
+#ifndef SUPERLUCENT_ENGINE_GPU_PARTICLE_SIMULATION_H_
+#define SUPERLUCENT_ENGINE_GPU_PARTICLE_SIMULATION_H_
 
 #include <vulkan/vulkan.hpp>
 
@@ -12,14 +12,14 @@ namespace engine
 class Engine;
 class Uniform;
 
-class ParticleSimulation
+class GpuParticleSimulation
 {
 public:
-  ParticleSimulation() = delete;
+  GpuParticleSimulation() = delete;
 
-  explicit ParticleSimulation(Engine* engine, int num_ubos);
+  explicit GpuParticleSimulation(Engine* engine, int num_ubos);
 
-  ~ParticleSimulation();
+  ~GpuParticleSimulation();
 
   const auto& SimulationParams() const { return simulation_params_; }
   auto ParticleBuffer() const { return particle_buffer_; }
@@ -87,4 +87,4 @@ private:
 }
 }
 
-#endif // SUPERLUCENT_ENGINE_PARTICLE_SIMULATION_H_
+#endif // SUPERLUCENT_ENGINE_GPU_PARTICLE_SIMULATION_H_

@@ -1,4 +1,4 @@
-#include <superlucent/engine/particle_simulation.h>
+#include <superlucent/engine/gpu_particle_simulation.h>
 
 #include <superlucent/engine/engine.h>
 #include <superlucent/engine/uniform_buffer.h>
@@ -9,7 +9,7 @@ namespace supl
 {
 namespace engine
 {
-ParticleSimulation::ParticleSimulation(Engine* engine, int num_ubos)
+GpuParticleSimulation::GpuParticleSimulation(Engine* engine, int num_ubos)
   : engine_(engine)
   , num_ubos_(num_ubos)
 {
@@ -17,13 +17,13 @@ ParticleSimulation::ParticleSimulation(Engine* engine, int num_ubos)
   PrepareResources();
 }
 
-ParticleSimulation::~ParticleSimulation()
+GpuParticleSimulation::~GpuParticleSimulation()
 {
   DestroyResources();
   DestroyComputePipelines();
 }
 
-void ParticleSimulation::UpdateSimulationParams(double dt, double animation_time, int ubo_index)
+void GpuParticleSimulation::UpdateSimulationParams(double dt, double animation_time, int ubo_index)
 {
   constexpr auto wall_offset_speed = 5.;
   constexpr auto wall_offset_magnitude = 0.5;
@@ -36,7 +36,7 @@ void ParticleSimulation::UpdateSimulationParams(double dt, double animation_time
   simulation_params_ubos_[ubo_index] = simulation_params_;
 }
 
-void ParticleSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer& command_buffer, int ubo_index)
+void GpuParticleSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer& command_buffer, int ubo_index)
 {
   // Barrier to make sure previous rendering command
   // TODO: triple buffering as well as for particle buffers
@@ -206,7 +206,7 @@ void ParticleSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer& co
     {}, particle_buffer_memory_barrier, {});
 }
 
-void ParticleSimulation::CreateComputePipelines()
+void GpuParticleSimulation::CreateComputePipelines()
 {
   const auto device = engine_->Device();
 
@@ -364,7 +364,7 @@ void ParticleSimulation::CreateComputePipelines()
   device.destroyShaderModule(particle_velocity_update_module);
 }
 
-void ParticleSimulation::DestroyComputePipelines()
+void GpuParticleSimulation::DestroyComputePipelines()
 {
   const auto device = engine_->Device();
 
@@ -387,7 +387,7 @@ void ParticleSimulation::DestroyComputePipelines()
   device.destroyPipelineCache(pipeline_cache_);
 }
 
-void ParticleSimulation::PrepareResources()
+void GpuParticleSimulation::PrepareResources()
 {
   const auto device = engine_->Device();
 
@@ -613,7 +613,7 @@ void ParticleSimulation::PrepareResources()
   }
 }
 
-void ParticleSimulation::DestroyResources()
+void GpuParticleSimulation::DestroyResources()
 {
   const auto device = engine_->Device();
 
@@ -623,7 +623,7 @@ void ParticleSimulation::DestroyResources()
   device.destroyBuffer(dispatch_indirect_);
 }
 
-vk::Pipeline ParticleSimulation::CreateComputePipeline(vk::ComputePipelineCreateInfo& create_info)
+vk::Pipeline GpuParticleSimulation::CreateComputePipeline(vk::ComputePipelineCreateInfo& create_info)
 {
   const auto device = engine_->Device();
 

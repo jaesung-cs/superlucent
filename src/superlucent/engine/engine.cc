@@ -7,8 +7,8 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <superlucent/engine/fluid_simulation.h>
-#include <superlucent/engine/particle_simulation.h>
+#include <superlucent/engine/gpu_fluid_simulation.h>
+#include <superlucent/engine/gpu_particle_simulation.h>
 #include <superlucent/engine/particle_renderer.h>
 #include <superlucent/engine/uniform_buffer.h>
 #include <superlucent/scene/light.h>
@@ -57,7 +57,7 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
 
   // Create particle renderer and simulator
   particle_renderer_ = std::make_unique<ParticleRenderer>(this, width_, height_);
-  fluid_simulation_ = std::make_unique<FluidSimulation>(this, swapchain_image_count_);
+  gpu_fluid_simulation_ = std::make_unique<GpuFluidSimulation>(this, swapchain_image_count_);
 
   CreateSynchronizationObjects();
 }
@@ -68,7 +68,7 @@ Engine::~Engine()
 
   DestroySynchronizationObjects();
 
-  fluid_simulation_ = nullptr;
+  gpu_fluid_simulation_ = nullptr;
   particle_renderer_ = nullptr;
 
   DestroyRendertarget();
@@ -155,7 +155,7 @@ void Engine::Draw(double time)
   particle_renderer_->UpdateLights(lights_, image_index);
   particle_renderer_->UpdateCamera(camera_, image_index);
 
-  fluid_simulation_->UpdateSimulationParams(dt, animation_time_, image_index);
+  gpu_fluid_simulation_->UpdateSimulationParams(dt, animation_time_, image_index);
 
   // Submit
   std::vector<vk::PipelineStageFlags> stages{
@@ -191,9 +191,9 @@ void Engine::Draw(double time)
 void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t image_index, double dt)
 {
   if (dt > 0.)
-    fluid_simulation_->RecordComputeWithGraphicsBarriers(command_buffer, image_index);
+    gpu_fluid_simulation_->RecordComputeWithGraphicsBarriers(command_buffer, image_index);
 
-  particle_renderer_->RecordRenderCommands(command_buffer, fluid_simulation_->ParticleBuffer(), fluid_simulation_->NumParticles(), fluid_simulation_->SimulationParams().radius, image_index);
+  particle_renderer_->RecordRenderCommands(command_buffer, gpu_fluid_simulation_->ParticleBuffer(), gpu_fluid_simulation_->NumParticles(), gpu_fluid_simulation_->SimulationParams().radius, image_index);
 }
 
 Engine::Memory Engine::AcquireDeviceMemory(vk::Buffer buffer)
