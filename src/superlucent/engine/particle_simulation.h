@@ -21,6 +21,7 @@ public:
   void Forward();
 
   const auto& Particles() const { return particles_; }
+  const auto& SimulationParams() const { return params_; }
 
 private:
   std::vector<Particle> particles_;
