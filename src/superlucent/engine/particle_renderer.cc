@@ -635,6 +635,19 @@ void ParticleRenderer::PrepareResources()
   cells_buffer_.index_offset = sphere_vertex_buffer_size;
   cells_buffer_.num_indices = sphere_index_buffer.size();
 
+  constexpr auto max_num_particles = 40 * 40 * 40;
+  constexpr auto particle_buffer_size = max_num_particles * sizeof(Particle);
+
+  buffer_create_info
+    .setSize(particle_buffer_size)
+    .setUsage(vk::BufferUsageFlagBits::eTransferSrc);
+  particle_staging_buffer_.buffer = device.createBuffer(buffer_create_info);
+
+  buffer_create_info
+    .setSize(particle_buffer_size)
+    .setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eIndexBuffer);
+  particle_buffer_ = device.createBuffer(buffer_create_info);
+
   // Memory binding
   const auto floor_memory = engine_->AcquireDeviceMemory(floor_buffer_.buffer);
   device.bindBufferMemory(floor_buffer_.buffer, floor_memory.memory, floor_memory.offset);
@@ -644,6 +657,18 @@ void ParticleRenderer::PrepareResources()
 
   const auto cells_vertex_memory = engine_->AcquireDeviceMemory(cells_buffer_.buffer);
   device.bindBufferMemory(cells_buffer_.buffer, cells_vertex_memory.memory, cells_vertex_memory.offset);
+
+  const auto particle_memory = engine_->AcquireHostMemory(particle_buffer_);
+  device.bindBufferMemory(particle_buffer_, particle_memory.memory, particle_memory.offset);
+
+  // Persistently mapped staging buffer
+  vk::MemoryAllocateInfo memory_allocate_info;
+  memory_allocate_info
+    .setMemoryTypeIndex(engine_->HostMemoryIndex())
+    .setAllocationSize(particle_buffer_size);
+  particle_staging_buffer_.memory = device.allocateMemory(memory_allocate_info);
+  particle_staging_buffer_.map = reinterpret_cast<uint8_t*>(device.mapMemory(particle_staging_buffer_.memory, 0, particle_buffer_size));
+  device.bindBufferMemory(particle_staging_buffer_.buffer, particle_staging_buffer_.memory, 0);
 
   // Create image view for floor texture
   vk::ImageSubresourceRange subresource_range;
@@ -740,6 +765,9 @@ void ParticleRenderer::DestroyResources()
   device.destroyBuffer(cells_buffer_.buffer);
   device.destroyImage(floor_texture_.image);
   device.destroyImageView(floor_texture_.image_view);
+  device.destroyBuffer(particle_staging_buffer_.buffer);
+  device.freeMemory(particle_staging_buffer_.memory);
+  device.destroyBuffer(particle_buffer_);
 }
 
 vk::Pipeline ParticleRenderer::CreateGraphicsPipeline(vk::GraphicsPipelineCreateInfo& create_info)
