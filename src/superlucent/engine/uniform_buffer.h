@@ -25,8 +25,8 @@ public:
   Uniform& operator = (const T& rhs);
 
   // Public members
-  vk::DeviceSize offset;
-  vk::DeviceSize size;
+  vk::DeviceSize offset = 0;
+  vk::DeviceSize size = 0;
 
 private:
   UniformBuffer* const uniform_buffer_;
