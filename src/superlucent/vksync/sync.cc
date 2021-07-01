@@ -1,6 +1,6 @@
 #include <superlucent/vksync/sync.h>
 
-#include <superlucent/vksync/buffer.h>
+#include <superlucent/vksync/host_buffer.h>
 
 namespace supl
 {
@@ -46,6 +46,12 @@ Sync::Sync(vk::PhysicalDevice physical_device, vk::Device device)
   ssbo_alignment_ = physical_device_.getProperties().limits.minStorageBufferOffsetAlignment;
 
   constexpr vk::DeviceSize memory_chunk_size = 128 * 1024 * 1024; // 128MB
+
+  vk::MemoryAllocateInfo memory_allocate_info;
+}
+
+Sync::~Sync()
+{
 }
 
 vk::DeviceSize Sync::SsboAlign(vk::DeviceSize offset) const
