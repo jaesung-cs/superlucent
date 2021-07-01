@@ -1,7 +1,5 @@
 #include <superlucent/vksync/sync.h>
 
-#include <superlucent/vksync/host_buffer.h>
-
 namespace supl
 {
 namespace vksync
