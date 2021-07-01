@@ -294,6 +294,11 @@ void Engine::CreateInstance(GLFWwindow* window)
   for (int i = 0; i < instance_extensions.size(); i++)
     std::cout << "  " << instance_extensions[i].extensionName << std::endl;
 
+  const auto instance_layers = vk::enumerateInstanceLayerProperties();
+  std::cout << "Instance layers:" << std::endl;
+  for (int i = 0; i < instance_layers.size(); i++)
+    std::cout << "  " << instance_layers[i].layerName << std::endl;
+
   // App
   vk::ApplicationInfo app_info;
   app_info
