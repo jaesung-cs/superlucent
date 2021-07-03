@@ -69,9 +69,6 @@
     <ClCompile Include="..\..\src\superlucent\engine\uniform_buffer.cc">
       <Filter>src\superlucent\engine</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\superlucent\engine\gpu_fluid_simulation.cc">
-      <Filter>src\superlucent\engine</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\superlucent\engine\particle_simulation.cc">
       <Filter>src\superlucent\engine</Filter>
     </ClCompile>
@@ -136,9 +133,6 @@
     </ClInclude>
     <ClInclude Include="..\..\src\superlucent\engine\ubo\fluid_simulation_params.h">
       <Filter>src\superlucent\engine\ubo</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\engine\gpu_fluid_simulation.h">
-      <Filter>src\superlucent\engine</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\superlucent\engine\particle_simulation.h">
       <Filter>src\superlucent\engine</Filter>
