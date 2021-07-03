@@ -5,6 +5,16 @@ This is my playground for practicing Vulkan programming, including:
 - Rendering (hopefully ray tracing later) from compute shader results, without haevy CPU-GPU data transfers
 - Graphical user interface, object-oriented
 
+## Code refactoring (July 3, 2021)
+
+In commit `8abf0e8`,
+
+Tested CPU-to-GPU transfer with transfer semaphore every frame, not so fast.
+FPS drops from 500 to 250, i.e. ~2ms transfer time.
+Possible solution is using a transfer thread, a transfer queue and triple buffering, which requires optimization in data transfer, and is not a goal in this project.
+
+Deleted fluid simulation code which was not working.
+
 ## Solver update with linked list of collision pairs (June 12, 2021)
 
 In PR #2 (commit `4815997`),
