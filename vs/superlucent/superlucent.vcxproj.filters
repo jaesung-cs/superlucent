@@ -152,13 +152,13 @@
     <ClInclude Include="..\..\src\superlucent\engine\particle_simulation.h">
       <Filter>src\superlucent\engine</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\superlucent\vksync\buffer.h">
-      <Filter>src\superlucent\vksync</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\superlucent\vksync\mapped_buffer.h">
       <Filter>src\superlucent\vksync</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\superlucent\vksync\device_buffer.h">
+      <Filter>src\superlucent\vksync</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\vksync\buffer_view.h">
       <Filter>src\superlucent\vksync</Filter>
     </ClInclude>
   </ItemGroup>

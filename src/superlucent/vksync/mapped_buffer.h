@@ -7,7 +7,6 @@ namespace supl
 {
 namespace vksync
 {
-template <typename T>
 class MappedBuffer
 {
 public:
@@ -17,7 +16,6 @@ public:
     : buffer_{ buffer }
     , size_{ size }
     , memory_{ memory }
-    , byte_size_{ size * sizeof(T) }
   {
   }
 
@@ -39,30 +37,25 @@ public:
     return *this;
   }
 
-  auto Size() const { return size_; }
-
   operator vk::Buffer() const { return buffer_; }
-  auto ByteSize() const { return byte_size_; }
+  auto Size() const { return size_; }
 
 private:
   void Move(MappedBuffer&& rhs) noexcept
   {
-    size_ = rhs.size_;
     buffer_ = rhs.buffer_;
-    byte_size_ = rhs.byte_size_;
+    size_ = rhs.size_;
     memory_ = rhs.memory_;
     map_ = rhs.map_;
 
-    rhs.size_ = 0;
     rhs.buffer_ = nullptr;
-    rhs.byte_size_ = 0;
+    rhs.size_ = 0;
     rhs.memory_ = nullptr;
     rhs.map_ = nullptr;
   }
 
-  int size_ = 0;
   vk::Buffer buffer_;
-  vk::DeviceSize byte_size_ = 0;
+  vk::DeviceSize size_ = 0;
   vk::DeviceMemory memory_;
   uint8_t* map_ = nullptr;
 };
