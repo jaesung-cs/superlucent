@@ -136,6 +136,8 @@ private:
   void CreateSynchronizationObjects();
   void DestroySynchronizationObjects();
 
+  void RecreateSwapchain();
+
 private:
   const uint32_t max_width_;
   const uint32_t max_height_;

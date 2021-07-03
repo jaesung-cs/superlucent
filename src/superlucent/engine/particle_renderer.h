@@ -23,6 +23,8 @@ public:
 
   ~ParticleRenderer();
 
+  void Resize(uint32_t width, uint32_t height);
+
   void UpdateLights(const LightUbo& lights, int image_index);
   void UpdateCamera(const CameraUbo& camera, int image_index);
 
@@ -33,6 +35,9 @@ public:
 private:
   void CreateSampler();
   void DestroySampler();
+
+  void CreateRenderPass();
+  void DestroyRenderPass();
 
   void CreateFramebuffer();
   void DestroyFramebuffer();

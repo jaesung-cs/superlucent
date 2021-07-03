@@ -18,6 +18,7 @@ ParticleRenderer::ParticleRenderer(Engine* engine, uint32_t width, uint32_t heig
   , height_(height)
 {
   CreateSampler();
+  CreateRenderPass();
   CreateFramebuffer();
   CreateGraphicsPipelines();
   PrepareResources();
@@ -28,7 +29,18 @@ ParticleRenderer::~ParticleRenderer()
   DestroyResources();
   DestroyGraphicsPipelines();
   DestroyFramebuffer();
+  DestroyRenderPass();
   DestroySampler();
+}
+
+void ParticleRenderer::Resize(uint32_t width, uint32_t height)
+{
+  width_ = width;
+  height_ = height;
+
+  // Recreate framebuffer
+  DestroyFramebuffer();
+  CreateFramebuffer();
 }
 
 void ParticleRenderer::UpdateLights(const LightUbo& lights, int image_index)
@@ -111,7 +123,7 @@ void ParticleRenderer::DestroySampler()
   device.destroySampler(sampler_);
 }
 
-void ParticleRenderer::CreateFramebuffer()
+void ParticleRenderer::CreateRenderPass()
 {
   const auto device = engine_->Device();
   const auto swapchain_image_format = engine_->SwapchainImageFormat();
@@ -197,6 +209,18 @@ void ParticleRenderer::CreateFramebuffer()
     .setSubpasses(subpass)
     .setDependencies(dependency);
   render_pass_ = device.createRenderPass(render_pass_create_info);
+}
+
+void ParticleRenderer::DestroyRenderPass()
+{
+  const auto device = engine_->Device();
+
+  device.destroyRenderPass(render_pass_);
+}
+
+void ParticleRenderer::CreateFramebuffer()
+{
+  const auto device = engine_->Device();
 
   // Framebuffer
   const auto rendertarget = engine_->Rendertarget();
@@ -229,8 +253,6 @@ void ParticleRenderer::DestroyFramebuffer()
   for (auto& framebuffer : swapchain_framebuffers_)
     device.destroyFramebuffer(framebuffer);
   swapchain_framebuffers_.clear();
-
-  device.destroyRenderPass(render_pass_);
 }
 
 void ParticleRenderer::CreateGraphicsPipelines()

@@ -77,7 +77,26 @@ Engine::~Engine()
 
 void Engine::Resize(uint32_t width, uint32_t height)
 {
-  // TODO
+  width_ = width;
+  height_ = height;
+
+  RecreateSwapchain();
+}
+
+void Engine::RecreateSwapchain()
+{
+  device_.waitIdle();
+
+  // Recreate swapchain image views
+  DestroySwapchain();
+  CreateSwapchain();
+
+  // Recreate rendertarget images views
+  DestroyRendertarget();
+  CreateRendertarget();
+
+  // Resize renderer
+  particle_renderer_->Resize(width_, height_);
 }
 
 void Engine::UpdateLights(const std::vector<std::shared_ptr<scene::Light>>& lights)
@@ -125,7 +144,7 @@ void Engine::Draw(double time)
   const auto acquire_next_image_result = device_.acquireNextImageKHR(swapchain_, UINT64_MAX, image_available_semaphores_[current_frame_]);
   if (acquire_next_image_result.result == vk::Result::eErrorOutOfDateKHR)
   {
-    // TODO: Recreate swapchain
+    RecreateSwapchain();
     return;
   }
   else if (acquire_next_image_result.result != vk::Result::eSuccess && acquire_next_image_result.result != vk::Result::eSuboptimalKHR)
@@ -175,9 +194,7 @@ void Engine::Draw(double time)
   const auto present_result = present_queue_.presentKHR(present_info);
 
   if (present_result == vk::Result::eErrorOutOfDateKHR || present_result == vk::Result::eSuboptimalKHR)
-  {
-    // TODO: Recreate swapchain
-  }
+    RecreateSwapchain();
   else if (present_result != vk::Result::eSuccess)
     throw std::runtime_error("Failed to present swapchain image");
 
