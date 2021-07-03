@@ -12,7 +12,6 @@
 #include <superlucent/engine/uniform_buffer.h>
 #include <superlucent/scene/light.h>
 #include <superlucent/scene/camera.h>
-#include <superlucent/vksync/sync.h>
 
 namespace supl
 {
@@ -46,8 +45,6 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
   // Prepare vulkan resources
   CreateInstance(window);
   CreateDevice();
-
-  sync_ = std::unique_ptr<vksync::Sync>();
 
   CreateSwapchain();
   PreallocateMemory();
