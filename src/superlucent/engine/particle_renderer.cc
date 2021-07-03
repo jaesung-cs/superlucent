@@ -57,6 +57,34 @@ void ParticleRenderer::UpdateCamera(const CameraUbo& camera, int image_index)
   camera_ubos_[image_index] = camera;
 }
 
+void ParticleRenderer::UpdateParticles(const std::vector<Particle>& particles, const std::vector<vk::Semaphore>& signal_semaphores)
+{
+  num_particles_ = particles.size();
+
+  const auto device = engine_->Device();
+  const auto queue = engine_->Queue();
+
+  const auto byte_size = particles.size() * sizeof(Particle);
+  std::memcpy(particle_staging_buffer_.map, particles.data(), byte_size);
+
+  vk::BufferCopy region;
+  region
+    .setSrcOffset(0)
+    .setDstOffset(0)
+    .setSize(byte_size);
+
+  auto command_buffer = engine_->CreateOneTimeCommandBuffer();
+  command_buffer.copyBuffer(particle_staging_buffer_.buffer, particle_buffer_, region);
+  command_buffer.end();
+
+  vk::SubmitInfo submit_info;
+  submit_info
+    .setCommandBuffers(command_buffer)
+    .setSignalSemaphores(signal_semaphores);
+
+  queue.submit(submit_info);
+}
+
 void ParticleRenderer::Begin(vk::CommandBuffer& command_buffer, int image_index)
 {
   // Begin render pass
@@ -78,6 +106,15 @@ void ParticleRenderer::Begin(vk::CommandBuffer& command_buffer, int image_index)
   // Bind a shared descriptor set
   command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_layout_, 0u,
     descriptor_sets_[image_index], {});
+}
+
+void ParticleRenderer::RecordParticleRenderCommands(vk::CommandBuffer& command_buffer, float radius)
+{
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, cell_sphere_pipeline_);
+  command_buffer.pushConstants<float>(pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0, radius);
+  command_buffer.bindVertexBuffers(0u, { cells_buffer_.buffer, particle_buffer_ }, { 0ull, 0ull });
+  command_buffer.bindIndexBuffer(cells_buffer_.buffer, cells_buffer_.index_offset, vk::IndexType::eUint32);
+  command_buffer.drawIndexed(cells_buffer_.num_indices, num_particles_, 0u, 0u, 0u);
 }
 
 void ParticleRenderer::RecordFloorRenderCommands(vk::CommandBuffer& command_buffer)

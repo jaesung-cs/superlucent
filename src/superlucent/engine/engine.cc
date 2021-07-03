@@ -158,6 +158,9 @@ void Engine::Draw(double time)
 
   device_.resetFences(in_flight_fences_[current_frame_]);
 
+  // Update particles from CPU to GPU
+  particle_renderer_->UpdateParticles(particle_simulation_->Particles(), { particle_update_semaphores_[current_frame_] });
+
   // Build command buffer
   auto& draw_command_buffer = draw_command_buffers_[image_index];
   draw_command_buffer.reset();
@@ -173,12 +176,18 @@ void Engine::Draw(double time)
   particle_simulation_->UpdateSimulationParams(dt, animation_time_);
 
   // Submit
+  std::vector<vk::Semaphore> wait_semaphores{
+    image_available_semaphores_[current_frame_],
+    particle_update_semaphores_[current_frame_],
+  };
+
   std::vector<vk::PipelineStageFlags> stages{
-    vk::PipelineStageFlagBits::eColorAttachmentOutput
+    vk::PipelineStageFlagBits::eColorAttachmentOutput,
+    vk::PipelineStageFlagBits::eVertexInput,
   };
   vk::SubmitInfo submit_info;
   submit_info
-    .setWaitSemaphores(image_available_semaphores_[current_frame_])
+    .setWaitSemaphores(wait_semaphores)
     .setWaitDstStageMask(stages)
     .setCommandBuffers(draw_command_buffer)
     .setSignalSemaphores(render_finished_semaphores_[current_frame_]);
@@ -207,7 +216,7 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
     particle_simulation_->Forward();
 
   particle_renderer_->Begin(command_buffer, image_index);
-  // TODO: render particles
+  particle_renderer_->RecordParticleRenderCommands(command_buffer, particle_simulation_->SimulationParams().radius);
   particle_renderer_->RecordFloorRenderCommands(command_buffer);
   particle_renderer_->End(command_buffer);
 }
@@ -298,7 +307,24 @@ void Engine::ToDeviceMemory(const std::vector<uint8_t>& data, vk::Image image, u
   const auto wait_result = device_.waitForFences(transfer_fence_, true, UINT64_MAX);
   device_.resetFences(transfer_fence_);
   transient_command_buffer_.reset();
+}
 
+vk::CommandBuffer Engine::CreateOneTimeCommandBuffer()
+{
+  vk::CommandBufferAllocateInfo command_buffer_allocate_info;
+  command_buffer_allocate_info
+    .setCommandPool(transient_command_pool_)
+    .setLevel(vk::CommandBufferLevel::ePrimary)
+    .setCommandBufferCount(1);
+  auto transient_command_buffer = device_.allocateCommandBuffers(command_buffer_allocate_info)[0];
+
+  // Transfer commands
+  vk::CommandBufferBeginInfo command_buffer_begin_info;
+  command_buffer_begin_info
+    .setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+  transient_command_buffer.begin(command_buffer_begin_info);
+
+  return transient_command_buffer;
 }
 
 void Engine::CreateInstance(GLFWwindow* window)
@@ -797,6 +823,7 @@ void Engine::CreateSynchronizationObjects()
   {
     image_available_semaphores_.emplace_back(device_.createSemaphore({}));
     render_finished_semaphores_.emplace_back(device_.createSemaphore({}));
+    particle_update_semaphores_.emplace_back(device_.createSemaphore({}));
     in_flight_fences_.emplace_back(device_.createFence({ vk::FenceCreateFlagBits::eSignaled }));
   }
 
@@ -813,6 +840,10 @@ void Engine::DestroySynchronizationObjects()
   for (auto& semaphore : render_finished_semaphores_)
     device_.destroySemaphore(semaphore);
   render_finished_semaphores_.clear();
+
+  for (auto& semaphore : particle_update_semaphores_)
+    device_.destroySemaphore(semaphore);
+  particle_update_semaphores_.clear();
 
   for (auto& fence : in_flight_fences_)
     device_.destroyFence(fence);

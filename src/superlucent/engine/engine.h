@@ -47,6 +47,7 @@ public:
 
   // Vulkan getters and utils
   auto Device() const { return device_; }
+  auto Queue() const { return queue_; }
   auto DescriptorPool() const { return descriptor_pool_; }
   auto HostMemoryIndex() const { return host_index_; }
 
@@ -111,6 +112,8 @@ public:
   }
 
   void ToDeviceMemory(const std::vector<uint8_t>& data, vk::Image image, uint32_t width, uint32_t height, uint32_t mipmap_levels);
+
+  vk::CommandBuffer CreateOneTimeCommandBuffer();
 
 private:
   void RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t image_index, double dt);
@@ -225,6 +228,9 @@ private:
 
   // Transfer
   vk::Fence transfer_fence_;
+
+  // Transfer semaphores
+  std::vector<vk::Semaphore> particle_update_semaphores_;
 
   // Present synchronization
   std::vector<vk::Semaphore> image_available_semaphores_;

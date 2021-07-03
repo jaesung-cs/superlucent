@@ -27,8 +27,10 @@ public:
 
   void UpdateLights(const LightUbo& lights, int image_index);
   void UpdateCamera(const CameraUbo& camera, int image_index);
+  void UpdateParticles(const std::vector<Particle>& particles, const std::vector<vk::Semaphore>& signal_semaphores);
 
   void Begin(vk::CommandBuffer& command_buffer, int image_index);
+  void RecordParticleRenderCommands(vk::CommandBuffer& command_buffer, float radius);
   void RecordFloorRenderCommands(vk::CommandBuffer& command_buffer);
   void End(vk::CommandBuffer& command_buffer);
 
@@ -83,6 +85,7 @@ private:
   };
   StagingBuffer particle_staging_buffer_;
   vk::Buffer particle_buffer_;
+  int num_particles_ = 0;
 
   // Pipeline
   vk::RenderPass render_pass_;
