@@ -3,6 +3,9 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include <superlucent/vksync/device_buffer.h>
+#include <superlucent/vksync/mapped_buffer.h>
+
 namespace supl
 {
 namespace vksync
@@ -13,6 +16,8 @@ public:
   Sync() = delete;
 
   explicit Sync(vk::PhysicalDevice physical_device, vk::Device device);
+
+  ~Sync();
 
   auto Device() const { return device_; }
 

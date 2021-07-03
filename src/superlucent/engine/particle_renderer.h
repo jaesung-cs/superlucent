@@ -12,6 +12,7 @@ namespace engine
 {
 class Engine;
 class Uniform;
+struct Particle;
 
 class ParticleRenderer
 {
@@ -25,7 +26,9 @@ public:
   void UpdateLights(const LightUbo& lights, int image_index);
   void UpdateCamera(const CameraUbo& camera, int image_index);
 
-  void RecordRenderCommands(vk::CommandBuffer command_buffer, vk::Buffer particle_buffer, uint32_t num_particles, float radius, int image_index);
+  void Begin(vk::CommandBuffer& command_buffer, int image_index);
+  void RecordFloorRenderCommands(vk::CommandBuffer& command_buffer);
+  void End(vk::CommandBuffer& command_buffer);
 
 private:
   void CreateSampler();
@@ -66,6 +69,15 @@ private:
     vk::ImageView image_view;
   };
   Texture floor_texture_;
+
+  struct StagingBuffer
+  {
+    vk::Buffer buffer;
+    vk::DeviceMemory memory;
+    uint8_t* map = nullptr;
+  };
+  StagingBuffer particle_staging_buffer_;
+  vk::Buffer particle_buffer_;
 
   // Pipeline
   vk::RenderPass render_pass_;

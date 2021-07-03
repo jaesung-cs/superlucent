@@ -1,4 +1,4 @@
-#include <superlucent/engine/fluid_simulation.h>
+#include <superlucent/engine/gpu_fluid_simulation.h>
 
 #include <iostream>
 
@@ -11,7 +11,7 @@ namespace supl
 {
 namespace engine
 {
-FluidSimulation::FluidSimulation(Engine* engine, int num_ubos)
+GpuFluidSimulation::GpuFluidSimulation(Engine* engine, int num_ubos)
   : engine_(engine)
   , num_ubos_(num_ubos)
 {
@@ -19,13 +19,13 @@ FluidSimulation::FluidSimulation(Engine* engine, int num_ubos)
   PrepareResources();
 }
 
-FluidSimulation::~FluidSimulation()
+GpuFluidSimulation::~GpuFluidSimulation()
 {
   DestroyResources();
   DestroyPipelines();
 }
 
-void FluidSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer& command_buffer, int ubo_index)
+void GpuFluidSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer& command_buffer, int ubo_index)
 {
   // Barrier to make sure previous rendering command
   // TODO: triple buffering as well as for particle buffers
@@ -175,7 +175,7 @@ void FluidSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer& comma
     {}, particle_buffer_memory_barrier, {});
 }
 
-void FluidSimulation::UpdateSimulationParams(double dt, double animation_time, int ubo_index)
+void GpuFluidSimulation::UpdateSimulationParams(double dt, double animation_time, int ubo_index)
 {
   constexpr auto wall_offset_speed = 5.;
   constexpr auto wall_offset_magnitude = 0.5;
@@ -187,7 +187,7 @@ void FluidSimulation::UpdateSimulationParams(double dt, double animation_time, i
   fluid_simulation_params_ubos_[ubo_index] = fluid_simulation_params_;
 }
 
-void FluidSimulation::CreatePipelines()
+void GpuFluidSimulation::CreatePipelines()
 {
   const auto device = engine_->Device();
 
@@ -317,7 +317,7 @@ void FluidSimulation::CreatePipelines()
   device.destroyShaderModule(update_v_module);
 }
 
-void FluidSimulation::DestroyPipelines()
+void GpuFluidSimulation::DestroyPipelines()
 {
   const auto device = engine_->Device();
 
@@ -336,7 +336,7 @@ void FluidSimulation::DestroyPipelines()
   device.destroyPipelineCache(pipeline_cache_);
 }
 
-void FluidSimulation::PrepareResources()
+void GpuFluidSimulation::PrepareResources()
 {
   const auto device = engine_->Device();
 
@@ -545,7 +545,7 @@ void FluidSimulation::PrepareResources()
   }
 }
 
-void FluidSimulation::DestroyResources()
+void GpuFluidSimulation::DestroyResources()
 {
   const auto device = engine_->Device();
 
@@ -554,7 +554,7 @@ void FluidSimulation::DestroyResources()
   device.destroyBuffer(storage_buffer_);
 }
 
-vk::Pipeline FluidSimulation::CreateComputePipeline(vk::ComputePipelineCreateInfo& create_info)
+vk::Pipeline GpuFluidSimulation::CreateComputePipeline(vk::ComputePipelineCreateInfo& create_info)
 {
   const auto device = engine_->Device();
 

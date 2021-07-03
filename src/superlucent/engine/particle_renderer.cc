@@ -45,11 +45,10 @@ void ParticleRenderer::UpdateCamera(const CameraUbo& camera, int image_index)
   camera_ubos_[image_index] = camera;
 }
 
-void ParticleRenderer::RecordRenderCommands(vk::CommandBuffer command_buffer, vk::Buffer particle_buffer, uint32_t num_particles, float radius, int image_index)
+void ParticleRenderer::Begin(vk::CommandBuffer& command_buffer, int image_index)
 {
-  // Begin render pass 
+  // Begin render pass
   command_buffer.setViewport(0, vk::Viewport{ 0.f, 0.f, static_cast<float>(width_), static_cast<float>(height_), 0.f, 1.f });
-
   command_buffer.setScissor(0, vk::Rect2D{ {0u, 0u}, {width_, height_} });
 
   std::vector<vk::ClearValue> clear_values{
@@ -67,29 +66,18 @@ void ParticleRenderer::RecordRenderCommands(vk::CommandBuffer command_buffer, vk
   // Bind a shared descriptor set
   command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eGraphics, pipeline_layout_, 0u,
     descriptor_sets_[image_index], {});
+}
 
-  // Draw cells
-  command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, cell_sphere_pipeline_);
-
-  command_buffer.pushConstants<float>(pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0, radius);
-
-  command_buffer.bindVertexBuffers(0u,
-    { cells_buffer_.buffer, particle_buffer },
-    { 0ull, 0ull });
-
-  command_buffer.bindIndexBuffer(cells_buffer_.buffer, cells_buffer_.index_offset, vk::IndexType::eUint32);
-
-  command_buffer.drawIndexed(cells_buffer_.num_indices, num_particles, 0u, 0u, 0u);
-
-  // Draw floor model
+void ParticleRenderer::RecordFloorRenderCommands(vk::CommandBuffer& command_buffer)
+{
   command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, floor_pipeline_);
-
   command_buffer.bindVertexBuffers(0u, { floor_buffer_.buffer }, { 0ull });
-
   command_buffer.bindIndexBuffer(floor_buffer_.buffer, floor_buffer_.index_offset, vk::IndexType::eUint32);
-
   command_buffer.drawIndexed(floor_buffer_.num_indices, 1u, 0u, 0u, 0u);
+}
 
+void ParticleRenderer::End(vk::CommandBuffer& command_buffer)
+{
   command_buffer.endRenderPass();
 }
 
@@ -636,6 +624,19 @@ void ParticleRenderer::PrepareResources()
   cells_buffer_.index_offset = sphere_vertex_buffer_size;
   cells_buffer_.num_indices = sphere_index_buffer.size();
 
+  constexpr auto max_num_particles = 40 * 40 * 40;
+  constexpr auto particle_buffer_size = max_num_particles * sizeof(Particle);
+
+  buffer_create_info
+    .setSize(particle_buffer_size)
+    .setUsage(vk::BufferUsageFlagBits::eTransferSrc);
+  particle_staging_buffer_.buffer = device.createBuffer(buffer_create_info);
+
+  buffer_create_info
+    .setSize(particle_buffer_size)
+    .setUsage(vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eIndexBuffer);
+  particle_buffer_ = device.createBuffer(buffer_create_info);
+
   // Memory binding
   const auto floor_memory = engine_->AcquireDeviceMemory(floor_buffer_.buffer);
   device.bindBufferMemory(floor_buffer_.buffer, floor_memory.memory, floor_memory.offset);
@@ -645,6 +646,18 @@ void ParticleRenderer::PrepareResources()
 
   const auto cells_vertex_memory = engine_->AcquireDeviceMemory(cells_buffer_.buffer);
   device.bindBufferMemory(cells_buffer_.buffer, cells_vertex_memory.memory, cells_vertex_memory.offset);
+
+  const auto particle_memory = engine_->AcquireHostMemory(particle_buffer_);
+  device.bindBufferMemory(particle_buffer_, particle_memory.memory, particle_memory.offset);
+
+  // Persistently mapped staging buffer
+  vk::MemoryAllocateInfo memory_allocate_info;
+  memory_allocate_info
+    .setMemoryTypeIndex(engine_->HostMemoryIndex())
+    .setAllocationSize(particle_buffer_size);
+  particle_staging_buffer_.memory = device.allocateMemory(memory_allocate_info);
+  particle_staging_buffer_.map = reinterpret_cast<uint8_t*>(device.mapMemory(particle_staging_buffer_.memory, 0, particle_buffer_size));
+  device.bindBufferMemory(particle_staging_buffer_.buffer, particle_staging_buffer_.memory, 0);
 
   // Create image view for floor texture
   vk::ImageSubresourceRange subresource_range;
@@ -741,6 +754,9 @@ void ParticleRenderer::DestroyResources()
   device.destroyBuffer(cells_buffer_.buffer);
   device.destroyImage(floor_texture_.image);
   device.destroyImageView(floor_texture_.image_view);
+  device.destroyBuffer(particle_staging_buffer_.buffer);
+  device.freeMemory(particle_staging_buffer_.memory);
+  device.destroyBuffer(particle_buffer_);
 }
 
 vk::Pipeline ParticleRenderer::CreateGraphicsPipeline(vk::GraphicsPipelineCreateInfo& create_info)

@@ -7,32 +7,47 @@ namespace supl
 {
 namespace vksync
 {
-template <typename T>
-class Buffer
+class DeviceBuffer
 {
 public:
-  Buffer() = delete;
+  DeviceBuffer() = delete;
 
-  Buffer(Sync* sync, int size)
-    : sync_(sync)
-    , size_(size)
+  DeviceBuffer(vk::Buffer buffer, vk::DeviceSize size)
+    : buffer_{ buffer }
+    , size_{ size }
   {
   }
 
-  auto Size() const { return size_; }
+  DeviceBuffer(const DeviceBuffer& rhs) = delete;
+  DeviceBuffer& operator = (const DeviceBuffer& rhs) = delete;
 
+  DeviceBuffer(DeviceBuffer&& rhs) noexcept
+  {
+    Move(std::move(rhs));
+  }
+
+  DeviceBuffer& operator = (DeviceBuffer&& rhs) noexcept
+  {
+    Move(std::move(rhs));
+    return *this;
+  }
+
+public:
   operator vk::Buffer() const { return buffer_; }
-  auto Offset() const { return offset_; }
-  auto ByteSize() const { return byte_size_; }
+  auto ByteSize() const { return size_; }
 
 private:
-  Sync* const sync_ = nullptr;
+  void Move(DeviceBuffer&& rhs)
+  {
+    buffer_ = rhs.buffer_;
+    size_ = rhs.size_;
 
-  int size_ = 0;
+    rhs.buffer_ = nullptr;
+    rhs.size_ = 0;
+  }
 
   vk::Buffer buffer_;
-  vk::DeviceSize offset_ = 0;
-  vk::DeviceSize byte_size_ = 0;
+  vk::DeviceSize size_ = 0;
 };
 }
 }
