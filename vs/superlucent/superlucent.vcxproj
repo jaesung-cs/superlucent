@@ -122,7 +122,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>../../src;../../lib;C:\lib\glfw\include;C:\lib\glm;C:\VulkanSDK\1.2.176.1\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src;../../lib;C:\lib\glfw\include;C:\lib\glm;C:\lib\assimp\include;C:\VulkanSDK\1.2.176.1\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -132,6 +132,8 @@
     </Link>
     <PreBuildEvent>
       <Command>cd $(SolutionDir)..\src\superlucent\shader\
+python compile.py
+cd $(SolutionDir)..\src\vkpbd\shader\
 python compile.py
 </Command>
     </PreBuildEvent>
@@ -145,7 +147,7 @@ python compile.py
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>../../src;../../lib;C:\lib\glfw\include;C:\lib\glm;C:\VulkanSDK\1.2.176.1\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src;../../lib;C:\lib\glfw\include;C:\lib\glm;C:\lib\assimp\include;C:\VulkanSDK\1.2.176.1\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -157,6 +159,8 @@ python compile.py
     </Link>
     <PreBuildEvent>
       <Command>cd $(SolutionDir)..\src\superlucent\shader\
+python compile.py
+cd $(SolutionDir)..\src\vkpbd\shader\
 python compile.py
 </Command>
     </PreBuildEvent>
@@ -200,6 +204,9 @@ python compile.py
     <ClInclude Include="..\..\src\superlucent\shader\particle\simulation_params.glsl" />
     <ClInclude Include="..\..\src\superlucent\shader\particle\solver.glsl" />
     <ClInclude Include="..\..\src\superlucent\utils\rng.h" />
+    <ClInclude Include="..\..\src\vkpbd\particle.h" />
+    <ClInclude Include="..\..\src\vkpbd\simulation_params.h" />
+    <ClInclude Include="..\..\src\vkpbd\vkpbd.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\superlucent\shader\.gitignore" />
@@ -224,6 +231,23 @@ python compile.py
     <None Include="..\..\src\superlucent\shader\rendering\floor.frag" />
     <None Include="..\..\src\superlucent\shader\rendering\floor.vert" />
     <None Include="..\..\src\superlucent\shader\uniform_grid\uniform_grid.glsl" />
+    <None Include="..\..\src\vkpbd\shader\particle\add_uniform_grid.comp" />
+    <None Include="..\..\src\vkpbd\shader\particle\collision_detection.comp" />
+    <None Include="..\..\src\vkpbd\shader\particle\collision_pairs.glsl" />
+    <None Include="..\..\src\vkpbd\shader\particle\forward.comp" />
+    <None Include="..\..\src\vkpbd\shader\particle\indirect.glsl" />
+    <None Include="..\..\src\vkpbd\shader\particle\initialize_collision_detection.comp" />
+    <None Include="..\..\src\vkpbd\shader\particle\initialize_dispatch.comp" />
+    <None Include="..\..\src\vkpbd\shader\particle\initialize_solver.comp" />
+    <None Include="..\..\src\vkpbd\shader\particle\initialize_uniform_grid.comp" />
+    <None Include="..\..\src\vkpbd\shader\particle\particle.glsl" />
+    <None Include="..\..\src\vkpbd\shader\particle\simulation_params.glsl" />
+    <None Include="..\..\src\vkpbd\shader\particle\solver.glsl" />
+    <None Include="..\..\src\vkpbd\shader\particle\solve_delta_lambda.comp" />
+    <None Include="..\..\src\vkpbd\shader\particle\solve_delta_x.comp" />
+    <None Include="..\..\src\vkpbd\shader\particle\solve_x_lambda.comp" />
+    <None Include="..\..\src\vkpbd\shader\particle\uniform_grid.glsl" />
+    <None Include="..\..\src\vkpbd\shader\particle\velocity_update.comp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

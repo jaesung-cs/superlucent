@@ -55,6 +55,17 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
   particle_renderer_ = std::make_unique<ParticleRenderer>(this, width_, height_);
   particle_simulation_ = std::make_unique<ParticleSimulation>();
 
+  // Create vkpbd
+  vkpbd::ParticleSimulatorCreateInfo particleSimulatorCreateInfo;
+  particleSimulatorCreateInfo.device = device_;
+  particleSimulatorCreateInfo.physicalDevice = physical_device_;
+  particleSimulatorCreateInfo.descriptorPool = descriptor_pool_;
+  particleSimulatorCreateInfo.particleCount = 40 * 40 * 40;
+  particleSimulatorCreateInfo.commandCount = 3;
+  particleSimulator_ = vkpbd::createParticleSimulator(particleSimulatorCreateInfo);
+
+  particleSimulator_.destroy();
+
   CreateSynchronizationObjects();
 }
 

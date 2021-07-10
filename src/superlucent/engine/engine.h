@@ -5,6 +5,8 @@
 
 #include <glm/glm.hpp>
 
+#include <vkpbd/vkpbd.hpp>
+
 #include <superlucent/engine/ubo/light_ubo.h>
 #include <superlucent/engine/ubo/camera_ubo.h>
 
@@ -214,6 +216,9 @@ private:
 
   // Position-based particle simulation in CPU
   std::unique_ptr<ParticleSimulation> particle_simulation_;
+
+  // vkpbd
+  vkpbd::ParticleSimulator particleSimulator_;
 
   // Command buffers
   vk::CommandBuffer transient_command_buffer_;
