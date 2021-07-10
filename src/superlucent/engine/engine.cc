@@ -56,15 +56,7 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
   particle_simulation_ = std::make_unique<ParticleSimulation>();
 
   // Create vkpbd
-  vkpbd::ParticleSimulatorCreateInfo particleSimulatorCreateInfo;
-  particleSimulatorCreateInfo.device = device_;
-  particleSimulatorCreateInfo.physicalDevice = physical_device_;
-  particleSimulatorCreateInfo.descriptorPool = descriptor_pool_;
-  particleSimulatorCreateInfo.particleCount = 40 * 40 * 40;
-  particleSimulatorCreateInfo.commandCount = 3;
-  particleSimulator_ = vkpbd::createParticleSimulator(particleSimulatorCreateInfo);
-
-  particleSimulator_.destroy();
+  CreateParticleSimulator();
 
   CreateSynchronizationObjects();
 }
@@ -74,6 +66,7 @@ Engine::~Engine()
   device_.waitIdle();
 
   DestroySynchronizationObjects();
+  DestroyParticleSimulator();
 
   particle_simulation_ = nullptr;
   particle_renderer_ = nullptr;
@@ -826,6 +819,71 @@ void Engine::DestroyRendertarget()
 
   device_.destroyImageView(rendertarget_.depth_image_view);
   device_.destroyImage(rendertarget_.depth_image);
+}
+
+void Engine::CreateParticleSimulator()
+{
+  constexpr auto particleDimension = 40;
+  constexpr auto particleCount = particleDimension * particleDimension * particleDimension;
+
+  vkpbd::ParticleSimulatorCreateInfo particleSimulatorCreateInfo;
+  particleSimulatorCreateInfo.device = device_;
+  particleSimulatorCreateInfo.physicalDevice = physical_device_;
+  particleSimulatorCreateInfo.descriptorPool = descriptor_pool_;
+  particleSimulatorCreateInfo.particleCount = particleCount;
+  particleSimulatorCreateInfo.commandCount = commandCount;
+  particleSimulator_ = vkpbd::createParticleSimulator(particleSimulatorCreateInfo);
+
+  // Create buffers
+  const auto particleBufferRequirements = particleSimulator_.getParticleBufferRequirements();
+  const auto internalBufferRequirements = particleSimulator_.getInternalBufferRequirements();
+  const auto uniformBufferRequirements = particleSimulator_.getUniformBufferRequirements();
+
+  vk::BufferCreateInfo bufferCreateInfo;
+  bufferCreateInfo
+    .setUsage(particleBufferRequirements.usage | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer)
+    .setSize(particleBufferRequirements.size * commandCount);
+  particleBuffer_ = device_.createBuffer(bufferCreateInfo);
+  particleBufferSize_ = particleBufferRequirements.size;
+
+  bufferCreateInfo
+    .setUsage(internalBufferRequirements.usage)
+    .setSize(internalBufferRequirements.size * commandCount);
+  particleInternalBuffer_ = device_.createBuffer(bufferCreateInfo);
+  particleInternalBufferSize_ = internalBufferRequirements.size;
+
+  bufferCreateInfo
+    .setUsage(uniformBufferRequirements.usage)
+    .setSize(uniformBufferRequirements.size * commandCount);
+  particleUniformBuffer_ = device_.createBuffer(bufferCreateInfo);
+  particleUniformBufferSize_ = uniformBufferRequirements.size;
+
+  // Bind to memory
+  const auto particleMemory = AcquireDeviceMemory(particleBuffer_);
+  device_.bindBufferMemory(particleBuffer_, particleMemory.memory, particleMemory.offset);
+
+  const auto particleInternalMemory = AcquireDeviceMemory(particleInternalBuffer_);
+  device_.bindBufferMemory(particleInternalBuffer_, particleInternalMemory.memory, particleInternalMemory.offset);
+
+  // Persistently mapped uniform buffer
+  vk::MemoryAllocateInfo memoryAllocateInfo;
+  memoryAllocateInfo
+    .setAllocationSize(device_.getBufferMemoryRequirements(particleUniformBuffer_).size)
+    .setMemoryTypeIndex(host_index_);
+  particleUniformMemory_ = device_.allocateMemory(memoryAllocateInfo);
+  particleUniformBufferMap_ = reinterpret_cast<uint8_t*>(device_.mapMemory(particleUniformMemory_, 0, uniformBufferRequirements.size * commandCount));
+  device_.bindBufferMemory(particleUniformBuffer_, particleUniformMemory_, 0);
+}
+
+void Engine::DestroyParticleSimulator()
+{
+  device_.destroyBuffer(particleBuffer_);
+  device_.destroyBuffer(particleInternalBuffer_);
+  device_.destroyBuffer(particleUniformBuffer_);
+  device_.unmapMemory(particleUniformMemory_);
+  device_.freeMemory(particleUniformMemory_);
+
+  particleSimulator_.destroy();
 }
 
 void Engine::CreateSynchronizationObjects()

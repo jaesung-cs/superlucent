@@ -138,6 +138,9 @@ private:
   void CreateRendertarget();
   void DestroyRendertarget();
 
+  void CreateParticleSimulator();
+  void DestroyParticleSimulator();
+
   void CreateSynchronizationObjects();
   void DestroySynchronizationObjects();
 
@@ -218,7 +221,16 @@ private:
   std::unique_ptr<ParticleSimulation> particle_simulation_;
 
   // vkpbd
+  static constexpr auto commandCount = 3; // Triple buffer
   vkpbd::ParticleSimulator particleSimulator_;
+  vk::Buffer particleBuffer_;
+  vk::DeviceSize particleBufferSize_ = 0;
+  vk::Buffer particleInternalBuffer_;
+  vk::DeviceSize particleInternalBufferSize_ = 0;
+  vk::Buffer particleUniformBuffer_;
+  vk::DeviceSize particleUniformBufferSize_ = 0;
+  vk::DeviceMemory particleUniformMemory_;
+  uint8_t* particleUniformBufferMap_ = nullptr;
 
   // Command buffers
   vk::CommandBuffer transient_command_buffer_;
