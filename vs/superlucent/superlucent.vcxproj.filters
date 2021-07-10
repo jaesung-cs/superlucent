@@ -37,6 +37,9 @@
     <Filter Include="src\superlucent\shader\rendering">
       <UniqueIdentifier>{d1617805-fd97-45bb-bb1a-8223322c7884}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\superlucent\geometry">
+      <UniqueIdentifier>{51f71da0-17b9-4704-b53f-1a094649b62d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cc">
@@ -68,6 +71,15 @@
     </ClCompile>
     <ClCompile Include="..\..\src\superlucent\engine\particle_simulation.cc">
       <Filter>src\superlucent\engine</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\geometry\mesh.cc">
+      <Filter>src\superlucent\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\geometry\mesh_loader.cc">
+      <Filter>src\superlucent\geometry</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\geometry\tetragrid.cc">
+      <Filter>src\superlucent\geometry</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -130,6 +142,15 @@
     </ClInclude>
     <ClInclude Include="..\..\src\superlucent\engine\particle_simulation.h">
       <Filter>src\superlucent\engine</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\geometry\mesh.h">
+      <Filter>src\superlucent\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\geometry\mesh_loader.h">
+      <Filter>src\superlucent\geometry</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\geometry\tetragrid.h">
+      <Filter>src\superlucent\geometry</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

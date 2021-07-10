@@ -128,7 +128,7 @@
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../lib;C:\VulkanSDK\1.2.176.1\Lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;vulkan-1.lib;assimp-vc142-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>cd $(SolutionDir)..\src\superlucent\shader\
@@ -153,7 +153,7 @@ python compile.py
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>../../lib;C:\VulkanSDK\1.2.176.1\Lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;vulkan-1.lib;assimp-vc142-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>cd $(SolutionDir)..\src\superlucent\shader\
@@ -169,6 +169,9 @@ python compile.py
     <ClCompile Include="..\..\src\superlucent\engine\gpu_particle_simulation.cc" />
     <ClCompile Include="..\..\src\superlucent\engine\particle_simulation.cc" />
     <ClCompile Include="..\..\src\superlucent\engine\uniform_buffer.cc" />
+    <ClCompile Include="..\..\src\superlucent\geometry\mesh.cc" />
+    <ClCompile Include="..\..\src\superlucent\geometry\mesh_loader.cc" />
+    <ClCompile Include="..\..\src\superlucent\geometry\tetragrid.cc" />
     <ClCompile Include="..\..\src\superlucent\scene\camera.cc" />
     <ClCompile Include="..\..\src\superlucent\scene\camera_control.cc" />
     <ClCompile Include="..\..\src\superlucent\utils\rng.cc" />
@@ -184,6 +187,9 @@ python compile.py
     <ClInclude Include="..\..\src\superlucent\engine\ubo\light_ubo.h" />
     <ClInclude Include="..\..\src\superlucent\engine\ubo\particle_simulation_params.h" />
     <ClInclude Include="..\..\src\superlucent\engine\uniform_buffer.h" />
+    <ClInclude Include="..\..\src\superlucent\geometry\mesh.h" />
+    <ClInclude Include="..\..\src\superlucent\geometry\mesh_loader.h" />
+    <ClInclude Include="..\..\src\superlucent\geometry\tetragrid.h" />
     <ClInclude Include="..\..\src\superlucent\scene\camera.h" />
     <ClInclude Include="..\..\src\superlucent\scene\camera_control.h" />
     <ClInclude Include="..\..\src\superlucent\scene\light.h" />
