@@ -27,12 +27,20 @@ struct BufferRange
   vk::DeviceSize size = 0;
 };
 
+struct UniformBufferRange
+{
+  vk::Buffer buffer;
+  vk::DeviceSize offset = 0;
+  vk::DeviceSize size = 0;
+  uint8_t* map_ = nullptr;
+};
+
 struct StepInfo
 {
   BufferRange srcBuffer;
   BufferRange dstBuffer;
   BufferRange internalBuffer;
-  BufferRange uniformBuffer;
+  UniformBufferRange uniformBuffer;
 };
 
 class ParticleSimulator
@@ -498,7 +506,7 @@ inline ParticleSimulator createParticleSimulator(const ParticleSimulatorCreateIn
   // Sub buffer ranges
   const auto collisionCount =
     simulator.particleCount_ + 5 // walls
-    + simulator.particleCount_ * 12; // max 12 collisions for each sphere
+    + simulator.particleCount_ * 6; // max 12 collisions for each sphere, 6 pairs in average
 
   const auto solverBufferSize =
     (collisionCount // lambda
