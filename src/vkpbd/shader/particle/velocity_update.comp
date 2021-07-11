@@ -30,7 +30,6 @@ void main()
   out_particles[index].position.xyz = solver_position;
 
   const float radius = params.radius;
-  const float mass = out_particles[index].properties.x;
 
   vec4 prev_velocity = out_particles[index].velocity;
   vec4 velocity = (out_particles[index].position - out_particles[index].prev_position) / params.dt;

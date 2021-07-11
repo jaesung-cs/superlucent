@@ -865,6 +865,7 @@ void Engine::CreateParticleSimulator()
   constexpr auto radius = 0.03f;
   constexpr float density = 1000.f; // water
   const float mass = radius * radius * radius * density;
+  const float invMass = 1.f / mass;
   constexpr glm::vec2 wallDistance = glm::vec2(3.f, 1.5f);
   const glm::vec3 particleOffset = glm::vec3(-wallDistance + glm::vec2(radius * 1.1f), radius * 1.1f);
   const glm::vec3 particleStride = glm::vec3(radius * 2.2f);
@@ -888,7 +889,7 @@ void Engine::CreateParticleSimulator()
           0.f
         };
         glm::vec4 velocity{ 0.f };
-        glm::vec4 properties{ mass, 0.f, 0.f, 0.f };
+        glm::vec4 properties{ invMass, 0.f, 0.f, 0.f };
         glm::vec4 externalForce{
           gravity.x * mass,
           gravity.y * mass,

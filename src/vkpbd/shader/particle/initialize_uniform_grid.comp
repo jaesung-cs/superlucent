@@ -15,7 +15,6 @@ void main()
   {
     // Cell size big enough for collision detection
     grid.cell_size = vec3(params.radius * 4.f);
-    // grid.cell_size = vec3(params.radius * 10.f);
     grid.num_pairs = 0;
   }
 
