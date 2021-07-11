@@ -20,44 +20,41 @@ struct BufferRequirements
   vk::DeviceSize size = 0;
 };
 
-struct BufferRange
-{
-  vk::Buffer buffer;
-  vk::DeviceSize offset = 0;
-  vk::DeviceSize size = 0;
-};
-
-struct UniformBufferRange
-{
-  vk::Buffer buffer;
-  vk::DeviceSize offset = 0;
-  vk::DeviceSize size = 0;
-  uint8_t* map = nullptr;
-};
-
-struct StepInfo
-{
-  BufferRange srcBuffer;
-  BufferRange dstBuffer;
-  BufferRange internalBuffer;
-  UniformBufferRange uniformBuffer;
-};
-
 class ParticleSimulator
 {
   friend ParticleSimulator createParticleSimulator(const ParticleSimulatorCreateInfo& createInfo);
 
 private:
-  struct BufferRange
+  struct SubBufferRange
   {
     vk::DeviceSize offset = 0;
     vk::DeviceSize size = 0;
+  };
+
+  struct BufferRange
+  {
+    vk::Buffer buffer;
+    vk::DeviceSize offset = 0;
+    vk::DeviceSize size = 0;
+  };
+
+  struct UniformBufferRange
+  {
+    vk::Buffer buffer;
+    vk::DeviceSize offset = 0;
+    vk::DeviceSize size = 0;
+    uint8_t* map = nullptr;
   };
 
 public:
   ParticleSimulator() = default;
 
   ~ParticleSimulator() = default;
+
+  auto getParticleCount() const
+  {
+    return particleCount_;
+  }
 
   BufferRequirements getParticleBufferRequirements()
   {
@@ -83,8 +80,52 @@ public:
     return requirements;
   }
 
-  void cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, const StepInfo& stepInfo)
+  void cmdBindSrcParticleBuffer(vk::Buffer buffer, vk::DeviceSize offset)
   {
+    srcBuffer_.buffer = buffer;
+    srcBuffer_.offset = offset;
+    srcBuffer_.size = particleBufferRequiredSize_;
+  }
+
+  void cmdBindDstParticleBuffer(vk::Buffer buffer, vk::DeviceSize offset)
+  {
+    dstBuffer_.buffer = buffer;
+    dstBuffer_.offset = offset;
+    dstBuffer_.size = particleBufferRequiredSize_;
+  }
+
+  void cmdBindInternalBuffer(vk::Buffer buffer, vk::DeviceSize offset)
+  {
+    internalBuffer_.buffer = buffer;
+    internalBuffer_.offset = offset;
+    internalBuffer_.size = internalBufferRequiredSize_;
+  }
+
+  void cmdBindUniformBuffer(vk::Buffer buffer, vk::DeviceSize offset, uint8_t* map)
+  {
+    uniformBuffer_.buffer = buffer;
+    uniformBuffer_.offset = offset;
+    uniformBuffer_.size = uniformBufferRequiredSize_;
+    uniformBuffer_.map = map;
+  }
+
+  void cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, float animationTime, float dt)
+  {
+    constexpr auto radius = 0.03f;
+
+    constexpr auto wallOffsetSpeed = 5.f;
+    constexpr auto wallOffsetMagnitude = 0.5f;
+
+    // Set uniform
+    SimulationParams params;
+    params.dt = dt;
+    params.num_particles = particleCount_;
+    params.radius = radius;
+    params.alpha = 1e-3f;
+    params.wall_offset = static_cast<float>(wallOffsetMagnitude * std::sin(animationTime * wallOffsetSpeed));
+
+    std::memcpy(uniformBuffer_.map, &params, sizeof(SimulationParams));
+    
     // Descriptor set update
     // Binding 0: input
     // Binding 1: output
@@ -95,66 +136,66 @@ public:
     // Binding 6: indirect dispatch
     // Binding 7: uniform params
 
-    std::vector<vk::DescriptorBufferInfo> buffer_infos(8);
-    buffer_infos[0]
-      .setBuffer(stepInfo.srcBuffer.buffer)
-      .setOffset(stepInfo.srcBuffer.offset)
-      .setRange(stepInfo.srcBuffer.size);
+    std::vector<vk::DescriptorBufferInfo> bufferInfos(8);
+    bufferInfos[0]
+      .setBuffer(srcBuffer_.buffer)
+      .setOffset(srcBuffer_.offset)
+      .setRange(srcBuffer_.size);
 
-    buffer_infos[1]
-      .setBuffer(stepInfo.dstBuffer.buffer)
-      .setOffset(stepInfo.dstBuffer.offset)
-      .setRange(stepInfo.dstBuffer.size);
+    bufferInfos[1]
+      .setBuffer(dstBuffer_.buffer)
+      .setOffset(dstBuffer_.offset)
+      .setRange(dstBuffer_.size);
 
-    buffer_infos[2]
-      .setBuffer(stepInfo.internalBuffer.buffer)
-      .setOffset(stepInfo.internalBuffer.offset + gridBufferRange_.offset)
+    bufferInfos[2]
+      .setBuffer(internalBuffer_.buffer)
+      .setOffset(internalBuffer_.offset + gridBufferRange_.offset)
       .setRange(gridBufferRange_.size);
 
-    buffer_infos[3]
-      .setBuffer(stepInfo.internalBuffer.buffer)
-      .setOffset(stepInfo.internalBuffer.offset + collisionPairsBufferRange_.offset)
+    bufferInfos[3]
+      .setBuffer(internalBuffer_.buffer)
+      .setOffset(internalBuffer_.offset + collisionPairsBufferRange_.offset)
       .setRange(collisionPairsBufferRange_.size);
 
-    buffer_infos[4]
-      .setBuffer(stepInfo.internalBuffer.buffer)
-      .setOffset(stepInfo.internalBuffer.offset + collisionChainBufferRange_.offset)
+    bufferInfos[4]
+      .setBuffer(internalBuffer_.buffer)
+      .setOffset(internalBuffer_.offset + collisionChainBufferRange_.offset)
       .setRange(collisionChainBufferRange_.size);
 
-    buffer_infos[5]
-      .setBuffer(stepInfo.internalBuffer.buffer)
-      .setOffset(stepInfo.internalBuffer.offset + solveBufferRange_.offset)
+    bufferInfos[5]
+      .setBuffer(internalBuffer_.buffer)
+      .setOffset(internalBuffer_.offset + solveBufferRange_.offset)
       .setRange(solveBufferRange_.size);
 
-    buffer_infos[6]
-      .setBuffer(stepInfo.internalBuffer.buffer)
-      .setOffset(stepInfo.internalBuffer.offset + dispatchIndirectBufferRange_.offset)
+    bufferInfos[6]
+      .setBuffer(internalBuffer_.buffer)
+      .setOffset(internalBuffer_.offset + dispatchIndirectBufferRange_.offset)
       .setRange(dispatchIndirectBufferRange_.size);
 
-    buffer_infos[7]
-      .setBuffer(stepInfo.uniformBuffer.buffer)
-      .setOffset(stepInfo.uniformBuffer.offset)
-      .setRange(stepInfo.uniformBuffer.size);
+    bufferInfos[7]
+      .setBuffer(uniformBuffer_.buffer)
+      .setOffset(uniformBuffer_.offset)
+      .setRange(uniformBuffer_.size);
 
-    std::vector<vk::WriteDescriptorSet> descriptor_writes(8);
+    std::vector<vk::WriteDescriptorSet> descriptorWrites(8);
     for (int i = 0; i < 7; i++)
     {
-      descriptor_writes[i]
+      descriptorWrites[i]
         .setDstSet(descriptorSets_[cmdIndex])
         .setDstBinding(i)
         .setDstArrayElement(0)
         .setDescriptorType(vk::DescriptorType::eStorageBuffer)
-        .setBufferInfo(buffer_infos[i]);
+        .setBufferInfo(bufferInfos[i]);
     }
 
-    descriptor_writes[7]
+    descriptorWrites[7]
       .setDstSet(descriptorSets_[cmdIndex])
       .setDstBinding(7)
       .setDstArrayElement(0)
       .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-      .setBufferInfo(buffer_infos[7]);
+      .setBufferInfo(bufferInfos[7]);
 
-    device_.updateDescriptorSets(descriptor_writes, {});
+    device_.updateDescriptorSets(descriptorWrites, {});
     
     // Prepare compute shaders
     commandBuffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipelineLayout_, 0u,
@@ -170,9 +211,9 @@ public:
       .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
       .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
       .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-      .setBuffer(stepInfo.srcBuffer.buffer)
-      .setOffset(stepInfo.srcBuffer.offset)
-      .setSize(stepInfo.srcBuffer.size);
+      .setBuffer(dstBuffer_.buffer)
+      .setOffset(dstBuffer_.offset)
+      .setSize(dstBuffer_.size);
 
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
       {}, particleBufferMemoryBarrier, {});
@@ -187,8 +228,8 @@ public:
       .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
       .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
       .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-      .setBuffer(stepInfo.internalBuffer.buffer)
-      .setOffset(stepInfo.internalBuffer.offset + gridBufferRange_.offset)
+      .setBuffer(internalBuffer_.buffer)
+      .setOffset(internalBuffer_.offset + gridBufferRange_.offset)
       .setSize(gridBufferRange_.size);
 
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
@@ -211,8 +252,8 @@ public:
       .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
       .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
       .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-      .setBuffer(stepInfo.internalBuffer.buffer)
-      .setOffset(stepInfo.internalBuffer.offset + collisionPairsBufferRange_.offset)
+      .setBuffer(internalBuffer_.buffer)
+      .setOffset(internalBuffer_.offset + collisionPairsBufferRange_.offset)
       .setSize(collisionPairsBufferRange_.size);
 
     vk::BufferMemoryBarrier collisionChainBufferMemoryBarrier;
@@ -221,8 +262,8 @@ public:
       .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
       .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
       .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-      .setBuffer(stepInfo.internalBuffer.buffer)
-      .setOffset(stepInfo.internalBuffer.offset + collisionChainBufferRange_.offset)
+      .setBuffer(internalBuffer_.buffer)
+      .setOffset(internalBuffer_.offset + collisionChainBufferRange_.offset)
       .setSize(collisionChainBufferRange_.size);
 
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
@@ -254,7 +295,7 @@ public:
 
     // Initialize solver
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, initializeSolverPipeline_);
-    commandBuffer.dispatchIndirect(stepInfo.internalBuffer.buffer, stepInfo.internalBuffer.offset + dispatchIndirectBufferRange_.offset);
+    commandBuffer.dispatchIndirect(internalBuffer_.buffer, internalBuffer_.offset + dispatchIndirectBufferRange_.offset);
 
     vk::BufferMemoryBarrier solverBufferMemoryBarrier;
     solverBufferMemoryBarrier
@@ -262,8 +303,8 @@ public:
       .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
       .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
       .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-      .setBuffer(stepInfo.internalBuffer.buffer)
-      .setOffset(stepInfo.internalBuffer.offset + solveBufferRange_.offset)
+      .setBuffer(internalBuffer_.buffer)
+      .setOffset(internalBuffer_.offset + solveBufferRange_.offset)
       .setSize(solveBufferRange_.size);
 
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
@@ -275,7 +316,7 @@ public:
     {
       // Solve delta lambda
       commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, solveDeltaLambdaPipeline_);
-      commandBuffer.dispatchIndirect(stepInfo.internalBuffer.buffer, stepInfo.internalBuffer.offset + dispatchIndirectBufferRange_.offset + sizeof(uint32_t) * 4);
+      commandBuffer.dispatchIndirect(internalBuffer_.buffer, internalBuffer_.offset + dispatchIndirectBufferRange_.offset + sizeof(uint32_t) * 4);
 
       commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
         {}, solverBufferMemoryBarrier, {});
@@ -289,7 +330,7 @@ public:
 
       // Solve x and lambda
       commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, solveXLambdaPipeline_);
-      commandBuffer.dispatchIndirect(stepInfo.internalBuffer.buffer, stepInfo.internalBuffer.offset + dispatchIndirectBufferRange_.offset);
+      commandBuffer.dispatchIndirect(internalBuffer_.buffer, internalBuffer_.offset + dispatchIndirectBufferRange_.offset);
 
       commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
         {}, solverBufferMemoryBarrier, {});
@@ -362,16 +403,22 @@ private:
   vk::Pipeline velocityUpdatePipeline_;
 
   // Internal buffer ranges
-  BufferRange gridBufferRange_;
-  BufferRange collisionPairsBufferRange_;
-  BufferRange collisionChainBufferRange_;
-  BufferRange solveBufferRange_;
-  BufferRange dispatchIndirectBufferRange_;
+  SubBufferRange gridBufferRange_;
+  SubBufferRange collisionPairsBufferRange_;
+  SubBufferRange collisionChainBufferRange_;
+  SubBufferRange solveBufferRange_;
+  SubBufferRange dispatchIndirectBufferRange_;
 
   // Requirements
   vk::DeviceSize particleBufferRequiredSize_ = 0;
   vk::DeviceSize internalBufferRequiredSize_ = 0;
   vk::DeviceSize uniformBufferRequiredSize_ = 0;
+
+  // Bound buffer ranges
+  BufferRange srcBuffer_;
+  BufferRange dstBuffer_;
+  BufferRange internalBuffer_;
+  UniformBufferRange uniformBuffer_;
 
   uint32_t particleCount_ = 0;
 };
@@ -519,8 +566,8 @@ inline ParticleSimulator createParticleSimulator(const ParticleSimulatorCreateIn
 
   const auto gridBufferSize =
     16 // 4-element header
-    + ParticleSimulator::hashBucketCount_ * sizeof(int32_t) // hash bucket
-    + (sizeof(uint32_t) + sizeof(int32_t)) * (simulator.particleCount_ * 8); // object grid pairs
+    + ParticleSimulator::hashBucketCount_ * sizeof(int32_t) + sizeof(int32_t) // hash bucket plus pad
+    + (sizeof(uint32_t) + sizeof(int32_t)) * (simulator.particleCount_ * 27); // object grid pairs
 
   simulator.gridBufferRange_.offset = 0;
   simulator.gridBufferRange_.size = gridBufferSize;
@@ -535,12 +582,12 @@ inline ParticleSimulator createParticleSimulator(const ParticleSimulatorCreateIn
   simulator.solveBufferRange_.size = solverBufferSize;
 
   simulator.dispatchIndirectBufferRange_.offset = align(simulator.solveBufferRange_.offset + simulator.solveBufferRange_.size, ssboAlignment);
-  simulator.dispatchIndirectBufferRange_.size = sizeof(uint32_t) * 2;
+  simulator.dispatchIndirectBufferRange_.size = sizeof(uint32_t) * 8;
 
   // Requirements
   simulator.particleBufferRequiredSize_ = sizeof(Particle) * simulator.particleCount_;
   simulator.internalBufferRequiredSize_ = simulator.dispatchIndirectBufferRange_.offset + simulator.dispatchIndirectBufferRange_.size;
-  simulator.uniformBufferRequiredSize_ = align(sizeof(SimulationParams), uboAlignment) * createInfo.commandCount;
+  simulator.uniformBufferRequiredSize_ = sizeof(SimulationParams);
 
   return simulator;
 }

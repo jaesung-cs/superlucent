@@ -12,6 +12,7 @@
 #include <superlucent/engine/uniform_buffer.h>
 #include <superlucent/scene/light.h>
 #include <superlucent/scene/camera.h>
+#include <superlucent/utils/rng.h>
 
 namespace supl
 {
@@ -166,22 +167,49 @@ void Engine::Draw(double time)
 
   draw_command_buffer.begin({ vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
 
-  /*
-  particleSimulator_.cmdStep(draw_command_buffer, image_index, stepInfo);
+  if (dt > 0.)
+  {
+    particleSimulator_.cmdBindSrcParticleBuffer(particleBuffer_, particleBufferSize_ * image_index);
+    particleSimulator_.cmdBindDstParticleBuffer(particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3));
+    particleSimulator_.cmdBindInternalBuffer(particleInternalBuffer_, 0);
+    particleSimulator_.cmdBindUniformBuffer(particleUniformBuffer_, 0, particleUniformBufferMap_);
+    particleSimulator_.cmdStep(draw_command_buffer, image_index, animation_time_, dt);
 
-  vk::BufferMemoryBarrier barrier;
-  barrier
-    .setBuffer(particleBuffer_)
-    .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
-    .setDstAccessMask(vk::AccessFlagBits::eVertexAttributeRead)
-    .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-    .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
-    .setOffset(particleBufferSize_ * ((image_index + 1) % 3))
-    .setSize(particleBufferSize_);
+    vk::BufferMemoryBarrier barrier;
+    barrier
+      .setBuffer(particleBuffer_)
+      .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+      .setDstAccessMask(vk::AccessFlagBits::eVertexAttributeRead)
+      .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+      .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+      .setOffset(particleBufferSize_ * ((image_index + 1) % 3))
+      .setSize(particleBufferSize_);
 
-  draw_command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eVertexInput, {},
-    {}, barrier, {});
-    */
+    draw_command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eVertexInput, {},
+      {}, barrier, {});
+  }
+  else
+  {
+    vk::BufferCopy region;
+    region
+      .setSrcOffset(particleBufferSize_ * image_index)
+      .setDstOffset(particleBufferSize_ * ((image_index + 1) % 3))
+      .setSize(particleBufferSize_);
+    draw_command_buffer.copyBuffer(particleBuffer_, particleBuffer_, region);
+
+    vk::BufferMemoryBarrier barrier;
+    barrier
+      .setBuffer(particleBuffer_)
+      .setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
+      .setDstAccessMask(vk::AccessFlagBits::eVertexAttributeRead)
+      .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+      .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+      .setOffset(particleBufferSize_ * ((image_index + 1) % 3))
+      .setSize(particleBufferSize_);
+
+    draw_command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexInput, {},
+      {}, barrier, {});
+  }
 
   RecordDrawCommands(draw_command_buffer, image_index, dt);
 
@@ -226,10 +254,10 @@ void Engine::Draw(double time)
 
 void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t image_index, double dt)
 {
-  constexpr auto radius = 0.003f;
+  constexpr auto radius = 0.03f;
 
   particle_renderer_->Begin(command_buffer, image_index);
-  particle_renderer_->RecordParticleRenderCommands(command_buffer, particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3), radius);
+  particle_renderer_->RecordParticleRenderCommands(command_buffer, particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3), particleSimulator_.getParticleCount(), radius);
   particle_renderer_->RecordFloorRenderCommands(command_buffer);
   particle_renderer_->End(command_buffer);
 }
@@ -834,6 +862,46 @@ void Engine::CreateParticleSimulator()
 {
   constexpr auto particleDimension = 40;
   constexpr auto particleCount = particleDimension * particleDimension * particleDimension;
+  constexpr auto radius = 0.03f;
+  constexpr float density = 1000.f; // water
+  const float mass = radius * radius * radius * density;
+  constexpr glm::vec2 wallDistance = glm::vec2(3.f, 1.5f);
+  const glm::vec3 particleOffset = glm::vec3(-wallDistance + glm::vec2(radius * 1.1f), radius * 1.1f);
+  const glm::vec3 particleStride = glm::vec3(radius * 2.2f);
+
+  utils::Rng rng;
+  constexpr float noiseRange = 1e-2f;
+  const auto noise = [&rng, noiseRange]() { return rng.Uniform(-noiseRange, noiseRange); };
+
+  std::vector<Particle> particles;
+  glm::vec3 gravity = glm::vec3(0.f, 0.f, -9.8f);
+  for (int i = 0; i < particleDimension; i++)
+  {
+    for (int j = 0; j < particleDimension; j++)
+    {
+      for (int k = 0; k < particleDimension; k++)
+      {
+        glm::vec4 position{
+          particleOffset.x + particleStride.x * i + noise(),
+          particleOffset.y + particleStride.y * j + noise(),
+          particleOffset.z + particleStride.z * k + noise(),
+          0.f
+        };
+        glm::vec4 velocity{ 0.f };
+        glm::vec4 properties{ mass, 0.f, 0.f, 0.f };
+        glm::vec4 externalForce{
+          gravity.x * mass,
+          gravity.y * mass,
+          gravity.z * mass,
+          0.f
+        };
+        glm::vec4 color{ 0.5f, 0.5f, 0.5f, 0.f };
+
+        // Struct initialization
+        particles.push_back({ position, position, velocity, properties, externalForce, color });
+      }
+    }
+  }
 
   vkpbd::ParticleSimulatorCreateInfo particleSimulatorCreateInfo;
   particleSimulatorCreateInfo.device = device_;
@@ -850,7 +918,7 @@ void Engine::CreateParticleSimulator()
 
   vk::BufferCreateInfo bufferCreateInfo;
   bufferCreateInfo
-    .setUsage(particleBufferRequirements.usage | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer)
+    .setUsage(particleBufferRequirements.usage | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer)
     .setSize(particleBufferRequirements.size * commandCount);
   particleBuffer_ = device_.createBuffer(bufferCreateInfo);
   particleBufferSize_ = particleBufferRequirements.size;
@@ -882,6 +950,9 @@ void Engine::CreateParticleSimulator()
   particleUniformMemory_ = device_.allocateMemory(memoryAllocateInfo);
   particleUniformBufferMap_ = reinterpret_cast<uint8_t*>(device_.mapMemory(particleUniformMemory_, 0, uniformBufferRequirements.size));
   device_.bindBufferMemory(particleUniformBuffer_, particleUniformMemory_, 0);
+
+  // To staging buffer and copy
+  ToDeviceMemory(particles, particleBuffer_, 0);
 }
 
 void Engine::DestroyParticleSimulator()

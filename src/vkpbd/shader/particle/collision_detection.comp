@@ -55,7 +55,7 @@ void main()
             }
           }
 
-          if (!found)
+          if (!found && num_contacts < num_max_contacts - 1)
           {
             contact_ids[num_contacts] = i1;
             num_contacts++;
@@ -84,11 +84,14 @@ void main()
       num_particles_in_grid++;
     }
 
-    out_particles[i0].color.rgb = vec3(num_particles_in_grid / 24.f);
+    // out_particles[i0].color.rgb = vec3(num_particles_in_grid / 24.f);
+    // out_particles[i0].color.rgb = vec3(0.f, 0.2f, 1.f) * (num_contacts / 5.f);
+    out_particles[i0].color.rgb = vec3((hash_index % 256) / 255.f, ((hash_index / 256) % 256) / 255.f, ((hash_index / 65536) % 256) / 255.f);
   }
   
   else
   {
+    int num_contacts = 0;
     for (uint i1 = i0 + 1; i1 < params.num_particles; i1++)
     {
       vec3 p1 = out_particles[i1].position.xyz;
@@ -113,9 +116,12 @@ void main()
 
         int next1 = atomicExchange(collision_chain.head[i1].y, int(collision_index));
         collisions[collision_index].next.y = next1;
+
+        num_contacts++;
       }
     }
-    out_particles[i0].color.rgb = vec3(0.f, 0.2f, 1.f);
+    // out_particles[i0].color.rgb = vec3(0.f, 0.2f, 1.f);
+    out_particles[i0].color.rgb = vec3(0.f, 0.2f, 1.f) * (num_contacts / 10.f);
   }
   
   // Collision against floor and virtual walls

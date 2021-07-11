@@ -161,13 +161,13 @@
     <ClInclude Include="..\..\src\superlucent\geometry\tetragrid.h">
       <Filter>src\superlucent\geometry</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\vkpbd\vkpbd.hpp">
-      <Filter>src\vkpbd</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\vkpbd\particle.h">
       <Filter>src\vkpbd</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\vkpbd\simulation_params.h">
+      <Filter>src\vkpbd</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\vkpbd\vkpbd.hpp">
       <Filter>src\vkpbd</Filter>
     </ClInclude>
   </ItemGroup>
@@ -176,18 +176,6 @@
       <Filter>src\superlucent\shader</Filter>
     </None>
     <None Include="..\..\src\superlucent\shader\compile.py">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
-    <None Include="..\..\src\superlucent\shader\floor.frag">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
-    <None Include="..\..\src\superlucent\shader\floor.vert">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
-    <None Include="..\..\src\superlucent\shader\cell_sphere.vert">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
-    <None Include="..\..\src\superlucent\shader\cell_sphere.frag">
       <Filter>src\superlucent\shader</Filter>
     </None>
     <None Include="..\..\src\superlucent\shader\uniform_grid\uniform_grid.glsl">
@@ -288,6 +276,9 @@
     </None>
     <None Include="..\..\src\vkpbd\shader\particle\uniform_grid.glsl">
       <Filter>src\vkpbd\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\compile.py">
+      <Filter>src\vkpbd\shader</Filter>
     </None>
   </ItemGroup>
 </Project>

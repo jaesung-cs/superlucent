@@ -210,11 +210,7 @@ python compile.py
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\superlucent\shader\.gitignore" />
-    <None Include="..\..\src\superlucent\shader\cell_sphere.frag" />
-    <None Include="..\..\src\superlucent\shader\cell_sphere.vert" />
     <None Include="..\..\src\superlucent\shader\compile.py" />
-    <None Include="..\..\src\superlucent\shader\floor.frag" />
-    <None Include="..\..\src\superlucent\shader\floor.vert" />
     <None Include="..\..\src\superlucent\shader\particle\particle_add_uniform_grid.comp" />
     <None Include="..\..\src\superlucent\shader\particle\particle_collision_detection.comp" />
     <None Include="..\..\src\superlucent\shader\particle\particle_forward.comp" />
@@ -231,6 +227,7 @@ python compile.py
     <None Include="..\..\src\superlucent\shader\rendering\floor.frag" />
     <None Include="..\..\src\superlucent\shader\rendering\floor.vert" />
     <None Include="..\..\src\superlucent\shader\uniform_grid\uniform_grid.glsl" />
+    <None Include="..\..\src\vkpbd\shader\compile.py" />
     <None Include="..\..\src\vkpbd\shader\particle\add_uniform_grid.comp" />
     <None Include="..\..\src\vkpbd\shader\particle\collision_detection.comp" />
     <None Include="..\..\src\vkpbd\shader\particle\collision_pairs.glsl" />

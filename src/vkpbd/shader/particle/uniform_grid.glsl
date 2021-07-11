@@ -12,13 +12,16 @@ layout (binding = 2) buffer GridSsbo
   uint num_pairs;
   
   int hash_table_head[num_hash_buckets];
+  int pad;
+
   Node object_grid_pairs[];
 } grid;
 
 // From Particle-based Fluid Simulation based Fluid Simulation by NVidia
 uint GridHash(ivec3 cell_index)
 {
-  uvec3 ucell_index = uvec3(cell_index);
+  // TODO: why make positive?
+  uvec3 ucell_index = uvec3(cell_index + vec3(100.f, 100.f, 100.f));
   const uint p1 = 73856093; // some large primes
   const uint p2 = 19349663;
   const uint p3 = 83492791;
@@ -31,8 +34,7 @@ uint GridHash(ivec3 cell_index)
 
 ivec3 CellIndex(vec3 position)
 {
-  // TODO: why make positive?
-  return ivec3(floor(position / grid.cell_size + vec3(100.f, 100.f, 100.f)));
+  return ivec3(floor(position / grid.cell_size));
 }
 
 mat2x3 Bound(vec3 position)
