@@ -5,6 +5,23 @@ This is my playground for practicing Vulkan programming, including:
 - Rendering (hopefully ray tracing later) from compute shader results, without haevy CPU-GPU data transfers
 - Graphical user interface, object-oriented
 
+## Code refactoring (July 11, 2021)
+
+In commit `e2ca714`,
+
+As code refactoring, GPU particle simulator is moved and renamed as a separate project `vkpbd`.
+The purpose is to move the responsibility of managing memories and buffers from class to the application and the user.
+
+There are still more codes for refactoring:
+- member variable naming convention: from `snake_case` to `camelCase` for consistency with Vulkan.
+- delete CPU simulator and other dead codes
+- change `vkpbd` from header-only to static library
+
+And fixed a fatal bug in `uniform_grid.glsl`
+- `CellIndex()` was returning an integer offset grid coordinates, causing `Bound()` function calculate wrong values.
+
+Next topic is probably to continue fluid simulation, as well as code refactoring.
+
 ## Code refactoring (July 3, 2021)
 
 In commit `8abf0e8`,
