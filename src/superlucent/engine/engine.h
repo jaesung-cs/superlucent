@@ -217,9 +217,6 @@ private:
   // Renderer
   std::unique_ptr<ParticleRenderer> particle_renderer_;
 
-  // Position-based particle simulation in CPU
-  std::unique_ptr<ParticleSimulation> particle_simulation_;
-
   // vkpbd
   static constexpr auto commandCount = 3; // Triple buffer
   vkpbd::ParticleSimulator particleSimulator_;
@@ -245,9 +242,6 @@ private:
 
   // Transfer
   vk::Fence transfer_fence_;
-
-  // Transfer semaphores
-  std::vector<vk::Semaphore> particle_update_semaphores_;
 
   // Present synchronization
   std::vector<vk::Semaphore> image_available_semaphores_;

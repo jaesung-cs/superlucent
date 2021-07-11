@@ -32,7 +32,7 @@ struct UniformBufferRange
   vk::Buffer buffer;
   vk::DeviceSize offset = 0;
   vk::DeviceSize size = 0;
-  uint8_t* map_ = nullptr;
+  uint8_t* map = nullptr;
 };
 
 struct StepInfo

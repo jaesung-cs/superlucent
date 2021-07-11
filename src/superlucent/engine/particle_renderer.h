@@ -30,6 +30,7 @@ public:
   void UpdateParticles(const std::vector<Particle>& particles, const std::vector<vk::Semaphore>& signal_semaphores);
 
   void Begin(vk::CommandBuffer& command_buffer, int image_index);
+  void RecordParticleRenderCommands(vk::CommandBuffer& command_buffer, vk::Buffer buffer, vk::DeviceSize offset, float radius);
   void RecordParticleRenderCommands(vk::CommandBuffer& command_buffer, float radius);
   void RecordFloorRenderCommands(vk::CommandBuffer& command_buffer);
   void End(vk::CommandBuffer& command_buffer);
