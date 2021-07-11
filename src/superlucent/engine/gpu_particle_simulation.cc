@@ -48,7 +48,7 @@ void GpuParticleSimulation::RecordComputeWithGraphicsBarriers(vk::CommandBuffer&
     .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
     .setBuffer(particle_buffer_)
     .setOffset(0)
-    .setSize(num_particles_ * sizeof(float) * 24);
+    .setSize(num_particles_ * sizeof(float) * 20);
   command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eVertexInput, vk::PipelineStageFlagBits::eComputeShader, {},
     {}, particle_buffer_memory_barrier, {});
 
@@ -431,7 +431,7 @@ void GpuParticleSimulation::PrepareResources()
         glm::vec4 color{ 0.5f, 0.5f, 0.5f, 0.f };
 
         // Struct initialization
-        particle_buffer.push_back({ position, position, velocity, properties, external_force, color });
+        particle_buffer.push_back({ position, velocity, properties, external_force, color });
       }
     }
   }
@@ -515,7 +515,7 @@ void GpuParticleSimulation::PrepareResources()
     buffer_infos[0]
       .setBuffer(particle_buffer_)
       .setOffset(0)
-      .setRange(num_particles * sizeof(float) * 24);
+      .setRange(num_particles * sizeof(float) * 20);
 
     buffer_infos[1]
       .setBuffer(uniform_buffer->Buffer())

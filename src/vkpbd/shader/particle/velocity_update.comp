@@ -32,7 +32,7 @@ void main()
   const float radius = params.radius;
 
   vec4 prev_velocity = out_particles[index].velocity;
-  vec4 velocity = (out_particles[index].position - out_particles[index].prev_position) / params.dt;
+  vec4 velocity = (out_particles[index].position - in_particles[index].position) / params.dt;
   
   // Solve velocities
   const float resilience = 0.9f;

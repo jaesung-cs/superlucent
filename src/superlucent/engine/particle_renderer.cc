@@ -505,7 +505,7 @@ void ParticleRenderer::CreateGraphicsPipelines()
   // Binding 1 shared with particle compute shader
   vertex_binding_descriptions[1]
     .setBinding(1)
-    .setStride(sizeof(float) * 24)
+    .setStride(sizeof(Particle))
     .setInputRate(vk::VertexInputRate::eInstance);
 
   vertex_attribute_descriptions.resize(4);

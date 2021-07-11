@@ -7,7 +7,6 @@ namespace vkpbd
 {
 struct Particle
 {
-  alignas(16) glm::vec4 prev_position{ 0.f };
   alignas(16) glm::vec4 position{ 0.f };
   alignas(16) glm::vec4 velocity{ 0.f };
   alignas(16) glm::vec4 properties{ 0.f }; // mass

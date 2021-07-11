@@ -899,7 +899,7 @@ void Engine::CreateParticleSimulator()
         glm::vec4 color{ 0.5f, 0.5f, 0.5f, 0.f };
 
         // Struct initialization
-        particles.push_back({ position, position, velocity, properties, externalForce, color });
+        particles.push_back({ position, velocity, properties, externalForce, color });
       }
     }
   }
