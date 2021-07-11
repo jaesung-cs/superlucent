@@ -12,6 +12,7 @@
 #include <superlucent/engine/uniform_buffer.h>
 #include <superlucent/scene/light.h>
 #include <superlucent/scene/camera.h>
+#include <superlucent/utils/rng.h>
 
 namespace supl
 {
@@ -53,7 +54,9 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
 
   // Create particle renderer and simulator
   particle_renderer_ = std::make_unique<ParticleRenderer>(this, width_, height_);
-  particle_simulation_ = std::make_unique<ParticleSimulation>();
+
+  // Create vkpbd
+  CreateParticleSimulator();
 
   CreateSynchronizationObjects();
 }
@@ -63,8 +66,8 @@ Engine::~Engine()
   device_.waitIdle();
 
   DestroySynchronizationObjects();
+  DestroyParticleSimulator();
 
-  particle_simulation_ = nullptr;
   particle_renderer_ = nullptr;
 
   DestroyRendertarget();
@@ -158,32 +161,71 @@ void Engine::Draw(double time)
 
   device_.resetFences(in_flight_fences_[current_frame_]);
 
-  // Update particles from CPU to GPU
-  particle_renderer_->UpdateParticles(particle_simulation_->Particles(), { particle_update_semaphores_[current_frame_] });
-
   // Build command buffer
   auto& draw_command_buffer = draw_command_buffers_[image_index];
   draw_command_buffer.reset();
 
   draw_command_buffer.begin({ vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
+
+  if (dt > 0.)
+  {
+    particleSimulator_.cmdBindSrcParticleBuffer(particleBuffer_, particleBufferSize_ * image_index);
+    particleSimulator_.cmdBindDstParticleBuffer(particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3));
+    particleSimulator_.cmdBindInternalBuffer(particleInternalBuffer_, 0);
+    particleSimulator_.cmdBindUniformBuffer(particleUniformBuffer_, 0, particleUniformBufferMap_);
+    particleSimulator_.cmdStep(draw_command_buffer, image_index, animation_time_, dt);
+
+    vk::BufferMemoryBarrier barrier;
+    barrier
+      .setBuffer(particleBuffer_)
+      .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+      .setDstAccessMask(vk::AccessFlagBits::eVertexAttributeRead)
+      .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+      .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+      .setOffset(particleBufferSize_ * ((image_index + 1) % 3))
+      .setSize(particleBufferSize_);
+
+    draw_command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eVertexInput, {},
+      {}, barrier, {});
+  }
+  else
+  {
+    vk::BufferCopy region;
+    region
+      .setSrcOffset(particleBufferSize_ * image_index)
+      .setDstOffset(particleBufferSize_ * ((image_index + 1) % 3))
+      .setSize(particleBufferSize_);
+    draw_command_buffer.copyBuffer(particleBuffer_, particleBuffer_, region);
+
+    vk::BufferMemoryBarrier barrier;
+    barrier
+      .setBuffer(particleBuffer_)
+      .setSrcAccessMask(vk::AccessFlagBits::eTransferWrite)
+      .setDstAccessMask(vk::AccessFlagBits::eVertexAttributeRead)
+      .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+      .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+      .setOffset(particleBufferSize_ * ((image_index + 1) % 3))
+      .setSize(particleBufferSize_);
+
+    draw_command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexInput, {},
+      {}, barrier, {});
+  }
+
   RecordDrawCommands(draw_command_buffer, image_index, dt);
+
   draw_command_buffer.end();
 
   // Update uniforms
   particle_renderer_->UpdateLights(lights_, image_index);
   particle_renderer_->UpdateCamera(camera_, image_index);
 
-  particle_simulation_->UpdateSimulationParams(dt, animation_time_);
-
   // Submit
   std::vector<vk::Semaphore> wait_semaphores{
     image_available_semaphores_[current_frame_],
-    particle_update_semaphores_[current_frame_],
   };
 
   std::vector<vk::PipelineStageFlags> stages{
     vk::PipelineStageFlagBits::eColorAttachmentOutput,
-    vk::PipelineStageFlagBits::eVertexInput,
   };
   vk::SubmitInfo submit_info;
   submit_info
@@ -212,11 +254,10 @@ void Engine::Draw(double time)
 
 void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t image_index, double dt)
 {
-  if (dt > 0.)
-    particle_simulation_->Forward();
+  constexpr auto radius = 0.03f;
 
   particle_renderer_->Begin(command_buffer, image_index);
-  particle_renderer_->RecordParticleRenderCommands(command_buffer, particle_simulation_->SimulationParams().radius);
+  particle_renderer_->RecordParticleRenderCommands(command_buffer, particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3), particleSimulator_.getParticleCount(), radius);
   particle_renderer_->RecordFloorRenderCommands(command_buffer);
   particle_renderer_->End(command_buffer);
 }
@@ -817,13 +858,120 @@ void Engine::DestroyRendertarget()
   device_.destroyImage(rendertarget_.depth_image);
 }
 
+void Engine::CreateParticleSimulator()
+{
+  constexpr auto particleDimension = 40;
+  constexpr auto particleCount = particleDimension * particleDimension * particleDimension;
+  constexpr auto radius = 0.03f;
+  constexpr float density = 1000.f; // water
+  const float mass = radius * radius * radius * density;
+  constexpr glm::vec2 wallDistance = glm::vec2(3.f, 1.5f);
+  const glm::vec3 particleOffset = glm::vec3(-wallDistance + glm::vec2(radius * 1.1f), radius * 1.1f);
+  const glm::vec3 particleStride = glm::vec3(radius * 2.2f);
+
+  utils::Rng rng;
+  constexpr float noiseRange = 1e-2f;
+  const auto noise = [&rng, noiseRange]() { return rng.Uniform(-noiseRange, noiseRange); };
+
+  std::vector<Particle> particles;
+  glm::vec3 gravity = glm::vec3(0.f, 0.f, -9.8f);
+  for (int i = 0; i < particleDimension; i++)
+  {
+    for (int j = 0; j < particleDimension; j++)
+    {
+      for (int k = 0; k < particleDimension; k++)
+      {
+        glm::vec4 position{
+          particleOffset.x + particleStride.x * i + noise(),
+          particleOffset.y + particleStride.y * j + noise(),
+          particleOffset.z + particleStride.z * k + noise(),
+          0.f
+        };
+        glm::vec4 velocity{ 0.f };
+        glm::vec4 properties{ mass, 0.f, 0.f, 0.f };
+        glm::vec4 externalForce{
+          gravity.x * mass,
+          gravity.y * mass,
+          gravity.z * mass,
+          0.f
+        };
+        glm::vec4 color{ 0.5f, 0.5f, 0.5f, 0.f };
+
+        // Struct initialization
+        particles.push_back({ position, position, velocity, properties, externalForce, color });
+      }
+    }
+  }
+
+  vkpbd::ParticleSimulatorCreateInfo particleSimulatorCreateInfo;
+  particleSimulatorCreateInfo.device = device_;
+  particleSimulatorCreateInfo.physicalDevice = physical_device_;
+  particleSimulatorCreateInfo.descriptorPool = descriptor_pool_;
+  particleSimulatorCreateInfo.particleCount = particleCount;
+  particleSimulatorCreateInfo.commandCount = commandCount;
+  particleSimulator_ = vkpbd::createParticleSimulator(particleSimulatorCreateInfo);
+
+  // Create buffers
+  const auto particleBufferRequirements = particleSimulator_.getParticleBufferRequirements();
+  const auto internalBufferRequirements = particleSimulator_.getInternalBufferRequirements();
+  const auto uniformBufferRequirements = particleSimulator_.getUniformBufferRequirements();
+
+  vk::BufferCreateInfo bufferCreateInfo;
+  bufferCreateInfo
+    .setUsage(particleBufferRequirements.usage | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer)
+    .setSize(particleBufferRequirements.size * commandCount);
+  particleBuffer_ = device_.createBuffer(bufferCreateInfo);
+  particleBufferSize_ = particleBufferRequirements.size;
+
+  bufferCreateInfo
+    .setUsage(internalBufferRequirements.usage)
+    .setSize(internalBufferRequirements.size);
+  particleInternalBuffer_ = device_.createBuffer(bufferCreateInfo);
+  particleInternalBufferSize_ = internalBufferRequirements.size;
+
+  bufferCreateInfo
+    .setUsage(uniformBufferRequirements.usage)
+    .setSize(uniformBufferRequirements.size);
+  particleUniformBuffer_ = device_.createBuffer(bufferCreateInfo);
+  particleUniformBufferSize_ = uniformBufferRequirements.size;
+
+  // Bind to memory
+  const auto particleMemory = AcquireDeviceMemory(particleBuffer_);
+  device_.bindBufferMemory(particleBuffer_, particleMemory.memory, particleMemory.offset);
+
+  const auto particleInternalMemory = AcquireDeviceMemory(particleInternalBuffer_);
+  device_.bindBufferMemory(particleInternalBuffer_, particleInternalMemory.memory, particleInternalMemory.offset);
+
+  // Persistently mapped uniform buffer
+  vk::MemoryAllocateInfo memoryAllocateInfo;
+  memoryAllocateInfo
+    .setAllocationSize(device_.getBufferMemoryRequirements(particleUniformBuffer_).size)
+    .setMemoryTypeIndex(host_index_);
+  particleUniformMemory_ = device_.allocateMemory(memoryAllocateInfo);
+  particleUniformBufferMap_ = reinterpret_cast<uint8_t*>(device_.mapMemory(particleUniformMemory_, 0, uniformBufferRequirements.size));
+  device_.bindBufferMemory(particleUniformBuffer_, particleUniformMemory_, 0);
+
+  // To staging buffer and copy
+  ToDeviceMemory(particles, particleBuffer_, 0);
+}
+
+void Engine::DestroyParticleSimulator()
+{
+  device_.destroyBuffer(particleBuffer_);
+  device_.destroyBuffer(particleInternalBuffer_);
+  device_.destroyBuffer(particleUniformBuffer_);
+  device_.unmapMemory(particleUniformMemory_);
+  device_.freeMemory(particleUniformMemory_);
+
+  particleSimulator_.destroy();
+}
+
 void Engine::CreateSynchronizationObjects()
 {
   for (int i = 0; i < 2; i++)
   {
     image_available_semaphores_.emplace_back(device_.createSemaphore({}));
     render_finished_semaphores_.emplace_back(device_.createSemaphore({}));
-    particle_update_semaphores_.emplace_back(device_.createSemaphore({}));
     in_flight_fences_.emplace_back(device_.createFence({ vk::FenceCreateFlagBits::eSignaled }));
   }
 
@@ -840,10 +988,6 @@ void Engine::DestroySynchronizationObjects()
   for (auto& semaphore : render_finished_semaphores_)
     device_.destroySemaphore(semaphore);
   render_finished_semaphores_.clear();
-
-  for (auto& semaphore : particle_update_semaphores_)
-    device_.destroySemaphore(semaphore);
-  particle_update_semaphores_.clear();
 
   for (auto& fence : in_flight_fences_)
     device_.destroyFence(fence);

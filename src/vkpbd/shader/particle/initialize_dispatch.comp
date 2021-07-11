@@ -1,0 +1,16 @@
+#version 450
+
+layout (local_size_x = 1) in;
+
+#include "collision_pairs.glsl"
+#include "simulation_params.glsl"
+#include "indirect.glsl"
+
+void main() 
+{
+  // Initializer solver, solve x and lambda
+  dispatch_indirect_commands[0] = uvec4((num_collisions + params.num_particles * 3 + 255) / 256, 1, 1, 0);
+  
+  // Solve delta lambda
+  dispatch_indirect_commands[1] = uvec4(max(1, (num_collisions + 255) / 256), 1, 1, 0);
+}

@@ -1,0 +1,24 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+#include "particle.glsl"
+#include "simulation_params.glsl"
+
+void main() 
+{
+	const int index = int(gl_GlobalInvocationID);
+	if (index >= params.num_particles)
+    return;
+
+  const float radius = params.radius;
+  const float mass = in_particles[index].properties.x;
+
+  out_particles[index].properties = in_particles[index].properties;
+  out_particles[index].external_force = in_particles[index].external_force;
+  out_particles[index].color = in_particles[index].color;
+  
+  out_particles[index].prev_position = in_particles[index].position;
+  out_particles[index].velocity = in_particles[index].velocity + params.dt * in_particles[index].external_force / mass;
+	out_particles[index].position = in_particles[index].position + params.dt * out_particles[index].velocity;
+}

@@ -108,6 +108,15 @@ void ParticleRenderer::Begin(vk::CommandBuffer& command_buffer, int image_index)
     descriptor_sets_[image_index], {});
 }
 
+void ParticleRenderer::RecordParticleRenderCommands(vk::CommandBuffer& command_buffer, vk::Buffer buffer, vk::DeviceSize offset, int num_particles, float radius)
+{
+  command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, cell_sphere_pipeline_);
+  command_buffer.pushConstants<float>(pipeline_layout_, vk::ShaderStageFlagBits::eVertex, 0, radius);
+  command_buffer.bindVertexBuffers(0u, { cells_buffer_.buffer, buffer }, { 0ull, offset });
+  command_buffer.bindIndexBuffer(cells_buffer_.buffer, cells_buffer_.index_offset, vk::IndexType::eUint32);
+  command_buffer.drawIndexed(cells_buffer_.num_indices, num_particles, 0u, 0u, 0u);
+}
+
 void ParticleRenderer::RecordParticleRenderCommands(vk::CommandBuffer& command_buffer, float radius)
 {
   command_buffer.bindPipeline(vk::PipelineBindPoint::eGraphics, cell_sphere_pipeline_);

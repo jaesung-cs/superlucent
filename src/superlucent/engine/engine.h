@@ -5,6 +5,8 @@
 
 #include <glm/glm.hpp>
 
+#include <vkpbd/vkpbd.hpp>
+
 #include <superlucent/engine/ubo/light_ubo.h>
 #include <superlucent/engine/ubo/camera_ubo.h>
 
@@ -136,6 +138,9 @@ private:
   void CreateRendertarget();
   void DestroyRendertarget();
 
+  void CreateParticleSimulator();
+  void DestroyParticleSimulator();
+
   void CreateSynchronizationObjects();
   void DestroySynchronizationObjects();
 
@@ -212,8 +217,17 @@ private:
   // Renderer
   std::unique_ptr<ParticleRenderer> particle_renderer_;
 
-  // Position-based particle simulation in CPU
-  std::unique_ptr<ParticleSimulation> particle_simulation_;
+  // vkpbd
+  static constexpr auto commandCount = 3; // Triple buffer
+  vkpbd::ParticleSimulator particleSimulator_;
+  vk::Buffer particleBuffer_;
+  vk::DeviceSize particleBufferSize_ = 0;
+  vk::Buffer particleInternalBuffer_;
+  vk::DeviceSize particleInternalBufferSize_ = 0;
+  vk::Buffer particleUniformBuffer_;
+  vk::DeviceSize particleUniformBufferSize_ = 0;
+  vk::DeviceMemory particleUniformMemory_;
+  uint8_t* particleUniformBufferMap_ = nullptr;
 
   // Command buffers
   vk::CommandBuffer transient_command_buffer_;
@@ -228,9 +242,6 @@ private:
 
   // Transfer
   vk::Fence transfer_fence_;
-
-  // Transfer semaphores
-  std::vector<vk::Semaphore> particle_update_semaphores_;
 
   // Present synchronization
   std::vector<vk::Semaphore> image_available_semaphores_;
