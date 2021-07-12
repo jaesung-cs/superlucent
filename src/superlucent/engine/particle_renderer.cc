@@ -2,9 +2,10 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <vkpbd/particle.h>
+
 #include <superlucent/engine/engine.h>
 #include <superlucent/engine/uniform_buffer.h>
-#include <superlucent/engine/data/particle.h>
 #include <superlucent/scene/camera.h>
 #include <superlucent/scene/light.h>
 
@@ -57,14 +58,14 @@ void ParticleRenderer::UpdateCamera(const CameraUbo& camera, int image_index)
   camera_ubos_[image_index] = camera;
 }
 
-void ParticleRenderer::UpdateParticles(const std::vector<Particle>& particles, const std::vector<vk::Semaphore>& signal_semaphores)
+void ParticleRenderer::UpdateParticles(const std::vector<vkpbd::Particle>& particles, const std::vector<vk::Semaphore>& signal_semaphores)
 {
   num_particles_ = particles.size();
 
   const auto device = engine_->Device();
   const auto queue = engine_->Queue();
 
-  const auto byte_size = particles.size() * sizeof(Particle);
+  const auto byte_size = particles.size() * sizeof(vkpbd::Particle);
   std::memcpy(particle_staging_buffer_.map, particles.data(), byte_size);
 
   vk::BufferCopy region;
@@ -505,7 +506,7 @@ void ParticleRenderer::CreateGraphicsPipelines()
   // Binding 1 shared with particle compute shader
   vertex_binding_descriptions[1]
     .setBinding(1)
-    .setStride(sizeof(Particle))
+    .setStride(sizeof(vkpbd::Particle))
     .setInputRate(vk::VertexInputRate::eInstance);
 
   vertex_attribute_descriptions.resize(4);
@@ -525,13 +526,13 @@ void ParticleRenderer::CreateGraphicsPipelines()
     .setLocation(2)
     .setBinding(1)
     .setFormat(vk::Format::eR32G32B32Sfloat)
-    .setOffset(offsetof(Particle, position));
+    .setOffset(offsetof(vkpbd::Particle, position));
 
   vertex_attribute_descriptions[3]
     .setLocation(3)
     .setBinding(1)
     .setFormat(vk::Format::eR32G32B32Sfloat)
-    .setOffset(offsetof(Particle, color));
+    .setOffset(offsetof(vkpbd::Particle, color));
 
   vertex_input
     .setVertexBindingDescriptions(vertex_binding_descriptions)
@@ -693,7 +694,7 @@ void ParticleRenderer::PrepareResources()
   cells_buffer_.num_indices = sphere_index_buffer.size();
 
   constexpr auto max_num_particles = 40 * 40 * 40;
-  constexpr auto particle_buffer_size = max_num_particles * sizeof(Particle);
+  constexpr auto particle_buffer_size = max_num_particles * sizeof(vkpbd::Particle);
 
   buffer_create_info
     .setSize(particle_buffer_size)

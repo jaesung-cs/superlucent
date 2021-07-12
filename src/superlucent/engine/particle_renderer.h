@@ -6,13 +6,17 @@
 #include <superlucent/engine/ubo/light_ubo.h>
 #include <superlucent/engine/ubo/camera_ubo.h>
 
+namespace vkpbd
+{
+struct Particle;
+}
+
 namespace supl
 {
 namespace engine
 {
 class Engine;
 class Uniform;
-struct Particle;
 
 class ParticleRenderer
 {
@@ -27,7 +31,7 @@ public:
 
   void UpdateLights(const LightUbo& lights, int image_index);
   void UpdateCamera(const CameraUbo& camera, int image_index);
-  void UpdateParticles(const std::vector<Particle>& particles, const std::vector<vk::Semaphore>& signal_semaphores);
+  void UpdateParticles(const std::vector<vkpbd::Particle>& particles, const std::vector<vk::Semaphore>& signal_semaphores);
 
   void Begin(vk::CommandBuffer& command_buffer, int image_index);
   void RecordParticleRenderCommands(vk::CommandBuffer& command_buffer, vk::Buffer buffer, vk::DeviceSize offset, int num_particles, float radius);

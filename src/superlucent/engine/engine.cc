@@ -7,7 +7,8 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-#include <superlucent/engine/particle_simulation.h>
+#include <vkpbd/particle.h>
+
 #include <superlucent/engine/particle_renderer.h>
 #include <superlucent/engine/uniform_buffer.h>
 #include <superlucent/scene/light.h>
@@ -874,7 +875,7 @@ void Engine::CreateParticleSimulator()
   constexpr float noiseRange = 1e-2f;
   const auto noise = [&rng, noiseRange]() { return rng.Uniform(-noiseRange, noiseRange); };
 
-  std::vector<Particle> particles;
+  std::vector<vkpbd::Particle> particles;
   glm::vec3 gravity = glm::vec3(0.f, 0.f, -9.8f);
   for (int i = 0; i < particleDimension; i++)
   {

@@ -22,7 +22,6 @@ class Camera;
 
 namespace engine
 {
-class ParticleSimulation;
 class ParticleRenderer;
 class UniformBuffer;
 
