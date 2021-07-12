@@ -133,12 +133,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\src\superlucent\shader\.gitignore">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
-    <None Include="..\..\src\superlucent\shader\compile.py">
-      <Filter>src\superlucent\shader</Filter>
-    </None>
     <None Include="..\..\src\superlucent\shader\uniform_grid\uniform_grid.glsl">
       <Filter>src\superlucent\shader\uniform_grid</Filter>
     </None>
@@ -205,8 +199,8 @@
     <None Include="..\..\src\vkpbd\shader\particle\uniform_grid.glsl">
       <Filter>src\vkpbd\shader\particle</Filter>
     </None>
-    <None Include="..\..\src\vkpbd\shader\compile.py">
-      <Filter>src\vkpbd\shader</Filter>
+    <None Include="..\..\src\compile_shader.py">
+      <Filter>src</Filter>
     </None>
   </ItemGroup>
 </Project>

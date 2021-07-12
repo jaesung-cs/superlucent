@@ -131,10 +131,8 @@
       <AdditionalDependencies>glfw3.lib;vulkan-1.lib;assimp-vc142-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>cd $(SolutionDir)..\src\superlucent\shader\
-python compile.py
-cd $(SolutionDir)..\src\vkpbd\shader\
-python compile.py
+      <Command>cd $(SolutionDir)..\src\
+python compile_shader.py
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -158,10 +156,8 @@ python compile.py
       <AdditionalDependencies>glfw3.lib;vulkan-1.lib;assimp-vc142-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
-      <Command>cd $(SolutionDir)..\src\superlucent\shader\
-python compile.py
-cd $(SolutionDir)..\src\vkpbd\shader\
-python compile.py
+      <Command>cd $(SolutionDir)..\src\
+python compile_shader.py
 </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
@@ -198,14 +194,12 @@ python compile.py
     <ClInclude Include="..\..\src\vkpbd\vkpbd.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\src\superlucent\shader\.gitignore" />
-    <None Include="..\..\src\superlucent\shader\compile.py" />
+    <None Include="..\..\src\compile_shader.py" />
     <None Include="..\..\src\superlucent\shader\rendering\cell_sphere.frag" />
     <None Include="..\..\src\superlucent\shader\rendering\cell_sphere.vert" />
     <None Include="..\..\src\superlucent\shader\rendering\floor.frag" />
     <None Include="..\..\src\superlucent\shader\rendering\floor.vert" />
     <None Include="..\..\src\superlucent\shader\uniform_grid\uniform_grid.glsl" />
-    <None Include="..\..\src\vkpbd\shader\compile.py" />
     <None Include="..\..\src\vkpbd\shader\particle\add_uniform_grid.comp" />
     <None Include="..\..\src\vkpbd\shader\particle\collision_detection.comp" />
     <None Include="..\..\src\vkpbd\shader\particle\collision_pairs.glsl" />

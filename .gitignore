@@ -6,6 +6,8 @@ vs/*/Debug
 vs/*/Release
 vs/*/*.vcxproj.user
 
+*.*.spv
+
 .VSCodeCounter/
 
 results/hq/
