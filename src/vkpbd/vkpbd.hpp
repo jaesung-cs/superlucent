@@ -111,6 +111,11 @@ public:
 
   void cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, float animationTime, float dt)
   {
+    cmdStep(commandBuffer, cmdIndex, particleCount_, animationTime, dt);
+  }
+
+  void cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint32_t particleCount, float animationTime, float dt)
+  {
     constexpr auto radius = 0.03f;
 
     constexpr auto wallOffsetSpeed = 5.f;
@@ -119,7 +124,7 @@ public:
     // Set uniform
     SimulationParams params;
     params.dt = dt;
-    params.num_particles = particleCount_;
+    params.num_particles = particleCount;
     params.radius = radius;
     params.alpha = 1e-3f;
     params.wall_offset = static_cast<float>(wallOffsetMagnitude * std::sin(animationTime * wallOffsetSpeed));
@@ -203,7 +208,7 @@ public:
 
     // Forward
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, forwardPipeline_);
-    commandBuffer.dispatch((particleCount_ + 255) / 256, 1, 1);
+    commandBuffer.dispatch((particleCount + 255) / 256, 1, 1);
 
     vk::BufferMemoryBarrier particleBufferMemoryBarrier;
     particleBufferMemoryBarrier
@@ -237,14 +242,14 @@ public:
 
     // Add to uniform grid
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, addUniformGridPipeline_);
-    commandBuffer.dispatch((particleCount_ + 255) / 256, 1, 1);
+    commandBuffer.dispatch((particleCount + 255) / 256, 1, 1);
 
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
       {}, gridBufferMemoryBarrier, {});
 
     // Initialize collision detection
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, initializeCollisionDetectionPipeline_);
-    commandBuffer.dispatch((particleCount_ + 255) / 256, 1, 1);
+    commandBuffer.dispatch((particleCount + 255) / 256, 1, 1);
 
     vk::BufferMemoryBarrier collisionPairsBufferMemoryBarrier;
     collisionPairsBufferMemoryBarrier
@@ -271,7 +276,7 @@ public:
 
     // Collision detection
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, collisionDetectionPipeline_);
-    commandBuffer.dispatch((particleCount_ + 255) / 256, 1, 1);
+    commandBuffer.dispatch((particleCount + 255) / 256, 1, 1);
 
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
       {}, { collisionPairsBufferMemoryBarrier, collisionChainBufferMemoryBarrier }, {});
@@ -323,7 +328,7 @@ public:
 
       // Solve delta x
       commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, solveDeltaXPipeline_);
-      commandBuffer.dispatch((particleCount_ + 255) / 256, 1, 1);
+      commandBuffer.dispatch((particleCount + 255) / 256, 1, 1);
 
       commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
         {}, solverBufferMemoryBarrier, {});
@@ -338,7 +343,7 @@ public:
 
     // Velocity update
     commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, velocityUpdatePipeline_);
-    commandBuffer.dispatch((particleCount_ + 255) / 256, 1, 1);
+    commandBuffer.dispatch((particleCount + 255) / 256, 1, 1);
 
     // TODO: Should barrier be added here, or by application?
     particleBufferMemoryBarrier
