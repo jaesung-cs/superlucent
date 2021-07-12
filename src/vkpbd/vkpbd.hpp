@@ -567,7 +567,7 @@ inline ParticleSimulator createParticleSimulator(const ParticleSimulatorCreateIn
   const auto gridBufferSize =
     16 // 4-element header
     + ParticleSimulator::hashBucketCount_ * sizeof(int32_t) + sizeof(int32_t) // hash bucket plus pad
-    + (sizeof(uint32_t) + sizeof(int32_t)) * (simulator.particleCount_ * 27); // object grid pairs
+    + (sizeof(uint32_t) + sizeof(int32_t)) * (simulator.particleCount_ * 8); // object grid pairs
 
   simulator.gridBufferRange_.offset = 0;
   simulator.gridBufferRange_.size = gridBufferSize;
