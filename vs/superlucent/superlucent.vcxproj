@@ -170,8 +170,6 @@ python compile.py
     <ClCompile Include="..\..\src\superlucent\application.cc" />
     <ClCompile Include="..\..\src\superlucent\engine\engine.cc" />
     <ClCompile Include="..\..\src\superlucent\engine\particle_renderer.cc" />
-    <ClCompile Include="..\..\src\superlucent\engine\gpu_particle_simulation.cc" />
-    <ClCompile Include="..\..\src\superlucent\engine\particle_simulation.cc" />
     <ClCompile Include="..\..\src\superlucent\engine\uniform_buffer.cc" />
     <ClCompile Include="..\..\src\superlucent\geometry\mesh.cc" />
     <ClCompile Include="..\..\src\superlucent\geometry\mesh_loader.cc" />
@@ -182,14 +180,10 @@ python compile.py
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\superlucent\application.h" />
-    <ClInclude Include="..\..\src\superlucent\engine\data\particle.h" />
     <ClInclude Include="..\..\src\superlucent\engine\engine.h" />
     <ClInclude Include="..\..\src\superlucent\engine\particle_renderer.h" />
-    <ClInclude Include="..\..\src\superlucent\engine\gpu_particle_simulation.h" />
-    <ClInclude Include="..\..\src\superlucent\engine\particle_simulation.h" />
     <ClInclude Include="..\..\src\superlucent\engine\ubo\camera_ubo.h" />
     <ClInclude Include="..\..\src\superlucent\engine\ubo\light_ubo.h" />
-    <ClInclude Include="..\..\src\superlucent\engine\ubo\particle_simulation_params.h" />
     <ClInclude Include="..\..\src\superlucent\engine\uniform_buffer.h" />
     <ClInclude Include="..\..\src\superlucent\geometry\mesh.h" />
     <ClInclude Include="..\..\src\superlucent\geometry\mesh_loader.h" />
@@ -198,11 +192,6 @@ python compile.py
     <ClInclude Include="..\..\src\superlucent\scene\camera_control.h" />
     <ClInclude Include="..\..\src\superlucent\scene\light.h" />
     <ClInclude Include="..\..\src\superlucent\shader\core\light.glsl" />
-    <ClInclude Include="..\..\src\superlucent\shader\particle\collision_pairs.glsl" />
-    <ClInclude Include="..\..\src\superlucent\shader\particle\indirect.glsl" />
-    <ClInclude Include="..\..\src\superlucent\shader\particle\particle.glsl" />
-    <ClInclude Include="..\..\src\superlucent\shader\particle\simulation_params.glsl" />
-    <ClInclude Include="..\..\src\superlucent\shader\particle\solver.glsl" />
     <ClInclude Include="..\..\src\superlucent\utils\rng.h" />
     <ClInclude Include="..\..\src\vkpbd\particle.h" />
     <ClInclude Include="..\..\src\vkpbd\simulation_params.h" />
@@ -211,17 +200,6 @@ python compile.py
   <ItemGroup>
     <None Include="..\..\src\superlucent\shader\.gitignore" />
     <None Include="..\..\src\superlucent\shader\compile.py" />
-    <None Include="..\..\src\superlucent\shader\particle\particle_add_uniform_grid.comp" />
-    <None Include="..\..\src\superlucent\shader\particle\particle_collision_detection.comp" />
-    <None Include="..\..\src\superlucent\shader\particle\particle_forward.comp" />
-    <None Include="..\..\src\superlucent\shader\particle\particle_initialize_collision_detection.comp" />
-    <None Include="..\..\src\superlucent\shader\particle\particle_initialize_dispatch.comp" />
-    <None Include="..\..\src\superlucent\shader\particle\particle_initialize_solver.comp" />
-    <None Include="..\..\src\superlucent\shader\particle\particle_initialize_uniform_grid.comp" />
-    <None Include="..\..\src\superlucent\shader\particle\particle_solve_delta_lambda.comp" />
-    <None Include="..\..\src\superlucent\shader\particle\particle_solve_delta_x.comp" />
-    <None Include="..\..\src\superlucent\shader\particle\particle_solve_x_lambda.comp" />
-    <None Include="..\..\src\superlucent\shader\particle\particle_velocity_update.comp" />
     <None Include="..\..\src\superlucent\shader\rendering\cell_sphere.frag" />
     <None Include="..\..\src\superlucent\shader\rendering\cell_sphere.vert" />
     <None Include="..\..\src\superlucent\shader\rendering\floor.frag" />
