@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{932365f3-4532-44c9-be9b-aec473382c7c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{81c35d26-2550-4104-985f-18c092903c28}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\shader">
+      <UniqueIdentifier>{97c451c4-c340-45c7-bc40-7d018cbce361}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\shader\particle">
+      <UniqueIdentifier>{2e8527eb-bc76-47b8-af96-5ed8a105491e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\src\vkpbd\shader\particle\add_uniform_grid.comp">
+      <Filter>src\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\particle\collision_detection.comp">
+      <Filter>src\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\particle\forward.comp">
+      <Filter>src\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\particle\initialize_collision_detection.comp">
+      <Filter>src\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\particle\initialize_dispatch.comp">
+      <Filter>src\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\particle\initialize_solver.comp">
+      <Filter>src\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\particle\initialize_uniform_grid.comp">
+      <Filter>src\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\particle\solve_delta_lambda.comp">
+      <Filter>src\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\particle\solve_delta_x.comp">
+      <Filter>src\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\particle\solve_x_lambda.comp">
+      <Filter>src\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\particle\velocity_update.comp">
+      <Filter>src\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\particle\collision_pairs.glsl">
+      <Filter>src\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\particle\indirect.glsl">
+      <Filter>src\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\particle\particle.glsl">
+      <Filter>src\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\particle\simulation_params.glsl">
+      <Filter>src\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\particle\solver.glsl">
+      <Filter>src\shader\particle</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\particle\uniform_grid.glsl">
+      <Filter>src\shader\particle</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\vkpbd\particle.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\vkpbd\simulation_params.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\vkpbd\vkpbd.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\vkpbd\vkpbd.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

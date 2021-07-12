@@ -25,23 +25,11 @@
     <Filter Include="src\superlucent\engine\ubo">
       <UniqueIdentifier>{61dfbf17-c314-44a1-b534-77768580bcc3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\superlucent\shader\uniform_grid">
-      <UniqueIdentifier>{0376c1f7-1adf-4bb3-86f9-ba8804d609e7}</UniqueIdentifier>
-    </Filter>
     <Filter Include="src\superlucent\shader\rendering">
       <UniqueIdentifier>{d1617805-fd97-45bb-bb1a-8223322c7884}</UniqueIdentifier>
     </Filter>
     <Filter Include="src\superlucent\geometry">
       <UniqueIdentifier>{51f71da0-17b9-4704-b53f-1a094649b62d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\vkpbd">
-      <UniqueIdentifier>{76f6c342-53f9-452f-8f1b-9d8d256c6d4f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\vkpbd\shader">
-      <UniqueIdentifier>{dbbf67f4-29fa-430d-844f-6b29657a8153}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="src\vkpbd\shader\particle">
-      <UniqueIdentifier>{27c2cd7c-17d4-45d4-9555-d9b39479cb45}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -122,20 +110,8 @@
     <ClInclude Include="..\..\src\superlucent\geometry\tetragrid.h">
       <Filter>src\superlucent\geometry</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\vkpbd\particle.h">
-      <Filter>src\vkpbd</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\vkpbd\simulation_params.h">
-      <Filter>src\vkpbd</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\src\vkpbd\vkpbd.hpp">
-      <Filter>src\vkpbd</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\..\src\superlucent\shader\uniform_grid\uniform_grid.glsl">
-      <Filter>src\superlucent\shader\uniform_grid</Filter>
-    </None>
     <None Include="..\..\src\superlucent\shader\rendering\cell_sphere.frag">
       <Filter>src\superlucent\shader\rendering</Filter>
     </None>
@@ -147,57 +123,6 @@
     </None>
     <None Include="..\..\src\superlucent\shader\rendering\floor.vert">
       <Filter>src\superlucent\shader\rendering</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\particle\add_uniform_grid.comp">
-      <Filter>src\vkpbd\shader\particle</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\particle\collision_detection.comp">
-      <Filter>src\vkpbd\shader\particle</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\particle\forward.comp">
-      <Filter>src\vkpbd\shader\particle</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\particle\initialize_collision_detection.comp">
-      <Filter>src\vkpbd\shader\particle</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\particle\initialize_dispatch.comp">
-      <Filter>src\vkpbd\shader\particle</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\particle\initialize_solver.comp">
-      <Filter>src\vkpbd\shader\particle</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\particle\initialize_uniform_grid.comp">
-      <Filter>src\vkpbd\shader\particle</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\particle\solve_delta_lambda.comp">
-      <Filter>src\vkpbd\shader\particle</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\particle\solve_delta_x.comp">
-      <Filter>src\vkpbd\shader\particle</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\particle\solve_x_lambda.comp">
-      <Filter>src\vkpbd\shader\particle</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\particle\velocity_update.comp">
-      <Filter>src\vkpbd\shader\particle</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\particle\collision_pairs.glsl">
-      <Filter>src\vkpbd\shader\particle</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\particle\indirect.glsl">
-      <Filter>src\vkpbd\shader\particle</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\particle\particle.glsl">
-      <Filter>src\vkpbd\shader\particle</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\particle\simulation_params.glsl">
-      <Filter>src\vkpbd\shader\particle</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\particle\solver.glsl">
-      <Filter>src\vkpbd\shader\particle</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\particle\uniform_grid.glsl">
-      <Filter>src\vkpbd\shader\particle</Filter>
     </None>
     <None Include="..\..\src\compile_shader.py">
       <Filter>src</Filter>
