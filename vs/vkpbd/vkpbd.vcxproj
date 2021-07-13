@@ -38,12 +38,18 @@
     <None Include="..\..\src\vkpbd\shader\particle\velocity_update.comp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\vkpbd\buffer_requirements.h" />
+    <ClInclude Include="..\..\include\vkpbd\fluid_particle.h" />
+    <ClInclude Include="..\..\include\vkpbd\fluid_simulation_params.h" />
+    <ClInclude Include="..\..\include\vkpbd\fluid_simulator.hpp" />
     <ClInclude Include="..\..\include\vkpbd\particle.h" />
+    <ClInclude Include="..\..\include\vkpbd\particle_simulator.hpp" />
     <ClInclude Include="..\..\include\vkpbd\simulation_params.h" />
     <ClInclude Include="..\..\include\vkpbd\vkpbd.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\vkpbd\vkpbd.cc" />
+    <ClCompile Include="..\..\src\vkpbd\fluid_simulator.cc" />
+    <ClCompile Include="..\..\src\vkpbd\particle_simulator.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

@@ -1,14 +1,14 @@
-#include <vkpbd/vkpbd.hpp>
+#include <vkpbd/fluid_simulator.hpp>
 
 #include <string>
 #include <fstream>
 
-#include <vkpbd/particle.h>
-#include <vkpbd/simulation_params.h>
+#include <vkpbd/fluid_particle.h>
+#include <vkpbd/fluid_simulation_params.h>
 
 namespace vkpbd
 {
-BufferRequirements ParticleSimulator::getParticleBufferRequirements()
+BufferRequirements FluidSimulator::getParticleBufferRequirements()
 {
   BufferRequirements requirements;
   requirements.usage = vk::BufferUsageFlagBits::eStorageBuffer;
@@ -16,7 +16,7 @@ BufferRequirements ParticleSimulator::getParticleBufferRequirements()
   return requirements;
 }
 
-BufferRequirements ParticleSimulator::getInternalBufferRequirements()
+BufferRequirements FluidSimulator::getInternalBufferRequirements()
 {
   BufferRequirements requirements;
   requirements.usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer;
@@ -24,7 +24,7 @@ BufferRequirements ParticleSimulator::getInternalBufferRequirements()
   return requirements;
 }
 
-BufferRequirements ParticleSimulator::getUniformBufferRequirements()
+BufferRequirements FluidSimulator::getUniformBufferRequirements()
 {
   BufferRequirements requirements;
   requirements.usage = vk::BufferUsageFlagBits::eUniformBuffer;
@@ -32,28 +32,28 @@ BufferRequirements ParticleSimulator::getUniformBufferRequirements()
   return requirements;
 }
 
-void ParticleSimulator::cmdBindSrcParticleBuffer(vk::Buffer buffer, vk::DeviceSize offset)
+void FluidSimulator::cmdBindSrcParticleBuffer(vk::Buffer buffer, vk::DeviceSize offset)
 {
   srcBuffer_.buffer = buffer;
   srcBuffer_.offset = offset;
   srcBuffer_.size = particleBufferRequiredSize_;
 }
 
-void ParticleSimulator::cmdBindDstParticleBuffer(vk::Buffer buffer, vk::DeviceSize offset)
+void FluidSimulator::cmdBindDstParticleBuffer(vk::Buffer buffer, vk::DeviceSize offset)
 {
   dstBuffer_.buffer = buffer;
   dstBuffer_.offset = offset;
   dstBuffer_.size = particleBufferRequiredSize_;
 }
 
-void ParticleSimulator::cmdBindInternalBuffer(vk::Buffer buffer, vk::DeviceSize offset)
+void FluidSimulator::cmdBindInternalBuffer(vk::Buffer buffer, vk::DeviceSize offset)
 {
   internalBuffer_.buffer = buffer;
   internalBuffer_.offset = offset;
   internalBuffer_.size = internalBufferRequiredSize_;
 }
 
-void ParticleSimulator::cmdBindUniformBuffer(vk::Buffer buffer, vk::DeviceSize offset, uint8_t* map)
+void FluidSimulator::cmdBindUniformBuffer(vk::Buffer buffer, vk::DeviceSize offset, uint8_t* map)
 {
   uniformBuffer_.buffer = buffer;
   uniformBuffer_.offset = offset;
@@ -61,12 +61,12 @@ void ParticleSimulator::cmdBindUniformBuffer(vk::Buffer buffer, vk::DeviceSize o
   uniformBuffer_.map = map;
 }
 
-void ParticleSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, float animationTime, float dt)
+void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, float animationTime, float dt)
 {
   cmdStep(commandBuffer, cmdIndex, particleCount_, animationTime, dt);
 }
 
-void ParticleSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint32_t particleCount, float animationTime, float dt)
+void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint32_t particleCount, float animationTime, float dt)
 {
   constexpr auto radius = 0.03f;
 
@@ -74,14 +74,14 @@ void ParticleSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, u
   constexpr auto wallOffsetMagnitude = 0.5f;
 
   // Set uniform
-  SimulationParams params;
+  FluidSimulationParams params;
   params.dt = dt;
   params.num_particles = particleCount;
   params.radius = radius;
   params.alpha = 1e-3f;
   params.wall_offset = static_cast<float>(wallOffsetMagnitude * std::sin(animationTime * wallOffsetSpeed));
 
-  std::memcpy(uniformBuffer_.map, &params, sizeof(SimulationParams));
+  std::memcpy(uniformBuffer_.map, &params, sizeof(FluidSimulationParams));
 
   // Descriptor set update
   // Binding 0: input
@@ -305,7 +305,7 @@ void ParticleSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, u
     {}, particleBufferMemoryBarrier, {});
 }
 
-void ParticleSimulator::destroy()
+void FluidSimulator::destroy()
 {
   device_.destroyPipeline(forwardPipeline_);
   device_.destroyPipeline(initializeUniformGridPipeline_);
@@ -325,9 +325,9 @@ void ParticleSimulator::destroy()
   descriptorSets_.clear();
 }
 
-ParticleSimulator createParticleSimulator(const ParticleSimulatorCreateInfo& createInfo)
+FluidSimulator createFluidSimulator(const FluidSimulatorCreateInfo& createInfo)
 {
-  ParticleSimulator simulator;
+  FluidSimulator simulator;
   simulator.device_ = createInfo.device;
   simulator.descriptorPool_ = createInfo.descriptorPool;
   simulator.particleCount_ = createInfo.particleCount;
@@ -453,7 +453,7 @@ ParticleSimulator createParticleSimulator(const ParticleSimulatorCreateInfo& cre
 
   const auto gridBufferSize =
     16 // 4-element header
-    + ParticleSimulator::hashBucketCount_ * sizeof(int32_t) + sizeof(int32_t) // hash bucket plus pad
+    + FluidSimulator::hashBucketCount_ * sizeof(int32_t) + sizeof(int32_t) // hash bucket plus pad
     + (sizeof(uint32_t) + sizeof(int32_t)) * (simulator.particleCount_ * 8); // object grid pairs
 
   simulator.gridBufferRange_.offset = 0;
@@ -472,9 +472,9 @@ ParticleSimulator createParticleSimulator(const ParticleSimulatorCreateInfo& cre
   simulator.dispatchIndirectBufferRange_.size = sizeof(uint32_t) * 8;
 
   // Requirements
-  simulator.particleBufferRequiredSize_ = sizeof(Particle) * simulator.particleCount_;
+  simulator.particleBufferRequiredSize_ = sizeof(FluidParticle) * simulator.particleCount_;
   simulator.internalBufferRequiredSize_ = simulator.dispatchIndirectBufferRange_.offset + simulator.dispatchIndirectBufferRange_.size;
-  simulator.uniformBufferRequiredSize_ = sizeof(SimulationParams);
+  simulator.uniformBufferRequiredSize_ = sizeof(FluidSimulationParams);
 
   return simulator;
 }

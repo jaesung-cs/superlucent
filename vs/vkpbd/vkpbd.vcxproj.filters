@@ -13,6 +13,9 @@
     <Filter Include="src\shader\particle">
       <UniqueIdentifier>{2e8527eb-bc76-47b8-af96-5ed8a105491e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\shader\fluid">
+      <UniqueIdentifier>{b009f995-002d-422f-a7de-09b1a8ca4d7e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\vkpbd\shader\particle\add_uniform_grid.comp">
@@ -77,9 +80,27 @@
     <ClInclude Include="..\..\include\vkpbd\vkpbd.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\vkpbd\fluid_particle.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\vkpbd\fluid_simulator.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\vkpbd\fluid_simulation_params.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\vkpbd\particle_simulator.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\vkpbd\buffer_requirements.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\vkpbd\vkpbd.cc">
+    <ClCompile Include="..\..\src\vkpbd\particle_simulator.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\vkpbd\fluid_simulator.cc">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
