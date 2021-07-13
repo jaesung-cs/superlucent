@@ -57,7 +57,7 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
   particle_renderer_ = std::make_unique<ParticleRenderer>(this, width_, height_);
 
   // Create vkpbd
-  CreateParticleSimulator();
+  CreateSimulator();
 
   CreateSynchronizationObjects();
 }
@@ -67,7 +67,7 @@ Engine::~Engine()
   device_.waitIdle();
 
   DestroySynchronizationObjects();
-  DestroyParticleSimulator();
+  DestroySimulator();
 
   particle_renderer_ = nullptr;
 
@@ -170,11 +170,11 @@ void Engine::Draw(double time)
 
   if (dt > 0.)
   {
-    particleSimulator_.cmdBindSrcParticleBuffer(particleBuffer_, particleBufferSize_ * image_index);
-    particleSimulator_.cmdBindDstParticleBuffer(particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3));
-    particleSimulator_.cmdBindInternalBuffer(particleInternalBuffer_, 0);
-    particleSimulator_.cmdBindUniformBuffer(particleUniformBuffer_, 0, particleUniformBufferMap_);
-    particleSimulator_.cmdStep(draw_command_buffer, image_index, animation_time_, dt);
+    fluidSimulator_.cmdBindSrcParticleBuffer(particleBuffer_, particleBufferSize_ * image_index);
+    fluidSimulator_.cmdBindDstParticleBuffer(particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3));
+    fluidSimulator_.cmdBindInternalBuffer(particleInternalBuffer_, 0);
+    fluidSimulator_.cmdBindUniformBuffer(particleUniformBuffer_, 0, particleUniformBufferMap_);
+    fluidSimulator_.cmdStep(draw_command_buffer, image_index, animation_time_, dt);
 
     vk::BufferMemoryBarrier barrier;
     barrier
@@ -258,7 +258,7 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
   constexpr auto radius = 0.03f;
 
   particle_renderer_->Begin(command_buffer, image_index);
-  particle_renderer_->RecordParticleRenderCommands(command_buffer, particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3), particleSimulator_.getParticleCount(), radius);
+  particle_renderer_->RecordParticleRenderCommands(command_buffer, particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3), fluidSimulator_.getParticleCount(), radius);
   particle_renderer_->RecordFloorRenderCommands(command_buffer);
   particle_renderer_->End(command_buffer);
 }
@@ -859,7 +859,7 @@ void Engine::DestroyRendertarget()
   device_.destroyImage(rendertarget_.depth_image);
 }
 
-void Engine::CreateParticleSimulator()
+void Engine::CreateSimulator()
 {
   constexpr auto particleDimension = 40;
   constexpr auto particleCount = particleDimension * particleDimension * particleDimension;
@@ -905,18 +905,18 @@ void Engine::CreateParticleSimulator()
     }
   }
 
-  vkpbd::ParticleSimulatorCreateInfo particleSimulatorCreateInfo;
-  particleSimulatorCreateInfo.device = device_;
-  particleSimulatorCreateInfo.physicalDevice = physical_device_;
-  particleSimulatorCreateInfo.descriptorPool = descriptor_pool_;
-  particleSimulatorCreateInfo.particleCount = particleCount;
-  particleSimulatorCreateInfo.commandCount = commandCount;
-  particleSimulator_ = vkpbd::createParticleSimulator(particleSimulatorCreateInfo);
+  vkpbd::FluidSimulatorCreateInfo fluidSimulatorCreateInfo;
+  fluidSimulatorCreateInfo.device = device_;
+  fluidSimulatorCreateInfo.physicalDevice = physical_device_;
+  fluidSimulatorCreateInfo.descriptorPool = descriptor_pool_;
+  fluidSimulatorCreateInfo.particleCount = particleCount;
+  fluidSimulatorCreateInfo.commandCount = commandCount;
+  fluidSimulator_ = vkpbd::createFluidSimulator(fluidSimulatorCreateInfo);
 
   // Create buffers
-  const auto particleBufferRequirements = particleSimulator_.getParticleBufferRequirements();
-  const auto internalBufferRequirements = particleSimulator_.getInternalBufferRequirements();
-  const auto uniformBufferRequirements = particleSimulator_.getUniformBufferRequirements();
+  const auto particleBufferRequirements = fluidSimulator_.getParticleBufferRequirements();
+  const auto internalBufferRequirements = fluidSimulator_.getInternalBufferRequirements();
+  const auto uniformBufferRequirements = fluidSimulator_.getUniformBufferRequirements();
 
   vk::BufferCreateInfo bufferCreateInfo;
   bufferCreateInfo
@@ -957,7 +957,7 @@ void Engine::CreateParticleSimulator()
   ToDeviceMemory(particles, particleBuffer_, 0);
 }
 
-void Engine::DestroyParticleSimulator()
+void Engine::DestroySimulator()
 {
   device_.destroyBuffer(particleBuffer_);
   device_.destroyBuffer(particleInternalBuffer_);
@@ -965,7 +965,7 @@ void Engine::DestroyParticleSimulator()
   device_.unmapMemory(particleUniformMemory_);
   device_.freeMemory(particleUniformMemory_);
 
-  particleSimulator_.destroy();
+  fluidSimulator_.destroy();
 }
 
 void Engine::CreateSynchronizationObjects()
