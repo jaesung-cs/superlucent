@@ -3,6 +3,9 @@
 #include <string>
 #include <fstream>
 
+#include <vkpbd/particle.h>
+#include <vkpbd/simulation_params.h>
+
 namespace vkpbd
 {
 BufferRequirements ParticleSimulator::getParticleBufferRequirements()

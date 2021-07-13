@@ -5,9 +5,6 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include <vkpbd/particle.h>
-#include <vkpbd/simulation_params.h>
-
 namespace vkpbd
 {
 class ParticleSimulatorCreateInfo;
