@@ -413,7 +413,7 @@ FluidSimulator createFluidSimulator(const FluidSimulatorCreateInfo& createInfo)
     return pipeline.value;
   };
 
-  const std::string baseDir = "C:\\workspace\\superlucent\\src\\vkpbd\\shader\\particle";
+  const std::string baseDir = "C:\\workspace\\superlucent\\src\\vkpbd\\shader\\fluid";
   simulator.forwardPipeline_ = createComputePipeline(baseDir + "\\forward.comp.spv");
   simulator.initializeUniformGridPipeline_ = createComputePipeline(baseDir + "\\initialize_uniform_grid.comp.spv");
   simulator.addUniformGridPipeline_ = createComputePipeline(baseDir + "\\add_uniform_grid.comp.spv");

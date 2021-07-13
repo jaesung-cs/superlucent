@@ -69,6 +69,57 @@
     <None Include="..\..\src\vkpbd\shader\particle\uniform_grid.glsl">
       <Filter>src\shader\particle</Filter>
     </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\add_uniform_grid.comp">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\collision_detection.comp">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\collision_pairs.glsl">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\forward.comp">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\indirect.glsl">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\initialize_collision_detection.comp">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\initialize_dispatch.comp">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\initialize_solver.comp">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\initialize_uniform_grid.comp">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\particle.glsl">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\simulation_params.glsl">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\solve_delta_lambda.comp">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\solve_delta_x.comp">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\solve_x_lambda.comp">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\solver.glsl">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\uniform_grid.glsl">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\velocity_update.comp">
+      <Filter>src\shader\fluid</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\vkpbd\particle.h">
