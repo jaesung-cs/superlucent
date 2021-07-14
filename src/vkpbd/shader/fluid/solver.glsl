@@ -1,37 +1,9 @@
-layout (binding = 5) buffer SolverSsbo
+#ifndef VKPBD_FLUID_SOLVER_GLSL_
+#define VKPBD_FLUID_SOLVER_GLSL_
+
+layout (binding = 4) buffer SolverSsbo
 {
-  // rows = num_collisions
-  // cols = num_particles * 3
-  // J: [rows * cols], C: [cols], lambda: [rows], x: [cols]
-  float matrix[];
+  int buf[];
 } solver;
 
-uint Rows()
-{
-  return num_collisions;
-}
-
-uint Cols()
-{
-  return params.num_particles * 3;
-}
-
-uint LambdaIndex(uint row)
-{
-  return row;
-}
-
-uint XIndex(uint row)
-{
-  return Rows() + row;
-}
-
-uint DeltaLambdaIndex(uint row)
-{
-  return Rows() + Cols() + row;
-}
-
-uint DeltaXIndex(uint row)
-{
-  return Rows() + Cols() + Rows() + row;
-}
+#endif // VKPBD_FLUID_SOLVER_GLSL_

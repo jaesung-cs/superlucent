@@ -73,11 +73,10 @@ private:
   // Binding 0: input
   // Binding 1: output
   // Binding 2: uniform grid and hash table
-  // Binding 3: collision pairs
-  // Binding 4: collision pairs linked list
-  // Binding 5: solver
-  // Binding 6: indirect dispatch
-  // Binding 7: uniform params
+  // Binding 3: neighbors
+  // TODO: Binding 4: solver
+  // Binding 5: indirect dispatch
+  // Binding 6: uniform params
   vk::DescriptorSetLayout descriptorSetLayout_;
   vk::DescriptorPool descriptorPool_;
 
@@ -89,20 +88,15 @@ private:
   vk::Pipeline forwardPipeline_;
   vk::Pipeline initializeUniformGridPipeline_;
   vk::Pipeline addUniformGridPipeline_;
-  vk::Pipeline initializeCollisionDetectionPipeline_;
-  vk::Pipeline collisionDetectionPipeline_;
+  vk::Pipeline initializeNeighborSearchPipeline_;
+  vk::Pipeline neighborSearchPipeline_;
   vk::Pipeline initializeDispatchPipeline_;
-  vk::Pipeline initializeSolverPipeline_;
-  vk::Pipeline solveDeltaLambdaPipeline_;
-  vk::Pipeline solveDeltaXPipeline_;
-  vk::Pipeline solveXLambdaPipeline_;
   vk::Pipeline velocityUpdatePipeline_;
 
   // Internal buffer ranges
   SubBufferRange gridBufferRange_;
-  SubBufferRange collisionPairsBufferRange_;
-  SubBufferRange collisionChainBufferRange_;
-  SubBufferRange solveBufferRange_;
+  SubBufferRange neighborsBufferRange_;
+  SubBufferRange solverBufferRange_;
   SubBufferRange dispatchIndirectBufferRange_;
 
   // Requirements
@@ -117,6 +111,7 @@ private:
   UniformBufferRange uniformBuffer_;
 
   uint32_t particleCount_ = 0;
+  uint32_t maxNeighborCount_ = 0;
 };
 
 class FluidSimulatorCreateInfo
@@ -131,6 +126,7 @@ public:
   vk::DescriptorPool descriptorPool;
   uint32_t particleCount = 0;
   uint32_t commandCount = 0;
+  uint32_t maxNeighborCount = 30u;
 };
 }
 

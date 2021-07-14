@@ -5,12 +5,13 @@ namespace vkpbd
 {
 struct FluidSimulationParams
 {
-  alignas(16) float dt;
-  int num_particles;
-  float alpha; // compliance of the constraints
-  float wall_offset; // wall x direction distance is added with this value
+  alignas(16) float dt = 0.f;
+  int num_particles = 0;
+  float alpha = 0.f; // compliance of the constraints
+  float wall_offset = 0.f; // wall x direction distance is added with this value
 
-  float radius;
+  float radius = 0.f;
+  int max_num_neighbors = 0;
 };
 }
 

@@ -1,3 +1,6 @@
+#ifndef VKPBD_FLUID_UNIFORM_GRID_GLSL_
+#define VKPBD_FLUID_UNIFORM_GRID_GLSL_
+
 struct Node
 {
   uint object_id;
@@ -77,3 +80,5 @@ void AddSphereToGrid(uint object_id, vec3 position, float d)
     }
   }
 }
+
+#endif // VKPBD_FLUID_UNIFORM_GRID_GLSL_

@@ -1,3 +1,6 @@
+#ifndef VKPBD_FLUID_PARTICLE_GLSL_
+#define VKPBD_FLUID_PARTICLE_GLSL_
+
 struct Particle
 {
   vec4 position; // [px, py, pz, 0]
@@ -16,3 +19,5 @@ layout(std140, binding = 1) buffer OutParticleSsbo
 {
   Particle out_particles[];
 };
+
+#endif // VKPBD_FLUID_PARTICLE_GLSL_

@@ -3,9 +3,7 @@
 layout (local_size_x = 256) in;
 
 #include "particle.glsl"
-#include "collision_pairs.glsl"
-#include "simulation_params.glsl"
-#include "solver.glsl"
+#include "fluid_simulation_params.glsl"
 
 vec3 computeRestitutionUpdate(vec3 normal, vec4 velocity, vec4 prev_velocity, float resilience)
 {
@@ -21,46 +19,13 @@ void main()
 	if (index >= params.num_particles)
     return;
     
-  // Update position from solver
-  vec3 solver_position;
-  for (int coord = 0; coord < 3; coord++)
-    solver_position[coord] = solver.matrix[XIndex(index * 3 + coord)];
-
-  // Update position
-  out_particles[index].position.xyz = solver_position;
+  // TODO: Update position from solver
 
   const float radius = params.radius;
 
   vec4 prev_velocity = out_particles[index].velocity;
   vec4 velocity = (out_particles[index].position - in_particles[index].position) / params.dt;
   
-  // Solve velocities
-  const float resilience = 0.9f;
-
-  vec4 solved_velocity = velocity;
-  /*
-  if (collision.x != 0.f)
-  {
-    const vec3 normal = vec3(collision.x, 0.f, 0.f);
-    vec3 dv = computeRestitutionUpdate(normal, velocity, prev_velocity, resilience);
-    solved_velocity.xyz += dv;
-  }
-
-  if (collision.y != 0.f)
-  {
-    const vec3 normal = vec3(0.f, collision.y, 0.f);
-    vec3 dv = computeRestitutionUpdate(normal, velocity, prev_velocity, resilience);
-    solved_velocity.xyz += dv;
-  }
-
-  if (collision.z != 0.f)
-  {
-    const vec3 normal = vec3(0.f, 0.f, collision.z);
-    vec3 dv = computeRestitutionUpdate(normal, velocity, prev_velocity, resilience);
-    solved_velocity.xyz += dv;
-  }
-  */
-
   // Update velocity
-  out_particles[index].velocity = solved_velocity;
+  out_particles[index].velocity = velocity;
 }
