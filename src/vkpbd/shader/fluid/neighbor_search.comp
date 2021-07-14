@@ -66,5 +66,6 @@ void main()
     num_particles_in_grid++;
   }
 
-  out_particles[i0].color.rgb = vec3((hash_index % 256) / 255.f, ((hash_index / 256) % 256) / 255.f, ((hash_index / 65536) % 256) / 255.f);
+  // out_particles[i0].color.rgb = vec3((hash_index % 256) / 255.f, ((hash_index / 256) % 256) / 255.f, ((hash_index / 65536) % 256) / 255.f);
+  out_particles[i0].color.rgb = vec3(NeighborCount(i0) / 5.f);
 }

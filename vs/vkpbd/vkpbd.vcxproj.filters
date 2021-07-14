@@ -108,6 +108,9 @@
     <None Include="..\..\src\vkpbd\shader\fluid\solver.glsl">
       <Filter>src\shader\fluid</Filter>
     </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\kernel.glsl">
+      <Filter>src\shader\fluid</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\vkpbd\particle.h">

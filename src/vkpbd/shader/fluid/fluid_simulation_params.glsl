@@ -10,6 +10,9 @@ layout (binding = 6) uniform FluidSimulationParamsUbo
 
   float radius;
   int max_num_neighbors;
+  vec2 kernel_constants; // [k, l]
+  // where k = 8 / (pi * h3)
+  // and   l = 48 / (pi * h3)
 } params;
 
 #endif // VKPBD_FLUID_FLUID_SIMULATION_PARAMS_GLSL_

@@ -82,6 +82,14 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
   params.wall_offset = static_cast<float>(wallOffsetMagnitude * std::sin(animationTime * wallOffsetSpeed));
   params.max_num_neighbors = maxNeighborCount_;
 
+  constexpr auto pi = 3.141592f;
+  const auto h = radius;
+  const auto h2 = h * h;
+  const auto h3 = h2 * h;
+  const auto k = 8.f / (pi * h3);
+  const auto l = 48.f / (pi * h3);
+  params.kernel_constants = { k, l };
+
   std::memcpy(uniformBuffer_.map, &params, sizeof(FluidSimulationParams));
 
   // Descriptor set update
@@ -196,7 +204,7 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
 
   // Initialize neighbor search
   commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, initializeNeighborSearchPipeline_);
-  commandBuffer.dispatch((particleCount + 255) / 256, 1, 1);
+  commandBuffer.dispatch((particleCount + particleCount * maxNeighborCount_ + 255) / 256, 1, 1);
 
   vk::BufferMemoryBarrier neighborsBufferMemoryBarrier;
   neighborsBufferMemoryBarrier
