@@ -19,7 +19,7 @@ BufferRequirements FluidSimulator::getParticleBufferRequirements()
 BufferRequirements FluidSimulator::getInternalBufferRequirements()
 {
   BufferRequirements requirements;
-  requirements.usage = vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eIndirectBuffer;
+  requirements.usage = vk::BufferUsageFlagBits::eStorageBuffer;
   requirements.size = internalBufferRequiredSize_;
   return requirements;
 }
@@ -99,10 +99,9 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
   // Binding 2: uniform grid and hash table
   // Binding 3: neighbors
   // TODO: Binding 4: solver
-  // Binding 5: indirect dispatch
-  // Binding 6: uniform params
+  // Binding 5: uniform params
 
-  std::vector<vk::DescriptorBufferInfo> bufferInfos(8);
+  std::vector<vk::DescriptorBufferInfo> bufferInfos(6);
   bufferInfos[0]
     .setBuffer(srcBuffer_.buffer)
     .setOffset(srcBuffer_.offset)
@@ -129,17 +128,12 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
     .setRange(solverBufferRange_.size);
 
   bufferInfos[5]
-    .setBuffer(internalBuffer_.buffer)
-    .setOffset(internalBuffer_.offset + dispatchIndirectBufferRange_.offset)
-    .setRange(dispatchIndirectBufferRange_.size);
-
-  bufferInfos[6]
     .setBuffer(uniformBuffer_.buffer)
     .setOffset(uniformBuffer_.offset)
     .setRange(uniformBuffer_.size);
 
-  std::vector<vk::WriteDescriptorSet> descriptorWrites(7);
-  for (int i = 0; i < 6; i++)
+  std::vector<vk::WriteDescriptorSet> descriptorWrites(6);
+  for (int i = 0; i < 5; i++)
   {
     descriptorWrites[i]
       .setDstSet(descriptorSets_[cmdIndex])
@@ -149,12 +143,12 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
       .setBufferInfo(bufferInfos[i]);
   }
 
-  descriptorWrites[6]
+  descriptorWrites[5]
     .setDstSet(descriptorSets_[cmdIndex])
-    .setDstBinding(6)
+    .setDstBinding(5)
     .setDstArrayElement(0)
     .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-    .setBufferInfo(bufferInfos[6]);
+    .setBufferInfo(bufferInfos[5]);
 
   device_.updateDescriptorSets(descriptorWrites, {});
 
@@ -231,19 +225,6 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
   commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
     {}, particleBufferMemoryBarrier, {});
 
-  // Initialize dispatch
-  commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, initializeDispatchPipeline_);
-  commandBuffer.dispatch(1, 1, 1);
-
-  vk::MemoryBarrier dispatch_indirect_barrier;
-  dispatch_indirect_barrier
-    .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
-    .setDstAccessMask(vk::AccessFlagBits::eIndirectCommandRead);
-
-  // Why draw indirect stage, not top of pipe or compute?
-  commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eDrawIndirect, {},
-    dispatch_indirect_barrier, {}, {});
-
   // Velocity update
   commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, velocityUpdatePipeline_);
   commandBuffer.dispatch((particleCount + 255) / 256, 1, 1);
@@ -256,7 +237,6 @@ void FluidSimulator::destroy()
   device_.destroyPipeline(addUniformGridPipeline_);
   device_.destroyPipeline(initializeNeighborSearchPipeline_);
   device_.destroyPipeline(neighborSearchPipeline_);
-  device_.destroyPipeline(initializeDispatchPipeline_);
   device_.destroyPipeline(velocityUpdatePipeline_);
 
   device_.destroyPipelineLayout(pipelineLayout_);
@@ -278,9 +258,9 @@ FluidSimulator createFluidSimulator(const FluidSimulatorCreateInfo& createInfo)
   auto physical_device = createInfo.physicalDevice;
 
   // Create descriptor set layout
-  std::vector<vk::DescriptorSetLayoutBinding> bindings(7);
+  std::vector<vk::DescriptorSetLayoutBinding> bindings(6);
 
-  for (int i = 0; i < 6; i++)
+  for (int i = 0; i < 5; i++)
   {
     bindings[i]
       .setBinding(i)
@@ -289,8 +269,8 @@ FluidSimulator createFluidSimulator(const FluidSimulatorCreateInfo& createInfo)
       .setDescriptorCount(1);
   }
 
-  bindings[6]
-    .setBinding(6)
+  bindings[5]
+    .setBinding(5)
     .setStageFlags(vk::ShaderStageFlagBits::eCompute)
     .setDescriptorType(vk::DescriptorType::eUniformBuffer)
     .setDescriptorCount(1);
@@ -367,7 +347,6 @@ FluidSimulator createFluidSimulator(const FluidSimulatorCreateInfo& createInfo)
   simulator.addUniformGridPipeline_ = createComputePipeline(baseDir + "\\add_uniform_grid.comp.spv");
   simulator.initializeNeighborSearchPipeline_ = createComputePipeline(baseDir + "\\initialize_neighbor_search.comp.spv");
   simulator.neighborSearchPipeline_ = createComputePipeline(baseDir + "\\neighbor_search.comp.spv");
-  simulator.initializeDispatchPipeline_ = createComputePipeline(baseDir + "\\initialize_dispatch.comp.spv");
   simulator.velocityUpdatePipeline_ = createComputePipeline(baseDir + "\\velocity_update.comp.spv");
 
   device.destroyPipelineCache(pipelineCache);
@@ -396,12 +375,9 @@ FluidSimulator createFluidSimulator(const FluidSimulatorCreateInfo& createInfo)
   simulator.solverBufferRange_.offset = align(simulator.neighborsBufferRange_.offset + simulator.neighborsBufferRange_.size, ssboAlignment);
   simulator.solverBufferRange_.size = sizeof(int32_t); // TODO: non-zero value as a placeholder!
 
-  simulator.dispatchIndirectBufferRange_.offset = align(simulator.solverBufferRange_.offset + simulator.solverBufferRange_.size, ssboAlignment);
-  simulator.dispatchIndirectBufferRange_.size = sizeof(uint32_t) * 8;
-
   // Requirements
   simulator.particleBufferRequiredSize_ = sizeof(FluidParticle) * simulator.particleCount_;
-  simulator.internalBufferRequiredSize_ = simulator.dispatchIndirectBufferRange_.offset + simulator.dispatchIndirectBufferRange_.size;
+  simulator.internalBufferRequiredSize_ = simulator.solverBufferRange_.offset + simulator.solverBufferRange_.size;
   simulator.uniformBufferRequiredSize_ = sizeof(FluidSimulationParams);
 
   return simulator;

@@ -81,13 +81,7 @@
     <None Include="..\..\src\vkpbd\shader\fluid\forward.comp">
       <Filter>src\shader\fluid</Filter>
     </None>
-    <None Include="..\..\src\vkpbd\shader\fluid\indirect.glsl">
-      <Filter>src\shader\fluid</Filter>
-    </None>
     <None Include="..\..\src\vkpbd\shader\fluid\initialize_neighbor_search.comp">
-      <Filter>src\shader\fluid</Filter>
-    </None>
-    <None Include="..\..\src\vkpbd\shader\fluid\initialize_dispatch.comp">
       <Filter>src\shader\fluid</Filter>
     </None>
     <None Include="..\..\src\vkpbd\shader\fluid\initialize_uniform_grid.comp">

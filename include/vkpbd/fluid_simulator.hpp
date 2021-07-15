@@ -75,8 +75,7 @@ private:
   // Binding 2: uniform grid and hash table
   // Binding 3: neighbors
   // TODO: Binding 4: solver
-  // Binding 5: indirect dispatch
-  // Binding 6: uniform params
+  // Binding 5: uniform params
   vk::DescriptorSetLayout descriptorSetLayout_;
   vk::DescriptorPool descriptorPool_;
 
@@ -90,14 +89,12 @@ private:
   vk::Pipeline addUniformGridPipeline_;
   vk::Pipeline initializeNeighborSearchPipeline_;
   vk::Pipeline neighborSearchPipeline_;
-  vk::Pipeline initializeDispatchPipeline_;
   vk::Pipeline velocityUpdatePipeline_;
 
   // Internal buffer ranges
   SubBufferRange gridBufferRange_;
   SubBufferRange neighborsBufferRange_;
   SubBufferRange solverBufferRange_;
-  SubBufferRange dispatchIndirectBufferRange_;
 
   // Requirements
   vk::DeviceSize particleBufferRequiredSize_ = 0;
