@@ -81,6 +81,7 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
   params.alpha = 1e-3f;
   params.wall_offset = static_cast<float>(wallOffsetMagnitude * std::sin(animationTime * wallOffsetSpeed));
   params.max_num_neighbors = maxNeighborCount_;
+  params.rest_density = restDensity_;
 
   constexpr auto pi = 3.141592f;
   const auto h = radius;
@@ -278,6 +279,7 @@ FluidSimulator createFluidSimulator(const FluidSimulatorCreateInfo& createInfo)
   simulator.descriptorPool_ = createInfo.descriptorPool;
   simulator.particleCount_ = createInfo.particleCount;
   simulator.maxNeighborCount_ = createInfo.maxNeighborCount;
+  simulator.restDensity_ = createInfo.restDensity;
 
   auto device = createInfo.device;
   auto physical_device = createInfo.physicalDevice;

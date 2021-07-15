@@ -15,6 +15,8 @@ struct FluidSimulationParams
   glm::vec2 kernel_constants{ 0.f }; // [k, l]
   // where k = 8 / (pi * h3)
   // and   l = 48 / (pi * h3)
+
+  float rest_density = 0.f;
 };
 }
 

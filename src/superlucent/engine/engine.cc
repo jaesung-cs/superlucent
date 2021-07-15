@@ -913,6 +913,7 @@ void Engine::CreateSimulator()
   fluidSimulatorCreateInfo.particleCount = particleCount;
   fluidSimulatorCreateInfo.maxNeighborCount = 30;
   fluidSimulatorCreateInfo.commandCount = commandCount;
+  fluidSimulatorCreateInfo.restDensity = density;
   fluidSimulator_ = vkpbd::createFluidSimulator(fluidSimulatorCreateInfo);
 
   // Create buffers

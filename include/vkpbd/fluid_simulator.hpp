@@ -112,6 +112,8 @@ private:
 
   uint32_t particleCount_ = 0;
   uint32_t maxNeighborCount_ = 0;
+
+  float restDensity_ = 0.f;
 };
 
 class FluidSimulatorCreateInfo
@@ -127,6 +129,7 @@ public:
   uint32_t particleCount = 0;
   uint32_t commandCount = 0;
   uint32_t maxNeighborCount = 30u;
+  float restDensity = 1000.f;
 };
 }
 

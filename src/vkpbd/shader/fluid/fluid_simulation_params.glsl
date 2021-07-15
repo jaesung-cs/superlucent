@@ -13,6 +13,8 @@ layout (binding = 6) uniform FluidSimulationParamsUbo
   vec2 kernel_constants; // [k, l]
   // where k = 8 / (pi * h3)
   // and   l = 48 / (pi * h3)
+
+  float rest_density;
 } params;
 
 #endif // VKPBD_FLUID_FLUID_SIMULATION_PARAMS_GLSL_
