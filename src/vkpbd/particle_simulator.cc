@@ -296,13 +296,6 @@ void ParticleSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, u
   // Velocity update
   commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, velocityUpdatePipeline_);
   commandBuffer.dispatch((particleCount + 255) / 256, 1, 1);
-
-  // TODO: Should barrier be added here, or by application?
-  particleBufferMemoryBarrier
-    .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
-    .setDstAccessMask(vk::AccessFlagBits::eVertexAttributeRead);
-  commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eVertexInput, {},
-    {}, particleBufferMemoryBarrier, {});
 }
 
 void ParticleSimulator::destroy()
