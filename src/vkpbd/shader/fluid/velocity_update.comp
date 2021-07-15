@@ -4,6 +4,7 @@ layout (local_size_x = 256) in;
 
 #include "particle.glsl"
 #include "fluid_simulation_params.glsl"
+#include "solver.glsl"
 
 vec3 computeRestitutionUpdate(vec3 normal, vec4 velocity, vec4 prev_velocity, float resilience)
 {
@@ -19,7 +20,9 @@ void main()
 	if (index >= params.num_particles)
     return;
     
-  // TODO: Update position from solver
+  // Update position from solver
+  const vec3 dx = solver.particles[index].dx;
+  out_particles[index].position.xyz += dx;
 
   const float radius = params.radius;
 

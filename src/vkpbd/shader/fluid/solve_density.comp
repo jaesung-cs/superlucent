@@ -1,0 +1,37 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+#include "particle.glsl"
+#include "fluid_simulation_params.glsl"
+#include "neighbors.glsl"
+#include "solver.glsl"
+
+#include "kernel.glsl"
+
+void main()
+{
+  uint particle_index = gl_GlobalInvocationID.x;
+  if (particle_index >= params.num_particles)
+    return;
+
+  const vec3 xi = out_particles[particle_index].position.xyz;
+  const float lambda_i = solver.particles[particle_index].lambda;
+
+  solver.particles[particle_index].dx = vec3(0.f);
+
+  const int neighbor_count = NeighborCount(particle_index);
+  for (int i = 0; i < neighbor_count; i++)
+  {
+    const int neighbor_index = NeighborIndex(particle_index, i);
+
+    const float mj = out_particles[neighbor_index].properties.y;
+    const vec3 xj = out_particles[neighbor_index].position.xyz;
+    const float lambda_j = solver.particles[particle_index].lambda;
+
+    const vec3 grad_cj = -mj / params.rest_density * KernelGradW(xi - xj);
+    solver.particles[particle_index].dx += -(lambda_i + lambda_j) * grad_cj;
+
+    // TODO: boundary particles
+  }
+}

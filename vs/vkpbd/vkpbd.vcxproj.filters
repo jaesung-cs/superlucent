@@ -105,6 +105,15 @@
     <None Include="..\..\src\vkpbd\shader\fluid\kernel.glsl">
       <Filter>src\shader\fluid</Filter>
     </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\initialize_solver.comp">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\compute_density.comp">
+      <Filter>src\shader\fluid</Filter>
+    </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\solve_density.comp">
+      <Filter>src\shader\fluid</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\vkpbd\particle.h">

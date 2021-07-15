@@ -20,6 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\vkpbd\shader\fluid\add_uniform_grid.comp" />
+    <None Include="..\..\src\vkpbd\shader\fluid\compute_density.comp" />
+    <None Include="..\..\src\vkpbd\shader\fluid\initialize_solver.comp" />
     <None Include="..\..\src\vkpbd\shader\fluid\kernel.glsl" />
     <None Include="..\..\src\vkpbd\shader\fluid\neighbor_search.comp" />
     <None Include="..\..\src\vkpbd\shader\fluid\neighbors.glsl" />
@@ -29,6 +31,7 @@
     <None Include="..\..\src\vkpbd\shader\fluid\particle.glsl" />
     <None Include="..\..\src\vkpbd\shader\fluid\fluid_simulation_params.glsl" />
     <None Include="..\..\src\vkpbd\shader\fluid\solver.glsl" />
+    <None Include="..\..\src\vkpbd\shader\fluid\solve_density.comp" />
     <None Include="..\..\src\vkpbd\shader\fluid\uniform_grid.glsl" />
     <None Include="..\..\src\vkpbd\shader\fluid\velocity_update.comp" />
     <None Include="..\..\src\vkpbd\shader\particle\add_uniform_grid.comp" />

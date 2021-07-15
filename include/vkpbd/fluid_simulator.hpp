@@ -89,6 +89,8 @@ private:
   vk::Pipeline addUniformGridPipeline_;
   vk::Pipeline initializeNeighborSearchPipeline_;
   vk::Pipeline neighborSearchPipeline_;
+  vk::Pipeline computeDensityPipeline_;
+  vk::Pipeline solveDensityPipeline_;
   vk::Pipeline velocityUpdatePipeline_;
 
   // Internal buffer ranges

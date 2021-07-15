@@ -24,7 +24,7 @@ float KernelW(vec3 r)
     return k * (2.f * pow(1.f - q, 3));
 }
 
-vec3 KernelGradW(vec3 r, float h)
+vec3 KernelGradW(vec3 r)
 {
   const float l = params.kernel_constants[1];
 
@@ -35,12 +35,12 @@ vec3 KernelGradW(vec3 r, float h)
 
   if (rl > 1e-6f)
   {
-    const vec3 gradQ = r / (rl * h);
+    const vec3 gradQ = r / (rl * params.radius);
     if (q <= 0.5f)
       return l * q * (3.f * q - 2.f) * gradQ;
     else
     {
-      const float factor = 1.f - f;
+      const float factor = 1.f - q;
       return l * (-factor * factor) * gradQ;
     }
   }
