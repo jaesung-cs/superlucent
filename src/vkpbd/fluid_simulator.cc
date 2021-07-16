@@ -221,10 +221,6 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
   commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
     {}, neighborsBufferMemoryBarrier, {});
 
-  // DEBUG: In neighbor search, particle color is written for debug purpose
-  commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
-    {}, particleBufferMemoryBarrier, {});
-
   vk::BufferMemoryBarrier solverBufferMemoryBarrier;
   solverBufferMemoryBarrier
     .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
@@ -252,6 +248,10 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
       {}, solverBufferMemoryBarrier, {});
   }
+
+  // DEBUG: In compute particle, particle color is written for debug purpose
+  commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, particleBufferMemoryBarrier, {});
 
   // Velocity update
   commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, velocityUpdatePipeline_);

@@ -6,8 +6,8 @@ layout (local_size_x = 256) in;
 #include "fluid_simulation_params.glsl"
 #include "neighbors.glsl"
 #include "solver.glsl"
-
 #include "kernel.glsl"
+#include "color.glsl"
 
 void main()
 {
@@ -63,4 +63,7 @@ void main()
   
   solver.particles[particle_index].density = density;
   solver.particles[particle_index].lambda = lambda;
+
+  // DEBUG: density particle color
+  out_particles[particle_index].color.rgb = BlueRedColor(density / params.rest_density);
 }
