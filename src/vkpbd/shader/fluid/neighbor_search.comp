@@ -32,32 +32,29 @@ void main()
   {
     uint i1 = grid.object_grid_pairs[pointer].object_id;
     
-    if (i0 < i1)
-    {
-      vec3 p1 = out_particles[i1].position.xyz;
-      vec3 pd = p1 - p0;
+    vec3 p1 = out_particles[i1].position.xyz;
+    vec3 pd = p1 - p0;
     
-      float r1 = params.radius;
+    float r1 = params.radius;
 
-      if (dot(pd, pd) <= (r0 + r1) * (r0 + r1))
+    if (dot(pd, pd) <= (r0 + r1) * (r0 + r1))
+    {
+      bool found = false;
+      for (int i = 0; i < num_neighbors; i++)
       {
-        bool found = false;
-        for (int i = 0; i < num_neighbors; i++)
+        if (neighbor_ids[i] == i1)
         {
-          if (neighbor_ids[i] == i1)
-          {
-            found = true;
-            break;
-          }
+          found = true;
+          break;
         }
+      }
 
-        if (!found)
-        {
-          neighbor_ids[num_neighbors] = i1;
-          num_neighbors++;
+      if (!found)
+      {
+        neighbor_ids[num_neighbors] = i1;
+        num_neighbors++;
 
-          AddNeighbor(i0, i1);
-        }
+        AddNeighbor(i0, i1);
       }
     }
 

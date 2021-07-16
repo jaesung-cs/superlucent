@@ -866,11 +866,11 @@ void Engine::CreateSimulator()
   constexpr auto radius = 0.03f;
   constexpr float density = 1000.f; // water
   constexpr float pi = 3.141592f;
-  const float mass = 4.f / 3.f * pi * radius * radius * radius * density;
-  const float invMass = 1.f / mass;
+  constexpr float mass = 4.f / 3.f * pi * radius * radius * radius * density;
+  constexpr float invMass = 1.f / mass;
   constexpr glm::vec2 wallDistance = glm::vec2(3.f, 1.5f);
   const glm::vec3 particleOffset = glm::vec3(-wallDistance + glm::vec2(radius * 1.1f), radius * 1.1f);
-  const glm::vec3 particleStride = glm::vec3(radius); // Compressed at initial state
+  const glm::vec3 particleStride = glm::vec3(radius) / 2.f; // Compressed at initial state
 
   utils::Rng rng;
   constexpr float noiseRange = 1e-2f;
