@@ -34,4 +34,28 @@ void main()
 
     // TODO: boundary particles
   }
+
+  // Wall constraints
+  // TODO: define walls from CPU
+  const vec2 wall_distance = vec2(3.f + params.wall_offset, 1.5f);
+
+  // Five walls
+  const int num_walls = 5;
+  vec4 planes[num_walls] = {
+    vec4(0.f, 0.f, 1.f, 0.f),
+    vec4( 1.f, 0.f, 0.f, wall_distance.x),
+    vec4(-1.f, 0.f, 0.f, wall_distance.x),
+    vec4(0.f,  1.f, 0.f, wall_distance.y),
+    vec4(0.f, -1.f, 0.f, wall_distance.y),
+  };
+
+  for (int i = 0; i < num_walls; i++)
+  {
+    const float c = dot(vec4(xi, 1.f), planes[i]) - params.radius;
+    if (c < 0.f)
+    {
+      const vec3 grad_c = planes[i].xyz;
+      solver.particles[particle_index].dx += -(c * grad_c) / dot(grad_c, grad_c);
+    }
+  }
 }
