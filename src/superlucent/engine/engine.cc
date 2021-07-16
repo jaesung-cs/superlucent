@@ -141,6 +141,8 @@ void Engine::Draw(double time)
   auto dt = time - previous_time_;
   previous_time_ = time;
 
+  dt /= 10.;
+
   animation_time_ += dt;
 
   auto wait_result = device_.waitForFences(in_flight_fences_[current_frame_], true, UINT64_MAX);
@@ -868,16 +870,16 @@ void Engine::CreateSimulator()
   constexpr float pi = 3.141592f;
   constexpr float mass = 4.f / 3.f * pi * radius * radius * radius * density;
   constexpr float invMass = 1.f / mass;
-  constexpr glm::vec2 wallDistance = glm::vec2(3.f, 1.5f);
-  const glm::vec3 particleOffset = glm::vec3(-wallDistance + glm::vec2(radius * 1.1f), radius * 1.1f);
-  const glm::vec3 particleStride = glm::vec3(radius) / 2.f; // Compressed at initial state
+  constexpr glm::vec2 wallDistance = glm::vec2(1.f, 1.f);
+  constexpr glm::vec3 particleOffset = glm::vec3(0.f, 0.f, radius * 1.1f);
+  constexpr glm::vec3 particleStride = glm::vec3(radius) / 2.f; // Compressed at initial state
+  constexpr glm::vec3 gravity = glm::vec3(0.f, 0.f, -9.8f);
 
   utils::Rng rng;
   constexpr float noiseRange = 1e-2f;
   const auto noise = [&rng, noiseRange]() { return rng.Uniform(-noiseRange, noiseRange); };
 
   std::vector<vkpbd::Particle> particles;
-  glm::vec3 gravity = glm::vec3(0.f, 0.f, -9.8f);
   for (int i = 0; i < particleDimension; i++)
   {
     for (int j = 0; j < particleDimension; j++)

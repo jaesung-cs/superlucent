@@ -15,10 +15,10 @@ int NeighborCount(uint particle_index)
   return neighbors.buf[particle_index];
 }
 
-int NeighborIndex(uint particle_index, uint neighbor_index)
+int NeighborIndex(uint particle_index, uint index)
 {
   if (neighbors.buf[particle_index] < params.max_num_neighbors)
-    return neighbors.buf[params.num_particles + particle_index * params.max_num_neighbors + neighbor_index];
+    return neighbors.buf[params.num_particles + particle_index * params.max_num_neighbors + index];
   else
     return -1;
 }

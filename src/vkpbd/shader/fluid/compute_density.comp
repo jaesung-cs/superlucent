@@ -28,7 +28,8 @@ void main()
     const float mj = out_particles[neighbor_index].properties.y;
     const vec3 xj = out_particles[neighbor_index].position.xyz;
 
-    density += mj * KernelW(xi - xj);
+    // density += mj * KernelW(xi - xj);
+    density += length(xi - xj) * 100.f;
     
     // TODO: Compute boundary particle density
   }
@@ -38,7 +39,7 @@ void main()
 
   const float eps = 1e-6;
   const float c = max(density / params.rest_density - 1.f, 0.f);
-  if (c > eps)
+  if (c != 0.f)
   {
     float sum_grad_c2 = 0.f;
     vec3 grad_ci = vec3(0.f);
@@ -65,5 +66,5 @@ void main()
   solver.particles[particle_index].lambda = lambda;
 
   // DEBUG: density particle color
-  out_particles[particle_index].color.rgb = BlueRedColor(density / params.rest_density);
+  out_particles[particle_index].color.rgb = BlueRedColor(density / params.rest_density - 1.f + 0.5f);
 }

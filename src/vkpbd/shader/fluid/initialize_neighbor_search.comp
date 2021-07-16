@@ -8,12 +8,8 @@ layout (local_size_x = 256) in;
 void main()
 {
   const uint index = gl_GlobalInvocationID.x;
+  if (index >= params.num_particles)
+    return;
 
-  // Neighbor count
-  if (index < params.num_particles)
-    neighbors.buf[index] = 0;
-
-  // Neighbor indices
-  else
-    neighbors.buf[index] = -1;
+  neighbors.buf[index] = 0;
 }

@@ -84,7 +84,7 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
   params.rest_density = restDensity_;
 
   constexpr auto pi = 3.141592f;
-  const auto h = radius;
+  const auto h = 4.f * radius; // support radius
   const auto h2 = h * h;
   const auto h3 = h2 * h;
   const auto k = 8.f / (pi * h3);
@@ -199,7 +199,7 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
 
   // Initialize neighbor search
   commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, initializeNeighborSearchPipeline_);
-  commandBuffer.dispatch((particleCount + particleCount * maxNeighborCount_ + 255) / 256, 1, 1);
+  commandBuffer.dispatch((particleCount + 255) / 256, 1, 1);
 
   vk::BufferMemoryBarrier neighborsBufferMemoryBarrier;
   neighborsBufferMemoryBarrier

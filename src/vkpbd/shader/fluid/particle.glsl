@@ -5,7 +5,7 @@ struct Particle
 {
   vec4 position; // [px, py, pz, 0]
   vec4 velocity; // [vx, vy, vz, 0]
-  vec4 properties; // [invMass, mass, density, 0], density is updated while solving
+  vec4 properties; // [invMass, mass, 0, 0]
   vec4 external_force;
   vec4 color; // [r, g, b, 0]
 };
