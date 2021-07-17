@@ -141,7 +141,7 @@ void Engine::Draw(double time)
   auto dt = time - previous_time_;
   previous_time_ = time;
 
-  dt /= 10.;
+  dt /= 40.;
 
   animation_time_ += dt;
 
@@ -885,7 +885,7 @@ void Engine::CreateSimulator()
   constexpr float mass = 4.f / 3.f * pi * radius * radius * radius * density;
   constexpr float invMass = 1.f / mass;
   constexpr glm::vec2 wallDistance = glm::vec2(1.f, 1.f);
-  constexpr glm::vec3 particleOffset = glm::vec3(-glm::vec2(radius * particleDimension), radius * 1.1f);
+  constexpr glm::vec3 particleOffset = glm::vec3(-glm::vec2(radius * particleDimension), radius * 1.5f);
   constexpr glm::vec3 particleStride = glm::vec3(radius * 2.f); // Compressed at initial state
   constexpr glm::vec3 gravity = glm::vec3(0.f, 0.f, -9.8f);
   constexpr auto viscosity = 0.02f;
@@ -928,7 +928,7 @@ void Engine::CreateSimulator()
   fluidSimulatorCreateInfo.physicalDevice = physical_device_;
   fluidSimulatorCreateInfo.descriptorPool = descriptor_pool_;
   fluidSimulatorCreateInfo.particleCount = particleCount;
-  fluidSimulatorCreateInfo.maxNeighborCount = 30;
+  fluidSimulatorCreateInfo.maxNeighborCount = 60;
   fluidSimulatorCreateInfo.commandCount = commandCount;
   fluidSimulatorCreateInfo.restDensity = density;
   fluidSimulatorCreateInfo.viscosity = viscosity;

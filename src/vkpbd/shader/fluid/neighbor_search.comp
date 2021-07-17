@@ -21,7 +21,7 @@ void main()
   ivec3 cell_index = CellIndex(p0);
   uint hash_index = GridHash(cell_index);
 
-  const int max_num_neighbors = 50;
+  const int max_num_neighbors = 60;
   int num_neighbors = 0;
   uint neighbor_ids[max_num_neighbors];
 
