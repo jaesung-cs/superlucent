@@ -257,10 +257,6 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
       {}, particleBufferMemoryBarrier, {});
   }
 
-  // DEBUG: In compute particle, particle color is written for debug purpose
-  commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
-    {}, particleBufferMemoryBarrier, {});
-
   // Velocity update
   commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, velocityUpdatePipeline_);
   commandBuffer.dispatch((particleCount + 255) / 256, 1, 1);

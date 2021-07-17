@@ -6,23 +6,12 @@ layout (local_size_x = 256) in;
 #include "fluid_simulation_params.glsl"
 #include "solver.glsl"
 
-vec3 computeRestitutionUpdate(vec3 normal, vec4 velocity, vec4 prev_velocity, float resilience)
-{
-  float vn = dot(velocity.xyz, normal);
-  float vntilde = dot(prev_velocity.xyz, normal);
-
-  return normal * (-vn + -resilience * vntilde);
-}
-
 void main() 
 {
 	const int index = int(gl_GlobalInvocationID);
 	if (index >= params.num_particles)
     return;
-    
-  const float radius = params.radius;
 
-  vec4 prev_velocity = out_particles[index].velocity;
   vec4 velocity = (out_particles[index].position - in_particles[index].position) / params.dt;
   
   // Update velocity
