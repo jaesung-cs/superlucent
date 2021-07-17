@@ -28,8 +28,7 @@ void main()
     const float mj = out_particles[neighbor_index].properties.y;
     const vec3 xj = out_particles[neighbor_index].position.xyz;
 
-    // density += mj * KernelW(xi - xj);
-    density += length(xi - xj) * 100.f;
+    density += mj * KernelW(xi - xj);
     
     // TODO: Compute boundary particle density
   }
