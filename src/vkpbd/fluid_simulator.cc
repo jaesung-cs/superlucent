@@ -79,7 +79,8 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
   params.num_particles = particleCount;
   params.radius = radius;
   params.alpha = 1e-3f;
-  params.wall_offset = static_cast<float>(wallOffsetMagnitude * std::sin(animationTime * wallOffsetSpeed));
+  // params.wall_offset = static_cast<float>(wallOffsetMagnitude * std::sin(animationTime * wallOffsetSpeed));
+  params.wall_offset = 0.f;
   params.max_num_neighbors = maxNeighborCount_;
   params.rest_density = restDensity_;
 

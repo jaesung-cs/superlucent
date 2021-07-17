@@ -37,7 +37,7 @@ void main()
 
   // Wall constraints
   // TODO: define walls from CPU
-  const vec2 wall_distance = vec2(3.f + params.wall_offset, 1.5f);
+  const vec2 wall_distance = vec2(2.f + params.wall_offset, 2.f);
 
   // Five walls
   const int num_walls = 5;

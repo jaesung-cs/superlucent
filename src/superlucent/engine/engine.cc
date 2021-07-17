@@ -871,8 +871,8 @@ void Engine::CreateSimulator()
   constexpr float mass = 4.f / 3.f * pi * radius * radius * radius * density;
   constexpr float invMass = 1.f / mass;
   constexpr glm::vec2 wallDistance = glm::vec2(1.f, 1.f);
-  constexpr glm::vec3 particleOffset = glm::vec3(0.f, 0.f, radius * 1.1f);
-  constexpr glm::vec3 particleStride = glm::vec3(radius) / 2.f; // Compressed at initial state
+  constexpr glm::vec3 particleOffset = glm::vec3(-glm::vec2(radius * particleDimension), radius * 1.1f);
+  constexpr glm::vec3 particleStride = glm::vec3(radius * 2.f); // Compressed at initial state
   constexpr glm::vec3 gravity = glm::vec3(0.f, 0.f, -9.8f);
 
   utils::Rng rng;
