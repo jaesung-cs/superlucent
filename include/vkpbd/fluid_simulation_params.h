@@ -17,6 +17,7 @@ struct FluidSimulationParams
   // and   l = 48 / (pi * h3)
 
   float rest_density = 0.f;
+  float viscosity = 0.f;
 };
 }
 

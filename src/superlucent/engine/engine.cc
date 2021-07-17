@@ -257,7 +257,7 @@ void Engine::Draw(double time)
 
 void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t image_index, double dt)
 {
-  constexpr auto radius = 0.03f;
+  constexpr auto radius = 0.025f;
 
   particle_renderer_->Begin(command_buffer, image_index);
   particle_renderer_->RecordParticleRenderCommands(command_buffer, particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3), fluidSimulator_.getParticleCount(), radius);
@@ -865,7 +865,7 @@ void Engine::CreateSimulator()
 {
   constexpr auto particleDimension = 40;
   constexpr auto particleCount = particleDimension * particleDimension * particleDimension;
-  constexpr auto radius = 0.03f;
+  constexpr auto radius = 0.025f;
   constexpr float density = 1000.f; // water
   constexpr float pi = 3.141592f;
   constexpr float mass = 4.f / 3.f * pi * radius * radius * radius * density;
@@ -874,6 +874,7 @@ void Engine::CreateSimulator()
   constexpr glm::vec3 particleOffset = glm::vec3(-glm::vec2(radius * particleDimension), radius * 1.1f);
   constexpr glm::vec3 particleStride = glm::vec3(radius * 2.f); // Compressed at initial state
   constexpr glm::vec3 gravity = glm::vec3(0.f, 0.f, -9.8f);
+  constexpr auto viscosity = 0.02f;
 
   utils::Rng rng;
   constexpr float noiseRange = 1e-2f;
@@ -916,6 +917,7 @@ void Engine::CreateSimulator()
   fluidSimulatorCreateInfo.maxNeighborCount = 30;
   fluidSimulatorCreateInfo.commandCount = commandCount;
   fluidSimulatorCreateInfo.restDensity = density;
+  fluidSimulatorCreateInfo.viscosity = viscosity;
   fluidSimulator_ = vkpbd::createFluidSimulator(fluidSimulatorCreateInfo);
 
   // Create buffers

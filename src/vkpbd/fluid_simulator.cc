@@ -68,7 +68,7 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, floa
 
 void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint32_t particleCount, float animationTime, float dt)
 {
-  constexpr auto radius = 0.03f;
+  constexpr auto radius = 0.025f;
 
   constexpr auto wallOffsetSpeed = 5.f;
   constexpr auto wallOffsetMagnitude = 0.5f;
@@ -83,6 +83,7 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
   params.wall_offset = 0.f;
   params.max_num_neighbors = maxNeighborCount_;
   params.rest_density = restDensity_;
+  params.viscosity = viscosity_;
 
   constexpr auto pi = 3.141592f;
   const auto h = 4.f * radius; // support radius
@@ -288,6 +289,7 @@ FluidSimulator createFluidSimulator(const FluidSimulatorCreateInfo& createInfo)
   simulator.particleCount_ = createInfo.particleCount;
   simulator.maxNeighborCount_ = createInfo.maxNeighborCount;
   simulator.restDensity_ = createInfo.restDensity;
+  simulator.viscosity_ = createInfo.viscosity;
 
   auto device = createInfo.device;
   auto physical_device = createInfo.physicalDevice;

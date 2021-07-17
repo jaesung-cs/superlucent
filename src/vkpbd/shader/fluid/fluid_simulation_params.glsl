@@ -15,6 +15,7 @@ layout (binding = 5) uniform FluidSimulationParamsUbo
   // and   l = 48 / (pi * h3)
 
   float rest_density;
+  float viscosity;
 } params;
 
 #endif // VKPBD_FLUID_FLUID_SIMULATION_PARAMS_GLSL_
