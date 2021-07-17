@@ -214,6 +214,20 @@ void Engine::Draw(double time)
       {}, barrier, {});
   }
 
+  // For next compute simulation step
+  vk::BufferMemoryBarrier barrier;
+  barrier
+    .setBuffer(particleBuffer_)
+    .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+    .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+    .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setOffset(particleBufferSize_ * ((image_index + 1) % 3))
+    .setSize(particleBufferSize_);
+
+  draw_command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, barrier, {});
+
   RecordDrawCommands(draw_command_buffer, image_index, dt);
 
   draw_command_buffer.end();
@@ -894,7 +908,7 @@ void Engine::CreateSimulator()
           0.f
         };
         glm::vec4 velocity{ 0.f };
-        glm::vec4 properties{ invMass, mass, 0.f, 0.f };
+        glm::vec4 properties{ invMass, mass, noise(), 0.f };
         glm::vec4 externalForce{
           gravity.x * mass,
           gravity.y * mass,

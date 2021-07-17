@@ -1,0 +1,16 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+#include "fluid_simulation_params.glsl"
+#include "particle.glsl"
+#include "solver.glsl"
+
+void main() 
+{
+	const int particle_index = int(gl_GlobalInvocationID);
+	if (particle_index >= params.num_particles)
+    return;
+
+  out_particles[particle_index].velocity.xyz += solver.particles[particle_index].dv;
+}

@@ -79,8 +79,7 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
   params.num_particles = particleCount;
   params.radius = radius;
   params.alpha = 1e-3f;
-  // params.wall_offset = static_cast<float>(wallOffsetMagnitude * std::sin(animationTime * wallOffsetSpeed));
-  params.wall_offset = 0.f;
+  params.wall_offset = static_cast<float>(wallOffsetMagnitude * std::sin(animationTime * wallOffsetSpeed));
   params.max_num_neighbors = maxNeighborCount_;
   params.rest_density = restDensity_;
   params.viscosity = viscosity_;
@@ -261,6 +260,20 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
   // Velocity update
   commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, velocityUpdatePipeline_);
   commandBuffer.dispatch((particleCount + 255) / 256, 1, 1);
+
+  commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, particleBufferMemoryBarrier, {});
+
+  // Solve viscosity
+  commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, solveViscosityPipeline_);
+  commandBuffer.dispatch((particleCount + 255) / 256, 1, 1);
+
+  commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, solverBufferMemoryBarrier, {});
+
+  // Update viscosity
+  commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, updateViscosityPipeline_);
+  commandBuffer.dispatch((particleCount + 255) / 256, 1, 1);
 }
 
 void FluidSimulator::destroy()
@@ -273,6 +286,8 @@ void FluidSimulator::destroy()
   device_.destroyPipeline(computeDensityPipeline_);
   device_.destroyPipeline(solveDensityPipeline_);
   device_.destroyPipeline(updatePositionPipeline_);
+  device_.destroyPipeline(solveViscosityPipeline_);
+  device_.destroyPipeline(updateViscosityPipeline_);
   device_.destroyPipeline(velocityUpdatePipeline_);
 
   device_.destroyPipelineLayout(pipelineLayout_);
@@ -387,6 +402,8 @@ FluidSimulator createFluidSimulator(const FluidSimulatorCreateInfo& createInfo)
   simulator.computeDensityPipeline_ = createComputePipeline(baseDir + "\\compute_density.comp.spv");
   simulator.solveDensityPipeline_ = createComputePipeline(baseDir + "\\solve_density.comp.spv");
   simulator.updatePositionPipeline_ = createComputePipeline(baseDir + "\\update_position.comp.spv");
+  simulator.solveViscosityPipeline_= createComputePipeline(baseDir + "\\solve_viscosity.comp.spv");
+  simulator.updateViscosityPipeline_ = createComputePipeline(baseDir + "\\update_viscosity.comp.spv");
   simulator.velocityUpdatePipeline_ = createComputePipeline(baseDir + "\\velocity_update.comp.spv");
 
   device.destroyPipelineCache(pipelineCache);
@@ -413,7 +430,7 @@ FluidSimulator createFluidSimulator(const FluidSimulatorCreateInfo& createInfo)
   simulator.neighborsBufferRange_.size = sizeof(int32_t) * (simulator.particleCount_ + simulator.particleCount_ * simulator.maxNeighborCount_); // TODO
 
   simulator.solverBufferRange_.offset = align(simulator.neighborsBufferRange_.offset + simulator.neighborsBufferRange_.size, ssboAlignment);
-  simulator.solverBufferRange_.size = (sizeof(float) * 8) * simulator.particleCount_;
+  simulator.solverBufferRange_.size = (sizeof(float) * 12) * simulator.particleCount_;
 
   // Requirements
   simulator.particleBufferRequiredSize_ = sizeof(FluidParticle) * simulator.particleCount_;

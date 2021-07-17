@@ -9,6 +9,9 @@ struct SolverParticle
 
   vec3 dx;
   float pad1;
+
+  vec3 dv;
+  float pad2;
 };
 
 layout (binding = 4) buffer SolverSsbo

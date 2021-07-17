@@ -35,6 +35,8 @@
     <None Include="..\..\src\vkpbd\shader\fluid\solve_density.comp" />
     <None Include="..\..\src\vkpbd\shader\fluid\uniform_grid.glsl" />
     <None Include="..\..\src\vkpbd\shader\fluid\update_position.comp" />
+    <None Include="..\..\src\vkpbd\shader\fluid\solve_viscosity.comp" />
+    <None Include="..\..\src\vkpbd\shader\fluid\update_viscosity.comp" />
     <None Include="..\..\src\vkpbd\shader\fluid\velocity_update.comp" />
     <None Include="..\..\src\vkpbd\shader\particle\add_uniform_grid.comp" />
     <None Include="..\..\src\vkpbd\shader\particle\collision_detection.comp" />
