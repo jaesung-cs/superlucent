@@ -4,11 +4,6 @@
 #include "fluid_simulation_params.glsl"
 
 // See SPHKernels.h in PositionBasedDynamics repo
-float KernelWZero()
-{
-  return 0.f;
-}
-
 float KernelW(vec3 r)
 {
   const float k = params.kernel_constants[0];
@@ -24,6 +19,11 @@ float KernelW(vec3 r)
     return k * (2.f * pow(1.f - q, 3));
   else
     return 0.f;
+}
+
+float KernelWZero()
+{
+  return KernelW(vec3(0.f));
 }
 
 vec3 KernelGradW(vec3 r)
