@@ -20,10 +20,6 @@ void main()
 	if (index >= params.num_particles)
     return;
     
-  // Update position from solver
-  const vec3 dx = solver.particles[index].dx;
-  out_particles[index].position.xyz += dx;
-
   const float radius = params.radius;
 
   vec4 prev_velocity = out_particles[index].velocity;

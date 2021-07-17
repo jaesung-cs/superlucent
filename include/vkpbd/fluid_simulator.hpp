@@ -91,6 +91,7 @@ private:
   vk::Pipeline neighborSearchPipeline_;
   vk::Pipeline computeDensityPipeline_;
   vk::Pipeline solveDensityPipeline_;
+  vk::Pipeline updatePositionPipeline_;
   vk::Pipeline velocityUpdatePipeline_;
 
   // Internal buffer ranges

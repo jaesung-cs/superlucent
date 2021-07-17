@@ -232,7 +232,7 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
     .setOffset(internalBuffer_.offset + solverBufferRange_.offset)
     .setSize(solverBufferRange_.size);
 
-  constexpr int numIters = 1;
+  constexpr int numIters = 5;
   for (int i = 0; i < numIters; i++)
   {
     // Compute density
@@ -248,6 +248,13 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
 
     commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
       {}, solverBufferMemoryBarrier, {});
+
+    // Update position
+    commandBuffer.bindPipeline(vk::PipelineBindPoint::eCompute, updatePositionPipeline_);
+    commandBuffer.dispatch((particleCount + 255) / 256, 1, 1);
+
+    commandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+      {}, particleBufferMemoryBarrier, {});
   }
 
   // DEBUG: In compute particle, particle color is written for debug purpose
@@ -268,6 +275,7 @@ void FluidSimulator::destroy()
   device_.destroyPipeline(neighborSearchPipeline_);
   device_.destroyPipeline(computeDensityPipeline_);
   device_.destroyPipeline(solveDensityPipeline_);
+  device_.destroyPipeline(updatePositionPipeline_);
   device_.destroyPipeline(velocityUpdatePipeline_);
 
   device_.destroyPipelineLayout(pipelineLayout_);
@@ -380,6 +388,7 @@ FluidSimulator createFluidSimulator(const FluidSimulatorCreateInfo& createInfo)
   simulator.neighborSearchPipeline_ = createComputePipeline(baseDir + "\\neighbor_search.comp.spv");
   simulator.computeDensityPipeline_ = createComputePipeline(baseDir + "\\compute_density.comp.spv");
   simulator.solveDensityPipeline_ = createComputePipeline(baseDir + "\\solve_density.comp.spv");
+  simulator.updatePositionPipeline_ = createComputePipeline(baseDir + "\\update_position.comp.spv");
   simulator.velocityUpdatePipeline_ = createComputePipeline(baseDir + "\\velocity_update.comp.spv");
 
   device.destroyPipelineCache(pipelineCache);
