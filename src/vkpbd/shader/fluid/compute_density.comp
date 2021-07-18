@@ -82,9 +82,8 @@ void main()
         const vec3 xj = boundary_particles[boundary_index].position.xyz;
 
 			  const vec3 grad_cj = -boundary.volume[boundary_index] * KernelGradW(xi - xj);
-        // TODO
-			  // sum_grad_c2 += dot(grad_cj, grad_cj);
-			  // grad_ci -= grad_cj;
+			  sum_grad_c2 += dot(grad_cj, grad_cj);
+			  grad_ci -= grad_cj;
       }
     }
     

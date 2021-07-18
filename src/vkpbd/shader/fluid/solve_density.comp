@@ -42,8 +42,7 @@ void main()
       const vec3 xj = boundary_particles[boundary_index].position.xyz;
 
       const vec3 grad_cj = -boundary.volume[boundary_index] * KernelGradW(xi - xj);
-      // TODO
-      // solver.particles[particle_index].dx += -lambda_i * grad_cj;
+      solver.particles[particle_index].dx += -lambda_i * grad_cj;
     }
   }
 }

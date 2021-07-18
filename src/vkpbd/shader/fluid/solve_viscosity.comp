@@ -25,13 +25,16 @@ void main()
   {
     const int neighbor_index = NeighborIndex(particle_index, i);
 
-    const float mj = out_particles[neighbor_index].properties.y;
-    const vec3 xj = out_particles[neighbor_index].position.xyz;
-    const vec3 vj = out_particles[neighbor_index].velocity.xyz;
-    const float density_j = solver.particles[neighbor_index].density;
+    if (neighbor_index < params.num_particles)
+    {
+      const float mj = out_particles[neighbor_index].properties.y;
+      const vec3 xj = out_particles[neighbor_index].position.xyz;
+      const vec3 vj = out_particles[neighbor_index].velocity.xyz;
+      const float density_j = solver.particles[neighbor_index].density;
 
-    // Project velocity every neighbor
-    dv -= params.viscosity * (mj / density_j) * (vi - vj) * KernelW(xi - xj);
+      // Project velocity every neighbor
+      dv -= params.viscosity * (mj / density_j) * (vi - vj) * KernelW(xi - xj);
+    }
   }
 
   solver.particles[particle_index].dv = dv;

@@ -141,6 +141,8 @@ void Engine::Draw(double time)
   auto dt = time - previous_time_;
   previous_time_ = time;
 
+  dt /= 100.f;
+
   animation_time_ += dt;
 
   auto wait_result = device_.waitForFences(in_flight_fences_[current_frame_], true, UINT64_MAX);
@@ -312,7 +314,7 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
 
   particle_renderer_->Begin(command_buffer, image_index);
   particle_renderer_->RecordParticleRenderCommands(command_buffer, particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3), fluidSimulator_.getParticleCount(), radius);
-  particle_renderer_->RecordParticleRenderCommands(command_buffer, boundaryBuffer_, boundaryBufferSize_ * ((image_index + 1) % 3), boundaryParticleCount_, radius);
+  // particle_renderer_->RecordParticleRenderCommands(command_buffer, boundaryBuffer_, boundaryBufferSize_ * ((image_index + 1) % 3), boundaryParticleCount_, radius);
   particle_renderer_->RecordFloorRenderCommands(command_buffer);
   particle_renderer_->End(command_buffer);
 }
@@ -971,7 +973,7 @@ void Engine::CreateSimulator()
     {
       for (int j = 0; j < dimension.y; j++)
       {
-        const auto p = glm::vec4{ anchor + 2.f * radius * (rotation[0] * static_cast<float>(i) + rotation[1] * static_cast<float>(j)), 0.f };
+        const auto p = glm::vec4{ anchor + radius * (rotation[0] * static_cast<float>(i) + rotation[1] * static_cast<float>(j)), 0.f };
         const glm::vec4 v{ 0.f };
         constexpr glm::vec4 color{ 0.25f, 0.25f, 0.25f, 0.f };
 
@@ -980,7 +982,7 @@ void Engine::CreateSimulator()
     }
   };
 
-  constexpr auto diameter = radius * 2.f;
+  constexpr auto diameter = radius;
   constexpr auto height = 3.f;
 
   AppendWallParticles(
