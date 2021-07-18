@@ -10,12 +10,16 @@ layout (local_size_x = 256) in;
 void main() 
 {
 	const uint i0 = gl_GlobalInvocationID.x;
-	if (i0 >= params.num_particles)
+	if (i0 >= params.num_particles + params.num_boundary)
     return;
 
   const float support_radius = 4.f * params.radius;
 
-	vec3 p0 = out_particles[i0].position.xyz;
+	vec3 p0;
+  if (i0 < params.num_particles)
+    p0 = out_particles[i0].position.xyz;
+  else
+    p0 = boundary_particles[i0 - params.num_particles].position.xyz;
 
   // Neighbor search between particles in uniform grid
   ivec3 cell_index = CellIndex(p0);
@@ -33,7 +37,8 @@ void main()
     vec3 p1 = out_particles[i1].position.xyz;
     vec3 pd = p1 - p0;
     
-    if (dot(pd, pd) <= support_radius * support_radius)
+    // For i0 boundary particle, only search for boundary i1
+    if ((i0 < params.num_particles || i1 >= params.num_particles) && dot(pd, pd) <= support_radius * support_radius)
     {
       bool found = false;
       for (int i = 0; i < num_neighbors; i++)
@@ -56,7 +61,4 @@ void main()
 
     pointer = grid.object_grid_pairs[pointer].next;
   }
-
-  out_particles[i0].color.rgb = vec3((hash_index % 256) / 255.f, ((hash_index / 256) % 256) / 255.f, ((hash_index / 65536) % 256) / 255.f);
-  // out_particles[i0].color.rgb = vec3(NeighborCount(i0) / 30.f);
 }

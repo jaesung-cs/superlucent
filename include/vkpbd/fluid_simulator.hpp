@@ -53,11 +53,11 @@ public:
   BufferRequirements getParticleBufferRequirements();
   BufferRequirements getInternalBufferRequirements();
   BufferRequirements getUniformBufferRequirements();
-  BufferRequirements getBoundaryBufferRequirements(int boundaryParticleCount);
+  BufferRequirements getBoundaryBufferRequirements();
 
   void cmdBindSrcParticleBuffer(vk::Buffer buffer, vk::DeviceSize offset);
   void cmdBindDstParticleBuffer(vk::Buffer buffer, vk::DeviceSize offset);
-  void cmdBindBoundaryBuffer(vk::Buffer buffer, vk::DeviceSize offset, int boundaryParticleCount);
+  void cmdBindBoundaryBuffer(vk::Buffer buffer, vk::DeviceSize offset);
   void cmdBindInternalBuffer(vk::Buffer buffer, vk::DeviceSize offset);
   void cmdBindUniformBuffer(vk::Buffer buffer, vk::DeviceSize offset, uint8_t* map);
 
@@ -75,10 +75,11 @@ private:
   // Binding 0: input
   // Binding 1: output
   // Binding 2: boundary
-  // Binding 3: uniform grid and hash table
-  // Binding 4: neighbors
-  // Binding 5: solver
-  // Binding 6: uniform params
+  // Binding 3: boundary volume
+  // Binding 4: uniform grid and hash table
+  // Binding 5: neighbors
+  // Binding 6: solver
+  // Binding 7: uniform params
   vk::DescriptorSetLayout descriptorSetLayout_;
   vk::DescriptorPool descriptorPool_;
 
@@ -89,9 +90,11 @@ private:
   vk::PipelineLayout pipelineLayout_;
   vk::Pipeline forwardPipeline_;
   vk::Pipeline initializeUniformGridPipeline_;
+  vk::Pipeline initializeBoudnaryPipeline_;
   vk::Pipeline addUniformGridPipeline_;
   vk::Pipeline initializeNeighborSearchPipeline_;
   vk::Pipeline neighborSearchPipeline_;
+  vk::Pipeline computeBoundaryPipeline_;
   vk::Pipeline computeDensityPipeline_;
   vk::Pipeline solveDensityPipeline_;
   vk::Pipeline updatePositionPipeline_;
@@ -102,6 +105,7 @@ private:
   // Internal buffer ranges
   SubBufferRange gridBufferRange_;
   SubBufferRange neighborsBufferRange_;
+  SubBufferRange boundaryBufferRange_;
   SubBufferRange solverBufferRange_;
 
   // Requirements
@@ -117,6 +121,7 @@ private:
   UniformBufferRange uniformBuffer_;
 
   uint32_t particleCount_ = 0;
+  uint32_t boundaryCount_ = 0;
   uint32_t maxNeighborCount_ = 0;
 
   // Simulation constants
@@ -135,6 +140,7 @@ public:
   vk::PhysicalDevice physicalDevice;
   vk::DescriptorPool descriptorPool;
   uint32_t particleCount = 0;
+  uint32_t boundaryCount = 0;
   uint32_t commandCount = 0;
   uint32_t maxNeighborCount = 30u;
   float restDensity = 1000.f;

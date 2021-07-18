@@ -197,7 +197,7 @@ void Engine::Draw(double time)
   {
     fluidSimulator_.cmdBindSrcParticleBuffer(particleBuffer_, particleBufferSize_ * image_index);
     fluidSimulator_.cmdBindDstParticleBuffer(particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3));
-    fluidSimulator_.cmdBindBoundaryBuffer(boundaryBuffer_, boundaryBufferSize_ * ((image_index + 1) % 3), boundaryParticleCount_);
+    fluidSimulator_.cmdBindBoundaryBuffer(boundaryBuffer_, boundaryBufferSize_ * ((image_index + 1) % 3));
     fluidSimulator_.cmdBindInternalBuffer(particleInternalBuffer_, 0);
     fluidSimulator_.cmdBindUniformBuffer(particleUniformBuffer_, 0, particleUniformBufferMap_);
     fluidSimulator_.cmdStep(draw_command_buffer, image_index, animation_time_, dt);
@@ -1020,12 +1020,14 @@ void Engine::CreateSimulator()
     glm::ivec2{ static_cast<int>(1.f / diameter) + 1, static_cast<int>(height / diameter) - 1 },
     -motion);
 
+  boundaryParticleCount_ = boundary.size();
 
   vkpbd::FluidSimulatorCreateInfo fluidSimulatorCreateInfo;
   fluidSimulatorCreateInfo.device = device_;
   fluidSimulatorCreateInfo.physicalDevice = physical_device_;
   fluidSimulatorCreateInfo.descriptorPool = descriptor_pool_;
   fluidSimulatorCreateInfo.particleCount = particleCount;
+  fluidSimulatorCreateInfo.boundaryCount = boundaryParticleCount_;
   fluidSimulatorCreateInfo.maxNeighborCount = 60;
   fluidSimulatorCreateInfo.commandCount = commandCount;
   fluidSimulatorCreateInfo.restDensity = density;
@@ -1036,7 +1038,7 @@ void Engine::CreateSimulator()
   const auto particleBufferRequirements = fluidSimulator_.getParticleBufferRequirements();
   const auto internalBufferRequirements = fluidSimulator_.getInternalBufferRequirements();
   const auto uniformBufferRequirements = fluidSimulator_.getUniformBufferRequirements();
-  const auto boundaryBufferRequirements = fluidSimulator_.getBoundaryBufferRequirements(boundary.size());
+  const auto boundaryBufferRequirements = fluidSimulator_.getBoundaryBufferRequirements();
 
   vk::BufferCreateInfo bufferCreateInfo;
   bufferCreateInfo
@@ -1063,7 +1065,6 @@ void Engine::CreateSimulator()
     .setSize(boundaryBufferRequirements.size * commandCount);
   boundaryBuffer_ = device_.createBuffer(bufferCreateInfo);
   boundaryBufferSize_ = boundaryBufferRequirements.size;
-  boundaryParticleCount_ = boundary.size();
 
   // Bind to memory
   const auto particleMemory = AcquireDeviceMemory(particleBuffer_);

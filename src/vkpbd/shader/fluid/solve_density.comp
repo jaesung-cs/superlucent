@@ -6,7 +6,7 @@ layout (local_size_x = 256) in;
 #include "fluid_simulation_params.glsl"
 #include "neighbors.glsl"
 #include "solver.glsl"
-
+#include "boundary.glsl"
 #include "kernel.glsl"
 
 void main()
@@ -25,13 +25,25 @@ void main()
   {
     const int neighbor_index = NeighborIndex(particle_index, i);
 
-    const float mj = out_particles[neighbor_index].properties.y;
-    const vec3 xj = out_particles[neighbor_index].position.xyz;
-    const float lambda_j = solver.particles[neighbor_index].lambda;
+    if (neighbor_index < params.num_particles)
+    {
+      // Fluid particles
+      const float mj = out_particles[neighbor_index].properties.y;
+      const vec3 xj = out_particles[neighbor_index].position.xyz;
+      const float lambda_j = solver.particles[neighbor_index].lambda;
 
-    const vec3 grad_cj = -mj / params.rest_density * KernelGradW(xi - xj);
-    solver.particles[particle_index].dx += -(lambda_i + lambda_j) * grad_cj;
+      const vec3 grad_cj = -mj / params.rest_density * KernelGradW(xi - xj);
+      solver.particles[particle_index].dx += -(lambda_i + lambda_j) * grad_cj;
+    }
+    else
+    {
+      // Boundary particles
+      const int boundary_index = neighbor_index - params.num_particles;
+      const float mj = out_particles[boundary_index].properties.y;
+      const vec3 xj = out_particles[boundary_index].position.xyz;
 
-    // TODO: boundary particles
+      const vec3 grad_cj = -boundary.volume[boundary_index] * KernelGradW(xi - xj);
+      solver.particles[particle_index].dx += -lambda_i * grad_cj;
+    }
   }
 }

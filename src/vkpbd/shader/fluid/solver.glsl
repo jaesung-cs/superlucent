@@ -14,7 +14,7 @@ struct SolverParticle
   float pad2;
 };
 
-layout (binding = 5) buffer SolverSsbo
+layout (binding = 6) buffer SolverSsbo
 {
   SolverParticle particles[];
 } solver;

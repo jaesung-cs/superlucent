@@ -1,0 +1,35 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+#include "fluid_simulation_params.glsl"
+#include "particle.glsl"
+#include "neighbors.glsl"
+#include "boundary.glsl"
+#include "kernel.glsl"
+
+void main()
+{
+  uint boundary_index = gl_GlobalInvocationID.x;
+  if (boundary_index >= params.num_boundary)
+    return;
+    
+  const vec3 xi = boundary_particles[boundary_index].position.xyz;
+
+  // Compute volume
+  float delta = KernelWZero();
+  const int neighbor_count = NeighborCount(params.num_particles + boundary_index);
+  for (int i = 0; i < neighbor_count; i++)
+  {
+    // Only boundary particles are searched
+    const int neighbor_index = NeighborIndex(params.num_particles + boundary_index, i) - params.num_particles;
+
+    const vec3 xj = boundary_particles[neighbor_index].position.xyz;
+
+    delta += KernelW(xi - xj);
+  }
+
+  const float volume = 1.f / delta;
+
+  boundary.volume[boundary_index] = volume;
+}

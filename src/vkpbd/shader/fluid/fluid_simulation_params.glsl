@@ -1,11 +1,11 @@
 #ifndef VKPBD_FLUID_FLUID_SIMULATION_PARAMS_GLSL_
 #define VKPBD_FLUID_FLUID_SIMULATION_PARAMS_GLSL_
 
-layout (binding = 6) uniform FluidSimulationParamsUbo
+layout (binding = 7) uniform FluidSimulationParamsUbo
 {
-	float dt;
-	int num_particles;
-  float alpha;
+  float dt;
+  int num_particles;
+  int num_boundary;
   float wall_offset;
 
   float radius;

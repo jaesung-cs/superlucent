@@ -8,12 +8,17 @@ layout (local_size_x = 256) in;
 
 void main()
 {
-  uint particle_id = gl_GlobalInvocationID.x;
-  if (particle_id >= params.num_particles)
+  uint particle_index = gl_GlobalInvocationID.x;
+  if (particle_index >= params.num_particles + params.num_boundary)
     return;
+    
+	vec3 position;
+  if (particle_index < params.num_particles)
+    position = out_particles[particle_index].position.xyz;
+  else
+    position = boundary_particles[particle_index - params.num_particles].position.xyz;
 
-  vec3 position = out_particles[particle_id].position.xyz;
-  float radius = params.radius;
+  const float radius = params.radius;
   
-  AddSphereToGrid(particle_id, position, 2.f * radius);
+  AddSphereToGrid(particle_index, position, 2.f * radius);
 }

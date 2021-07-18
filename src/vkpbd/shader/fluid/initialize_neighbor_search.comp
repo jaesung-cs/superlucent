@@ -8,7 +8,7 @@ layout (local_size_x = 256) in;
 void main()
 {
   const uint index = gl_GlobalInvocationID.x;
-  if (index >= params.num_particles)
+  if (index >= params.num_particles + params.num_boundary)
     return;
 
   neighbors.buf[index] = 0;
