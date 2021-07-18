@@ -20,4 +20,9 @@ layout(std140, binding = 1) buffer OutParticleSsbo
   Particle out_particles[];
 };
 
+layout(std140, binding = 2) buffer BoundaryParticleSsbo
+{
+  Particle boundary_particles[];
+};
+
 #endif // VKPBD_FLUID_PARTICLE_GLSL_

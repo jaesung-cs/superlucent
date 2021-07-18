@@ -3,7 +3,7 @@
 
 #include "fluid_simulation_params.glsl"
 
-layout (binding = 3) buffer NeighborsSsbo
+layout (binding = 4) buffer NeighborsSsbo
 {
   // [0, n): particles
   // [n, n + nm): particle ids

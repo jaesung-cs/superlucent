@@ -31,6 +31,9 @@
     <Filter Include="src\superlucent\geometry">
       <UniqueIdentifier>{51f71da0-17b9-4704-b53f-1a094649b62d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\superlucent\shader\engine">
+      <UniqueIdentifier>{df295ca5-1d70-416a-ae59-1e5ae2f98de4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\main.cc">
@@ -126,6 +129,9 @@
     </None>
     <None Include="..\..\src\compile_shader.py">
       <Filter>src</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\engine\update_boundary.comp">
+      <Filter>src\superlucent\shader\engine</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -22,6 +22,7 @@
     <None Include="..\..\src\vkpbd\shader\fluid\add_uniform_grid.comp" />
     <None Include="..\..\src\vkpbd\shader\fluid\color.glsl" />
     <None Include="..\..\src\vkpbd\shader\fluid\compute_density.comp" />
+    <None Include="..\..\src\vkpbd\shader\fluid\initialize_boundary.comp" />
     <None Include="..\..\src\vkpbd\shader\fluid\initialize_solver.comp" />
     <None Include="..\..\src\vkpbd\shader\fluid\kernel.glsl" />
     <None Include="..\..\src\vkpbd\shader\fluid\neighbor_search.comp" />

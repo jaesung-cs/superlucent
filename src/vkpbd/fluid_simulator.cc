@@ -32,6 +32,14 @@ BufferRequirements FluidSimulator::getUniformBufferRequirements()
   return requirements;
 }
 
+BufferRequirements FluidSimulator::getBoundaryBufferRequirements(int boundaryParticleCount)
+{
+  BufferRequirements requirements;
+  requirements.usage = vk::BufferUsageFlagBits::eStorageBuffer;
+  requirements.size = sizeof(FluidParticle) * boundaryParticleCount;
+  return requirements;
+}
+
 void FluidSimulator::cmdBindSrcParticleBuffer(vk::Buffer buffer, vk::DeviceSize offset)
 {
   srcBuffer_.buffer = buffer;
@@ -44,6 +52,13 @@ void FluidSimulator::cmdBindDstParticleBuffer(vk::Buffer buffer, vk::DeviceSize 
   dstBuffer_.buffer = buffer;
   dstBuffer_.offset = offset;
   dstBuffer_.size = particleBufferRequiredSize_;
+}
+
+void FluidSimulator::cmdBindBoundaryBuffer(vk::Buffer buffer, vk::DeviceSize offset, int boundaryParticleCount)
+{
+  boundaryBuffer_.buffer = buffer;
+  boundaryBuffer_.offset = offset;
+  boundaryBuffer_.size = sizeof(FluidParticle) * boundaryParticleCount;
 }
 
 void FluidSimulator::cmdBindInternalBuffer(vk::Buffer buffer, vk::DeviceSize offset)
@@ -95,14 +110,7 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
   std::memcpy(uniformBuffer_.map, &params, sizeof(FluidSimulationParams));
 
   // Descriptor set update
-  // Binding 0: input
-  // Binding 1: output
-  // Binding 2: uniform grid and hash table
-  // Binding 3: neighbors
-  // TODO: Binding 4: solver
-  // Binding 5: uniform params
-
-  std::vector<vk::DescriptorBufferInfo> bufferInfos(6);
+  std::vector<vk::DescriptorBufferInfo> bufferInfos(7);
   bufferInfos[0]
     .setBuffer(srcBuffer_.buffer)
     .setOffset(srcBuffer_.offset)
@@ -114,27 +122,32 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
     .setRange(dstBuffer_.size);
 
   bufferInfos[2]
+    .setBuffer(boundaryBuffer_.buffer)
+    .setOffset(boundaryBuffer_.offset)
+    .setRange(boundaryBuffer_.size);
+
+  bufferInfos[3]
     .setBuffer(internalBuffer_.buffer)
     .setOffset(internalBuffer_.offset + gridBufferRange_.offset)
     .setRange(gridBufferRange_.size);
 
-  bufferInfos[3]
+  bufferInfos[4]
     .setBuffer(internalBuffer_.buffer)
     .setOffset(internalBuffer_.offset + neighborsBufferRange_.offset)
     .setRange(neighborsBufferRange_.size);
 
-  bufferInfos[4]
+  bufferInfos[5]
     .setBuffer(internalBuffer_.buffer)
     .setOffset(internalBuffer_.offset + solverBufferRange_.offset)
     .setRange(solverBufferRange_.size);
 
-  bufferInfos[5]
+  bufferInfos[6]
     .setBuffer(uniformBuffer_.buffer)
     .setOffset(uniformBuffer_.offset)
     .setRange(uniformBuffer_.size);
 
-  std::vector<vk::WriteDescriptorSet> descriptorWrites(6);
-  for (int i = 0; i < 5; i++)
+  std::vector<vk::WriteDescriptorSet> descriptorWrites(7);
+  for (int i = 0; i < 6; i++)
   {
     descriptorWrites[i]
       .setDstSet(descriptorSets_[cmdIndex])
@@ -144,12 +157,12 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
       .setBufferInfo(bufferInfos[i]);
   }
 
-  descriptorWrites[5]
+  descriptorWrites[6]
     .setDstSet(descriptorSets_[cmdIndex])
-    .setDstBinding(5)
+    .setDstBinding(6)
     .setDstArrayElement(0)
     .setDescriptorType(vk::DescriptorType::eUniformBuffer)
-    .setBufferInfo(bufferInfos[5]);
+    .setBufferInfo(bufferInfos[6]);
 
   device_.updateDescriptorSets(descriptorWrites, {});
 
@@ -310,9 +323,9 @@ FluidSimulator createFluidSimulator(const FluidSimulatorCreateInfo& createInfo)
   auto physical_device = createInfo.physicalDevice;
 
   // Create descriptor set layout
-  std::vector<vk::DescriptorSetLayoutBinding> bindings(6);
+  std::vector<vk::DescriptorSetLayoutBinding> bindings(7);
 
-  for (int i = 0; i < 5; i++)
+  for (int i = 0; i < 6; i++)
   {
     bindings[i]
       .setBinding(i)
@@ -321,8 +334,8 @@ FluidSimulator createFluidSimulator(const FluidSimulatorCreateInfo& createInfo)
       .setDescriptorCount(1);
   }
 
-  bindings[5]
-    .setBinding(5)
+  bindings[6]
+    .setBinding(6)
     .setStageFlags(vk::ShaderStageFlagBits::eCompute)
     .setDescriptorType(vk::DescriptorType::eUniformBuffer)
     .setDescriptorCount(1);

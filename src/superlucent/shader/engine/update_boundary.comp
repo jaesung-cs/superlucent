@@ -1,0 +1,48 @@
+#version 450 core
+
+layout (local_size_x = 256) in;
+
+// From vkpbd particle
+// TODO: use the struct, binding to 0
+struct Particle
+{
+  vec4 position; // [px(t), py(t), pz(t), 0]
+  vec4 velocity; // [vx(t), vy(t), vz(t), 0]
+  vec4 p0; // [px(0), py(0), pz(0), 0]
+  vec4 motion; // [mx, my, mz, 0], where p(t) = p0 + motion * sin(time)
+  vec4 color; // [r, g, b, 0]
+};
+
+layout (binding = 0) buffer InBoundaryParticleSsbo
+{
+  Particle in_boundary_particles[];
+};
+
+layout (binding = 1) buffer OutBoundaryParticleSsbo
+{
+  Particle out_boundary_particles[];
+};
+
+layout (binding = 2) uniform ParamsUbo
+{
+  int num_particles;
+  float animation_time;
+  float animation_speed;
+};
+
+void main()
+{
+  uint particle_index = gl_GlobalInvocationID.x;
+  if (particle_index >= num_particles)
+    return;
+    
+  const vec3 p0 = in_boundary_particles[particle_index].p0.xyz;
+  const vec3 motion = in_boundary_particles[particle_index].motion.xyz;
+
+  out_boundary_particles[particle_index].p0 = in_boundary_particles[particle_index].p0;
+  out_boundary_particles[particle_index].motion = in_boundary_particles[particle_index].motion;
+  out_boundary_particles[particle_index].color = in_boundary_particles[particle_index].color;
+
+  out_boundary_particles[particle_index].position.xyz = p0 + motion * sin(animation_time * animation_speed);
+  out_boundary_particles[particle_index].velocity.xyz = motion * (cos(animation_time * animation_speed) * animation_speed);
+}

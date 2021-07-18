@@ -53,9 +53,11 @@ public:
   BufferRequirements getParticleBufferRequirements();
   BufferRequirements getInternalBufferRequirements();
   BufferRequirements getUniformBufferRequirements();
+  BufferRequirements getBoundaryBufferRequirements(int boundaryParticleCount);
 
   void cmdBindSrcParticleBuffer(vk::Buffer buffer, vk::DeviceSize offset);
   void cmdBindDstParticleBuffer(vk::Buffer buffer, vk::DeviceSize offset);
+  void cmdBindBoundaryBuffer(vk::Buffer buffer, vk::DeviceSize offset, int boundaryParticleCount);
   void cmdBindInternalBuffer(vk::Buffer buffer, vk::DeviceSize offset);
   void cmdBindUniformBuffer(vk::Buffer buffer, vk::DeviceSize offset, uint8_t* map);
 
@@ -72,10 +74,11 @@ private:
   // Descriptor set
   // Binding 0: input
   // Binding 1: output
-  // Binding 2: uniform grid and hash table
-  // Binding 3: neighbors
-  // TODO: Binding 4: solver
-  // Binding 5: uniform params
+  // Binding 2: boundary
+  // Binding 3: uniform grid and hash table
+  // Binding 4: neighbors
+  // Binding 5: solver
+  // Binding 6: uniform params
   vk::DescriptorSetLayout descriptorSetLayout_;
   vk::DescriptorPool descriptorPool_;
 
@@ -109,6 +112,7 @@ private:
   // Bound buffer ranges
   BufferRange srcBuffer_;
   BufferRange dstBuffer_;
+  BufferRange boundaryBuffer_;
   BufferRange internalBuffer_;
   UniformBufferRange uniformBuffer_;
 

@@ -126,6 +126,9 @@
     <None Include="..\..\src\vkpbd\shader\fluid\update_viscosity.comp">
       <Filter>src\shader\fluid</Filter>
     </None>
+    <None Include="..\..\src\vkpbd\shader\fluid\initialize_boundary.comp">
+      <Filter>src\shader\fluid</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\vkpbd\particle.h">

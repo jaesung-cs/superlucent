@@ -9,7 +9,7 @@ struct Node
 
 const int num_hash_buckets = 1000003;
 
-layout (binding = 2) buffer GridSsbo
+layout (binding = 3) buffer GridSsbo
 {
   vec3 cell_size;
   uint num_pairs;

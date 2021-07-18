@@ -226,7 +226,24 @@ private:
   vk::Buffer particleUniformBuffer_;
   vk::DeviceSize particleUniformBufferSize_ = 0;
   vk::DeviceMemory particleUniformMemory_;
+  vk::Buffer boundaryBuffer_;
+  vk::DeviceSize boundaryBufferSize_ = 0;
+  uint32_t boundaryParticleCount_ = 0;
   uint8_t* particleUniformBufferMap_ = nullptr;
+
+  struct UpdateBoundaryUbo
+  {
+    alignas(16) int num_particles;
+    float animation_time;
+    float animation_speed;
+  };
+
+  vk::PipelineLayout boundaryPipelineLayout_;
+  vk::Pipeline updateBoundaryPipeline_;
+  vk::DescriptorSetLayout boundaryDescriptorSetLayout_;
+  std::vector<vk::DescriptorSet> boundaryDescriptorSets_;
+  UpdateBoundaryUbo updateBoundaryUbo_;
+  vk::DeviceSize updateBoundaryUboOffset_ = 0;
 
   // Command buffers
   vk::CommandBuffer transient_command_buffer_;

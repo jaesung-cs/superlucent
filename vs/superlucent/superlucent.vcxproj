@@ -192,6 +192,7 @@ python compile_shader.py
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\compile_shader.py" />
+    <None Include="..\..\src\superlucent\shader\engine\update_boundary.comp" />
     <None Include="..\..\src\superlucent\shader\rendering\cell_sphere.frag" />
     <None Include="..\..\src\superlucent\shader\rendering\cell_sphere.vert" />
     <None Include="..\..\src\superlucent\shader\rendering\floor.frag" />

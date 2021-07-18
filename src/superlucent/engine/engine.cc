@@ -168,10 +168,36 @@ void Engine::Draw(double time)
 
   draw_command_buffer.begin({ vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
 
+  // Update boundary
+  updateBoundaryUbo_.num_particles = boundaryParticleCount_;
+  updateBoundaryUbo_.animation_time = animation_time_;
+  updateBoundaryUbo_.animation_speed = 5.f;
+  std::memcpy(particleUniformBufferMap_ + updateBoundaryUboOffset_, &updateBoundaryUbo_, sizeof(UpdateBoundaryUbo));
+
+  draw_command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, boundaryPipelineLayout_, 0,
+    boundaryDescriptorSets_[image_index], {});
+
+  draw_command_buffer.bindPipeline(vk::PipelineBindPoint::eCompute, updateBoundaryPipeline_);
+  draw_command_buffer.dispatch((boundaryParticleCount_ + 255) / 256, 1, 1);
+
+  vk::BufferMemoryBarrier boundaryBarrier;
+  boundaryBarrier
+    .setBuffer(boundaryBuffer_)
+    .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+    .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+    .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setOffset(boundaryBufferSize_ * ((image_index + 1) % 3))
+    .setSize(boundaryBufferSize_);
+
+  draw_command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, boundaryBarrier, {});
+
   if (dt > 0.)
   {
     fluidSimulator_.cmdBindSrcParticleBuffer(particleBuffer_, particleBufferSize_ * image_index);
     fluidSimulator_.cmdBindDstParticleBuffer(particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3));
+    fluidSimulator_.cmdBindBoundaryBuffer(boundaryBuffer_, boundaryBufferSize_ * ((image_index + 1) % 3), boundaryParticleCount_);
     fluidSimulator_.cmdBindInternalBuffer(particleInternalBuffer_, 0);
     fluidSimulator_.cmdBindUniformBuffer(particleUniformBuffer_, 0, particleUniformBufferMap_);
     fluidSimulator_.cmdStep(draw_command_buffer, image_index, animation_time_, dt);
@@ -273,6 +299,7 @@ void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t imag
 
   particle_renderer_->Begin(command_buffer, image_index);
   particle_renderer_->RecordParticleRenderCommands(command_buffer, particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3), fluidSimulator_.getParticleCount(), radius);
+  particle_renderer_->RecordParticleRenderCommands(command_buffer, boundaryBuffer_, boundaryBufferSize_ * ((image_index + 1) % 3), boundaryParticleCount_, radius);
   particle_renderer_->RecordFloorRenderCommands(command_buffer);
   particle_renderer_->End(command_buffer);
 }
@@ -883,7 +910,7 @@ void Engine::CreateSimulator()
   constexpr float mass = 4.f / 3.f * pi * radius * radius * radius * density;
   constexpr float invMass = 1.f / mass;
   constexpr glm::vec2 wallDistance = glm::vec2(1.f, 1.f);
-  constexpr glm::vec3 particleOffset = glm::vec3(-radius * glm::vec2(particleDimension.x, particleDimension.y), radius * 1.5f);
+  constexpr glm::vec3 particleOffset = glm::vec3(-radius * glm::vec2(particleDimension.x, particleDimension.y), radius * 2.5f);
   constexpr glm::vec3 particleStride = glm::vec3(radius * 2.f); // Compressed at initial state
   constexpr glm::vec3 gravity = glm::vec3(0.f, 0.f, -9.8f);
   constexpr auto viscosity = 0.02f;
@@ -892,6 +919,7 @@ void Engine::CreateSimulator()
   constexpr float noiseRange = 1e-2f;
   const auto noise = [&rng, noiseRange]() { return rng.Uniform(-noiseRange, noiseRange); };
 
+  // Fluid
   std::vector<vkpbd::Particle> particles;
   for (int i = 0; i < particleDimension.x; i++)
   {
@@ -921,6 +949,78 @@ void Engine::CreateSimulator()
     }
   }
 
+  // Boundary
+  std::vector<vkpbd::Particle> boundary;
+  const auto AppendWallParticles = [radius](std::vector<vkpbd::Particle>& boundary,
+    const glm::vec3& anchor, const glm::mat3& rotation, const glm::ivec2& dimension, const glm::vec3& motion = glm::vec3{ 0.f, 0.f, 0.f }) -> void
+  {
+    for (int i = 0; i < dimension.x; i++)
+    {
+      for (int j = 0; j < dimension.y; j++)
+      {
+        const auto p = glm::vec4{ anchor + 2.f * radius * (rotation[0] * static_cast<float>(i) + rotation[1] * static_cast<float>(j)), 0.f };
+        const glm::vec4 v{ 0.f };
+        constexpr glm::vec4 color{ 0.25f, 0.25f, 0.25f, 0.f };
+
+        boundary.push_back({ p, v, p, glm::vec4{motion, 0.f}, color });
+      }
+    }
+  };
+
+  constexpr auto diameter = radius * 2.f;
+  constexpr auto height = 3.f;
+
+  AppendWallParticles(
+    boundary,
+    glm::vec3{ -1.75f, -0.5f, 0.f },
+    glm::mat3{ 1.f },
+    glm::ivec2{ static_cast<int>(3.5f / diameter) + 1, static_cast<int>(1.f / diameter) + 1 });
+
+  AppendWallParticles(
+    boundary,
+    glm::vec3{ -1.75f, -0.5f, height },
+    glm::mat3{ 1.f },
+    glm::ivec2{ static_cast<int>(3.5f / diameter) + 1, static_cast<int>(1.f / diameter) + 1 });
+
+  // XZ planes
+  glm::mat3 rotation;
+  rotation[0] = glm::vec3{ 1.f, 0.f, 0.f };
+  rotation[1] = glm::vec3{ 0.f, 0.f, 1.f };
+  rotation[2] = glm::vec3{ 0.f, -1.f, 0.f };
+
+  AppendWallParticles(
+    boundary,
+    glm::vec3{ -1.75f, -0.5f, diameter },
+    rotation,
+    glm::ivec2{ static_cast<int>(3.5f / diameter) + 1, static_cast<int>(height / diameter) - 1 });
+
+  AppendWallParticles(
+    boundary,
+    glm::vec3{ -1.75f, 0.5f, diameter },
+    rotation,
+    glm::ivec2{ static_cast<int>(3.5f / diameter) + 1, static_cast<int>(height / diameter) - 1 });
+
+  // YZ planes
+  rotation[0] = glm::vec3{ 0.f, 1.f, 0.f };
+  rotation[1] = glm::vec3{ 0.f, 0.f, 1.f };
+  rotation[2] = glm::vec3{ 1.f, 0.f, 0.f };
+  constexpr glm::vec3 motion{ 0.25f, 0.f, 0.f };
+
+  AppendWallParticles(
+    boundary,
+    glm::vec3{ -1.5f, -0.5f, diameter },
+    rotation,
+    glm::ivec2{ static_cast<int>(1.f / diameter) + 1, static_cast<int>(height / diameter) - 1 },
+    motion);
+
+  AppendWallParticles(
+    boundary,
+    glm::vec3{ 1.5f, -0.5f, diameter },
+    rotation,
+    glm::ivec2{ static_cast<int>(1.f / diameter) + 1, static_cast<int>(height / diameter) - 1 },
+    -motion);
+
+
   vkpbd::FluidSimulatorCreateInfo fluidSimulatorCreateInfo;
   fluidSimulatorCreateInfo.device = device_;
   fluidSimulatorCreateInfo.physicalDevice = physical_device_;
@@ -936,6 +1036,7 @@ void Engine::CreateSimulator()
   const auto particleBufferRequirements = fluidSimulator_.getParticleBufferRequirements();
   const auto internalBufferRequirements = fluidSimulator_.getInternalBufferRequirements();
   const auto uniformBufferRequirements = fluidSimulator_.getUniformBufferRequirements();
+  const auto boundaryBufferRequirements = fluidSimulator_.getBoundaryBufferRequirements(boundary.size());
 
   vk::BufferCreateInfo bufferCreateInfo;
   bufferCreateInfo
@@ -950,11 +1051,19 @@ void Engine::CreateSimulator()
   particleInternalBuffer_ = device_.createBuffer(bufferCreateInfo);
   particleInternalBufferSize_ = internalBufferRequirements.size;
 
+  // Share same buffer with boundary update uniform buffer
   bufferCreateInfo
-    .setUsage(uniformBufferRequirements.usage)
-    .setSize(uniformBufferRequirements.size);
+    .setUsage(uniformBufferRequirements.usage | vk::BufferUsageFlagBits::eUniformBuffer)
+    .setSize(Align(uniformBufferRequirements.size, ubo_alignment_) + sizeof(UpdateBoundaryUbo));
   particleUniformBuffer_ = device_.createBuffer(bufferCreateInfo);
   particleUniformBufferSize_ = uniformBufferRequirements.size;
+
+  bufferCreateInfo
+    .setUsage(boundaryBufferRequirements.usage | vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eVertexBuffer)
+    .setSize(boundaryBufferRequirements.size * commandCount);
+  boundaryBuffer_ = device_.createBuffer(bufferCreateInfo);
+  boundaryBufferSize_ = boundaryBufferRequirements.size;
+  boundaryParticleCount_ = boundary.size();
 
   // Bind to memory
   const auto particleMemory = AcquireDeviceMemory(particleBuffer_);
@@ -962,6 +1071,9 @@ void Engine::CreateSimulator()
 
   const auto particleInternalMemory = AcquireDeviceMemory(particleInternalBuffer_);
   device_.bindBufferMemory(particleInternalBuffer_, particleInternalMemory.memory, particleInternalMemory.offset);
+
+  const auto boundaryMemory = AcquireDeviceMemory(particleInternalBuffer_);
+  device_.bindBufferMemory(boundaryBuffer_, boundaryMemory.memory, boundaryMemory.offset);
 
   // Persistently mapped uniform buffer
   vk::MemoryAllocateInfo memoryAllocateInfo;
@@ -972,12 +1084,138 @@ void Engine::CreateSimulator()
   particleUniformBufferMap_ = reinterpret_cast<uint8_t*>(device_.mapMemory(particleUniformMemory_, 0, uniformBufferRequirements.size));
   device_.bindBufferMemory(particleUniformBuffer_, particleUniformMemory_, 0);
 
+  // Update boundary pipeline
+  std::vector<vk::DescriptorSetLayoutBinding> bindings(3);
+  for (int i = 0; i < 2; i++)
+  {
+    bindings[i]
+      .setBinding(i)
+      .setStageFlags(vk::ShaderStageFlagBits::eCompute)
+      .setDescriptorType(vk::DescriptorType::eStorageBuffer)
+      .setDescriptorCount(1);
+  }
+
+  bindings[2]
+    .setBinding(2)
+    .setStageFlags(vk::ShaderStageFlagBits::eCompute)
+    .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+    .setDescriptorCount(1);
+
+  vk::DescriptorSetLayoutCreateInfo descriptorSetLayoutCreateInfo;
+  descriptorSetLayoutCreateInfo
+    .setBindings(bindings);
+  boundaryDescriptorSetLayout_ = device_.createDescriptorSetLayout(descriptorSetLayoutCreateInfo);
+
+  vk::DescriptorSetAllocateInfo descriptorSetAllocateInfo;
+  std::vector<vk::DescriptorSetLayout> layouts(commandCount, boundaryDescriptorSetLayout_);
+  descriptorSetAllocateInfo
+    .setDescriptorPool(descriptor_pool_)
+    .setSetLayouts(layouts);
+  boundaryDescriptorSets_ = device_.allocateDescriptorSets(descriptorSetAllocateInfo);
+
+  updateBoundaryUboOffset_ = Align(uniformBufferRequirements.size, ubo_alignment_);
+
+  for (int i = 0; i < boundaryDescriptorSets_.size(); i++)
+  {
+    std::vector<vk::DescriptorBufferInfo> bufferInfos(3);
+    bufferInfos[0]
+      .setBuffer(boundaryBuffer_)
+      .setOffset(boundaryBufferSize_ * i)
+      .setRange(boundaryBufferSize_);
+
+    bufferInfos[1]
+      .setBuffer(boundaryBuffer_)
+      .setOffset(boundaryBufferSize_ * ((i + 1) % commandCount))
+      .setRange(boundaryBufferSize_);
+
+    bufferInfos[2]
+      .setBuffer(particleUniformBuffer_)
+      .setOffset(updateBoundaryUboOffset_)
+      .setRange(sizeof(UpdateBoundaryUbo));
+
+    std::vector<vk::WriteDescriptorSet> writes(3);
+    for (int j = 0; j < 2; j++)
+    {
+      writes[j]
+        .setDstSet(boundaryDescriptorSets_[i])
+        .setDstBinding(j)
+        .setBufferInfo(bufferInfos[j])
+        .setDescriptorType(vk::DescriptorType::eStorageBuffer)
+        .setDescriptorCount(1);
+    }
+
+    writes[2]
+      .setDstSet(boundaryDescriptorSets_[i])
+      .setDstBinding(2)
+      .setBufferInfo(bufferInfos[2])
+      .setDescriptorType(vk::DescriptorType::eUniformBuffer)
+      .setDescriptorCount(1);
+
+    device_.updateDescriptorSets(writes, {});
+  }
+
+  vk::PipelineLayoutCreateInfo pipelineLayoutCreateInfo;
+  pipelineLayoutCreateInfo.setSetLayouts(boundaryDescriptorSetLayout_);
+  boundaryPipelineLayout_ = device_.createPipelineLayout(pipelineLayoutCreateInfo);
+
+  // TODO: remove code duplication with vkpbd
+  const auto CreateComputePipeline = [device = device_, pipelineLayout = boundaryPipelineLayout_](const std::string& filepath)
+  {
+    std::ifstream file(filepath, std::ios::ate | std::ios::binary);
+    if (!file.is_open())
+      throw std::runtime_error("Failed to open file: " + filepath);
+
+    size_t fileSize = (size_t)file.tellg();
+    std::vector<char> buffer(fileSize);
+    file.seekg(0);
+    file.read(buffer.data(), fileSize);
+    file.close();
+
+    std::vector<uint32_t> code;
+    auto* int_ptr = reinterpret_cast<uint32_t*>(buffer.data());
+    for (int i = 0; i < fileSize / 4; i++)
+      code.push_back(int_ptr[i]);
+
+    // Create shader module
+    vk::ShaderModuleCreateInfo shaderModuleCreateInfo;
+    shaderModuleCreateInfo
+      .setCode(code);
+    auto module = device.createShaderModule(shaderModuleCreateInfo);
+
+    vk::PipelineShaderStageCreateInfo shaderStage;
+    shaderStage
+      .setStage(vk::ShaderStageFlagBits::eCompute)
+      .setModule(module)
+      .setPName("main");
+
+    vk::ComputePipelineCreateInfo computePipelineCreateInfo;
+    computePipelineCreateInfo
+      .setStage(shaderStage)
+      .setLayout(pipelineLayout);
+    auto pipeline = device.createComputePipeline(nullptr, computePipelineCreateInfo);
+
+    // Destroy shader module after creating pipeline
+    device.destroyShaderModule(module);
+
+    return pipeline.value;
+  };
+
+  const std::string baseDir = "C:\\workspace\\superlucent\\src\\superlucent\\shader\\engine";
+  updateBoundaryPipeline_ = CreateComputePipeline(baseDir + "\\update_boundary.comp.spv");
+
   // To staging buffer and copy
   ToDeviceMemory(particles, particleBuffer_, 0);
+  ToDeviceMemory(boundary, boundaryBuffer_, 0);
 }
 
 void Engine::DestroySimulator()
 {
+  device_.destroyBuffer(boundaryBuffer_);
+  device_.destroyDescriptorSetLayout(boundaryDescriptorSetLayout_);
+  device_.destroyPipelineLayout(boundaryPipelineLayout_);
+  device_.destroyPipeline(updateBoundaryPipeline_);
+  boundaryDescriptorSets_.clear();
+
   device_.destroyBuffer(particleBuffer_);
   device_.destroyBuffer(particleInternalBuffer_);
   device_.destroyBuffer(particleUniformBuffer_);
