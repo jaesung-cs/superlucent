@@ -1,0 +1,62 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+#include "particle.glsl"
+#include "fluid_simulation_params.glsl"
+#include "neighbors.glsl"
+#include "uniform_grid.glsl"
+
+void main() 
+{
+	const uint i0 = gl_GlobalInvocationID.x;
+	if (i0 >= params.num_particles)
+    return;
+
+  const float support_radius = 4.f * params.radius;
+
+	vec3 p0 = out_particles[i0].position.xyz;
+
+  // Neighbor search between particles in uniform grid
+  ivec3 cell_index = CellIndex(p0);
+  uint hash_index = GridHash(cell_index);
+
+  const int max_num_neighbors = 60;
+  int num_neighbors = 0;
+  uint neighbor_ids[max_num_neighbors];
+
+  int pointer = grid.hash_table_head[hash_index];
+  while (pointer >= 0 && num_neighbors < max_num_neighbors && num_neighbors < params.max_num_neighbors)
+  {
+    uint i1 = grid.object_grid_pairs[pointer].object_id;
+    
+    vec3 p1 = out_particles[i1].position.xyz;
+    vec3 pd = p1 - p0;
+    
+    if (dot(pd, pd) <= support_radius * support_radius)
+    {
+      bool found = false;
+      for (int i = 0; i < num_neighbors; i++)
+      {
+        if (neighbor_ids[i] == i1)
+        {
+          found = true;
+          break;
+        }
+      }
+
+      if (!found)
+      {
+        neighbor_ids[num_neighbors] = i1;
+        num_neighbors++;
+
+        AddNeighbor(i0, i1);
+      }
+    }
+
+    pointer = grid.object_grid_pairs[pointer].next;
+  }
+
+  out_particles[i0].color.rgb = vec3((hash_index % 256) / 255.f, ((hash_index / 256) % 256) / 255.f, ((hash_index / 65536) % 256) / 255.f);
+  // out_particles[i0].color.rgb = vec3(NeighborCount(i0) / 30.f);
+}

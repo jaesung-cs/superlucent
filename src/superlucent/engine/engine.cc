@@ -57,7 +57,7 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
   particle_renderer_ = std::make_unique<ParticleRenderer>(this, width_, height_);
 
   // Create vkpbd
-  CreateParticleSimulator();
+  CreateSimulator();
 
   CreateSynchronizationObjects();
 }
@@ -67,7 +67,7 @@ Engine::~Engine()
   device_.waitIdle();
 
   DestroySynchronizationObjects();
-  DestroyParticleSimulator();
+  DestroySimulator();
 
   particle_renderer_ = nullptr;
 
@@ -141,6 +141,8 @@ void Engine::Draw(double time)
   auto dt = time - previous_time_;
   previous_time_ = time;
 
+  dt /= 10.;
+
   animation_time_ += dt;
 
   auto wait_result = device_.waitForFences(in_flight_fences_[current_frame_], true, UINT64_MAX);
@@ -170,11 +172,11 @@ void Engine::Draw(double time)
 
   if (dt > 0.)
   {
-    particleSimulator_.cmdBindSrcParticleBuffer(particleBuffer_, particleBufferSize_ * image_index);
-    particleSimulator_.cmdBindDstParticleBuffer(particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3));
-    particleSimulator_.cmdBindInternalBuffer(particleInternalBuffer_, 0);
-    particleSimulator_.cmdBindUniformBuffer(particleUniformBuffer_, 0, particleUniformBufferMap_);
-    particleSimulator_.cmdStep(draw_command_buffer, image_index, animation_time_, dt);
+    fluidSimulator_.cmdBindSrcParticleBuffer(particleBuffer_, particleBufferSize_ * image_index);
+    fluidSimulator_.cmdBindDstParticleBuffer(particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3));
+    fluidSimulator_.cmdBindInternalBuffer(particleInternalBuffer_, 0);
+    fluidSimulator_.cmdBindUniformBuffer(particleUniformBuffer_, 0, particleUniformBufferMap_);
+    fluidSimulator_.cmdStep(draw_command_buffer, image_index, animation_time_, dt);
 
     vk::BufferMemoryBarrier barrier;
     barrier
@@ -211,6 +213,20 @@ void Engine::Draw(double time)
     draw_command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer, vk::PipelineStageFlagBits::eVertexInput, {},
       {}, barrier, {});
   }
+
+  // For next compute simulation step
+  vk::BufferMemoryBarrier barrier;
+  barrier
+    .setBuffer(particleBuffer_)
+    .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+    .setDstAccessMask(vk::AccessFlagBits::eShaderRead)
+    .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setOffset(particleBufferSize_ * ((image_index + 1) % 3))
+    .setSize(particleBufferSize_);
+
+  draw_command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eComputeShader, {},
+    {}, barrier, {});
 
   RecordDrawCommands(draw_command_buffer, image_index, dt);
 
@@ -255,10 +271,10 @@ void Engine::Draw(double time)
 
 void Engine::RecordDrawCommands(vk::CommandBuffer& command_buffer, uint32_t image_index, double dt)
 {
-  constexpr auto radius = 0.03f;
+  constexpr auto radius = 0.025f;
 
   particle_renderer_->Begin(command_buffer, image_index);
-  particle_renderer_->RecordParticleRenderCommands(command_buffer, particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3), particleSimulator_.getParticleCount(), radius);
+  particle_renderer_->RecordParticleRenderCommands(command_buffer, particleBuffer_, particleBufferSize_ * ((image_index + 1) % 3), fluidSimulator_.getParticleCount(), radius);
   particle_renderer_->RecordFloorRenderCommands(command_buffer);
   particle_renderer_->End(command_buffer);
 }
@@ -859,29 +875,31 @@ void Engine::DestroyRendertarget()
   device_.destroyImage(rendertarget_.depth_image);
 }
 
-void Engine::CreateParticleSimulator()
+void Engine::CreateSimulator()
 {
-  constexpr auto particleDimension = 40;
-  constexpr auto particleCount = particleDimension * particleDimension * particleDimension;
-  constexpr auto radius = 0.03f;
+  constexpr auto particleDimension = glm::ivec3{ 40, 20, 40 };
+  constexpr auto particleCount = particleDimension.x * particleDimension.y * particleDimension.z;
+  constexpr auto radius = 0.025f;
   constexpr float density = 1000.f; // water
-  const float mass = radius * radius * radius * density;
-  const float invMass = 1.f / mass;
-  constexpr glm::vec2 wallDistance = glm::vec2(3.f, 1.5f);
-  const glm::vec3 particleOffset = glm::vec3(-wallDistance + glm::vec2(radius * 1.1f), radius * 1.1f);
-  const glm::vec3 particleStride = glm::vec3(radius * 2.2f);
+  constexpr float pi = 3.141592f;
+  constexpr float mass = 4.f / 3.f * pi * radius * radius * radius * density;
+  constexpr float invMass = 1.f / mass;
+  constexpr glm::vec2 wallDistance = glm::vec2(1.f, 1.f);
+  constexpr glm::vec3 particleOffset = glm::vec3(-radius * glm::vec2(particleDimension.x, particleDimension.y), radius * 1.5f);
+  constexpr glm::vec3 particleStride = glm::vec3(radius * 2.f); // Compressed at initial state
+  constexpr glm::vec3 gravity = glm::vec3(0.f, 0.f, -9.8f);
+  constexpr auto viscosity = 0.02f;
 
   utils::Rng rng;
   constexpr float noiseRange = 1e-2f;
   const auto noise = [&rng, noiseRange]() { return rng.Uniform(-noiseRange, noiseRange); };
 
   std::vector<vkpbd::Particle> particles;
-  glm::vec3 gravity = glm::vec3(0.f, 0.f, -9.8f);
-  for (int i = 0; i < particleDimension; i++)
+  for (int i = 0; i < particleDimension.x; i++)
   {
-    for (int j = 0; j < particleDimension; j++)
+    for (int j = 0; j < particleDimension.y; j++)
     {
-      for (int k = 0; k < particleDimension; k++)
+      for (int k = 0; k < particleDimension.z; k++)
       {
         glm::vec4 position{
           particleOffset.x + particleStride.x * i + noise(),
@@ -890,7 +908,7 @@ void Engine::CreateParticleSimulator()
           0.f
         };
         glm::vec4 velocity{ 0.f };
-        glm::vec4 properties{ invMass, 0.f, 0.f, 0.f };
+        glm::vec4 properties{ invMass, mass, noise(), 0.f };
         glm::vec4 externalForce{
           gravity.x * mass,
           gravity.y * mass,
@@ -905,18 +923,21 @@ void Engine::CreateParticleSimulator()
     }
   }
 
-  vkpbd::ParticleSimulatorCreateInfo particleSimulatorCreateInfo;
-  particleSimulatorCreateInfo.device = device_;
-  particleSimulatorCreateInfo.physicalDevice = physical_device_;
-  particleSimulatorCreateInfo.descriptorPool = descriptor_pool_;
-  particleSimulatorCreateInfo.particleCount = particleCount;
-  particleSimulatorCreateInfo.commandCount = commandCount;
-  particleSimulator_ = vkpbd::createParticleSimulator(particleSimulatorCreateInfo);
+  vkpbd::FluidSimulatorCreateInfo fluidSimulatorCreateInfo;
+  fluidSimulatorCreateInfo.device = device_;
+  fluidSimulatorCreateInfo.physicalDevice = physical_device_;
+  fluidSimulatorCreateInfo.descriptorPool = descriptor_pool_;
+  fluidSimulatorCreateInfo.particleCount = particleCount;
+  fluidSimulatorCreateInfo.maxNeighborCount = 60;
+  fluidSimulatorCreateInfo.commandCount = commandCount;
+  fluidSimulatorCreateInfo.restDensity = density;
+  fluidSimulatorCreateInfo.viscosity = viscosity;
+  fluidSimulator_ = vkpbd::createFluidSimulator(fluidSimulatorCreateInfo);
 
   // Create buffers
-  const auto particleBufferRequirements = particleSimulator_.getParticleBufferRequirements();
-  const auto internalBufferRequirements = particleSimulator_.getInternalBufferRequirements();
-  const auto uniformBufferRequirements = particleSimulator_.getUniformBufferRequirements();
+  const auto particleBufferRequirements = fluidSimulator_.getParticleBufferRequirements();
+  const auto internalBufferRequirements = fluidSimulator_.getInternalBufferRequirements();
+  const auto uniformBufferRequirements = fluidSimulator_.getUniformBufferRequirements();
 
   vk::BufferCreateInfo bufferCreateInfo;
   bufferCreateInfo
@@ -957,7 +978,7 @@ void Engine::CreateParticleSimulator()
   ToDeviceMemory(particles, particleBuffer_, 0);
 }
 
-void Engine::DestroyParticleSimulator()
+void Engine::DestroySimulator()
 {
   device_.destroyBuffer(particleBuffer_);
   device_.destroyBuffer(particleInternalBuffer_);
@@ -965,7 +986,7 @@ void Engine::DestroyParticleSimulator()
   device_.unmapMemory(particleUniformMemory_);
   device_.freeMemory(particleUniformMemory_);
 
-  particleSimulator_.destroy();
+  fluidSimulator_.destroy();
 }
 
 void Engine::CreateSynchronizationObjects()

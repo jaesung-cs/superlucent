@@ -1,0 +1,19 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+#include "particle.glsl"
+#include "fluid_simulation_params.glsl"
+#include "solver.glsl"
+
+void main() 
+{
+	const int index = int(gl_GlobalInvocationID);
+	if (index >= params.num_particles)
+    return;
+
+  vec4 velocity = (out_particles[index].position - in_particles[index].position) / params.dt;
+  
+  // Update velocity
+  out_particles[index].velocity = velocity;
+}

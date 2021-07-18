@@ -137,8 +137,8 @@ private:
   void CreateRendertarget();
   void DestroyRendertarget();
 
-  void CreateParticleSimulator();
-  void DestroyParticleSimulator();
+  void CreateSimulator();
+  void DestroySimulator();
 
   void CreateSynchronizationObjects();
   void DestroySynchronizationObjects();
@@ -218,7 +218,7 @@ private:
 
   // vkpbd
   static constexpr auto commandCount = 3; // Triple buffer
-  vkpbd::ParticleSimulator particleSimulator_;
+  vkpbd::FluidSimulator fluidSimulator_;
   vk::Buffer particleBuffer_;
   vk::DeviceSize particleBufferSize_ = 0;
   vk::Buffer particleInternalBuffer_;

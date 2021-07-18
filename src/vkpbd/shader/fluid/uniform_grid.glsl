@@ -1,28 +1,30 @@
+#ifndef VKPBD_FLUID_UNIFORM_GRID_GLSL_
+#define VKPBD_FLUID_UNIFORM_GRID_GLSL_
+
 struct Node
 {
   uint object_id;
   int next;
 };
 
-layout (binding = 5) buffer GridSsbo
+const int num_hash_buckets = 1000003;
+
+layout (binding = 2) buffer GridSsbo
 {
   vec3 cell_size;
   uint num_pairs;
+  
+  int hash_table_head[num_hash_buckets];
+  int pad;
 
   Node object_grid_pairs[];
 } grid;
 
-const int num_hash_buckets = 1000003;
-
-layout (binding = 6) buffer HashTableSsbo
-{
-  int head[num_hash_buckets];
-} grid_hash_table;
-
 // From Particle-based Fluid Simulation based Fluid Simulation by NVidia
 uint GridHash(ivec3 cell_index)
 {
-  uvec3 ucell_index = uvec3(cell_index);
+  // TODO: why make positive?
+  uvec3 ucell_index = uvec3(cell_index + vec3(100.f, 100.f, 100.f));
   const uint p1 = 73856093; // some large primes
   const uint p2 = 19349663;
   const uint p3 = 83492791;
@@ -35,8 +37,7 @@ uint GridHash(ivec3 cell_index)
 
 ivec3 CellIndex(vec3 position)
 {
-  // TODO: why make positive?
-  return ivec3(floor(position / grid.cell_size + vec3(100.f, 100.f, 100.f)));
+  return ivec3(floor(position / grid.cell_size));
 }
 
 mat2x3 Bound(vec3 position)
@@ -72,10 +73,12 @@ void AddSphereToGrid(uint object_id, vec3 position, float d)
           grid.object_grid_pairs[object_grid_pair_index].object_id = object_id;
 
           // Exchange hash table head
-          int next = atomicExchange(grid_hash_table.head[hash_index], int(object_grid_pair_index));
+          int next = atomicExchange(grid.hash_table_head[hash_index], int(object_grid_pair_index));
           grid.object_grid_pairs[object_grid_pair_index].next = next;
         }
       }
     }
   }
 }
+
+#endif // VKPBD_FLUID_UNIFORM_GRID_GLSL_

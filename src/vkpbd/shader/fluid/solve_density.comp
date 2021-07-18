@@ -1,0 +1,63 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+#include "particle.glsl"
+#include "fluid_simulation_params.glsl"
+#include "neighbors.glsl"
+#include "solver.glsl"
+
+#include "kernel.glsl"
+
+void main()
+{
+  uint particle_index = gl_GlobalInvocationID.x;
+  if (particle_index >= params.num_particles)
+    return;
+
+  const vec3 xi = out_particles[particle_index].position.xyz;
+  const float lambda_i = solver.particles[particle_index].lambda;
+
+  solver.particles[particle_index].dx = vec3(0.f);
+
+  const int neighbor_count = NeighborCount(particle_index);
+  for (int i = 0; i < neighbor_count; i++)
+  {
+    const int neighbor_index = NeighborIndex(particle_index, i);
+
+    const float mj = out_particles[neighbor_index].properties.y;
+    const vec3 xj = out_particles[neighbor_index].position.xyz;
+    const float lambda_j = solver.particles[neighbor_index].lambda;
+
+    const vec3 grad_cj = -mj / params.rest_density * KernelGradW(xi - xj);
+    solver.particles[particle_index].dx += -(lambda_i + lambda_j) * grad_cj;
+
+    // TODO: boundary particles
+  }
+
+  // Wall constraints
+  // TODO: define walls from CPU
+  const vec3 wall_distance = vec3(1.5f + params.wall_offset, 0.55f, 3.f);
+
+  // Five walls
+  const float noise = out_particles[particle_index].properties.z * 1e-1f;
+  const int num_walls = 6;
+  vec4 planes[num_walls] = {
+    vec4(0.f, 0.f, 1.f, noise),
+    vec4(0.f, 0.f, -1.f, wall_distance.z + noise),
+    vec4( 1.f, 0.f, 0.f, wall_distance.x + noise),
+    vec4(-1.f, 0.f, 0.f, wall_distance.x + noise),
+    vec4(0.f,  1.f, 0.f, wall_distance.y + noise),
+    vec4(0.f, -1.f, 0.f, wall_distance.y + noise),
+  };
+
+  for (int i = 0; i < num_walls; i++)
+  {
+    const float c = dot(vec4(xi, 1.f), planes[i]) - params.radius;
+    if (c < 0.f)
+    {
+      const vec3 grad_c = planes[i].xyz;
+      solver.particles[particle_index].dx += -(c * grad_c) / dot(grad_c, grad_c);
+    }
+  }
+}

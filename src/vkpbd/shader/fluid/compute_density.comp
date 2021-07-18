@@ -1,0 +1,70 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+#include "particle.glsl"
+#include "fluid_simulation_params.glsl"
+#include "neighbors.glsl"
+#include "solver.glsl"
+#include "kernel.glsl"
+#include "color.glsl"
+
+void main()
+{
+  uint particle_index = gl_GlobalInvocationID.x;
+  if (particle_index >= params.num_particles)
+    return;
+
+  const float mi = out_particles[particle_index].properties.y;
+  const vec3 xi = out_particles[particle_index].position.xyz;
+
+  // Compute density
+  float density = mi * KernelWZero();
+
+  const int neighbor_count = NeighborCount(particle_index);
+  for (int i = 0; i < neighbor_count; i++)
+  {
+    const int neighbor_index = NeighborIndex(particle_index, i);
+
+    const float mj = out_particles[neighbor_index].properties.y;
+    const vec3 xj = out_particles[neighbor_index].position.xyz;
+
+    density += mj * KernelW(xi - xj);
+    
+    // TODO: Compute boundary particle density
+  }
+
+  // Compute lambda
+  float lambda = 0.f;
+
+  const float eps = 1e-6;
+  const float c = density / params.rest_density - 1.f;
+  if (c > 0.f)
+  {
+    float sum_grad_c2 = 0.f;
+    vec3 grad_ci = vec3(0.f);
+    
+    for (int i = 0; i < neighbor_count; i++)
+    {
+      const int neighbor_index = NeighborIndex(particle_index, i);
+      
+      const float mj = out_particles[neighbor_index].properties.y;
+      const vec3 xj = out_particles[neighbor_index].position.xyz;
+
+			const vec3 grad_cj = -mj / params.rest_density * KernelGradW(xi - xj);
+			sum_grad_c2 += dot(grad_cj, grad_cj);
+			grad_ci -= grad_cj;
+      
+      // TODO: Compute boundary particle density gradient
+    }
+    
+		sum_grad_c2 += dot(grad_ci, grad_ci);
+		lambda = -c / (sum_grad_c2 + eps);
+  }
+  
+  solver.particles[particle_index].density = density;
+  solver.particles[particle_index].lambda = lambda;
+
+  // DEBUG: density particle color
+  out_particles[particle_index].color.rgb = BlueRedColor(density / params.rest_density - 1.f + 0.5f);
+}

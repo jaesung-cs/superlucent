@@ -1,0 +1,18 @@
+#version 450
+
+layout (local_size_x = 256) in;
+
+#include "particle.glsl"
+#include "fluid_simulation_params.glsl"
+#include "solver.glsl"
+
+void main()
+{
+  uint particle_index = gl_GlobalInvocationID.x;
+  if (particle_index >= params.num_particles)
+    return;
+    
+  // Update position from solver
+  const vec3 dx = solver.particles[particle_index].dx;
+  out_particles[particle_index].position.xyz += dx;
+}
