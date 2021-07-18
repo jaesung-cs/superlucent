@@ -5,6 +5,26 @@ This is my playground for practicing Vulkan programming, including:
 - Rendering (hopefully ray tracing later) from compute shader results, without haevy CPU-GPU data transfers
 - Graphical user interface, object-oriented
 
+## Fluid siulation (July 18, 2021)
+
+In commit `54f6439`,
+
+<p align="center">
+  <img src="/results/fluid_simulation.jpg">
+</p>
+(80 fps with 32,000 particles, x1/10 timestep for stable simulation)
+
+Implemented fluid simulation, translating [InteractiveComputerGraphics/PositionBasedDynamics](https://github.com/InteractiveComputerGraphics/PositionBasedDynamics) repo.
+- Neighbor search with max 60 neighbors per particle (lower than that causes incorrect density estimation)
+- Support radius h = 4r
+- Gaussian-like kernel function
+- No boundary particles
+
+Thing to fix:
+- Use boundary particles for correct density estimation
+  - Akinci et al., "Versatile Rigid-Fluid Coupling for Incompressible SPH"
+- Improve simulation performance and stability
+
 ## Code refactoring (July 11, 2021)
 
 In commit `e2ca714`,

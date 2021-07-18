@@ -9,6 +9,11 @@ My Vulkan compute/graphics engine for learning purpose.
 
 ~220 fps with 64k particles.
 
+<p align="center">
+  <img src="/results/fluid_simulation.jpg">
+</p>
+80 fps with 32,000 particles, x1/10 timestep for stable simulation
+
 ## Goals
 
 - Run physics simulation and rendering 100% on GPU, without heavy CPU-GPU transfers.
