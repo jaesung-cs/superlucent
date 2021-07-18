@@ -82,8 +82,9 @@ void main()
         const vec3 xj = boundary_particles[boundary_index].position.xyz;
 
 			  const vec3 grad_cj = -boundary.volume[boundary_index] * KernelGradW(xi - xj);
-			  sum_grad_c2 += dot(grad_cj, grad_cj);
-			  grad_ci -= grad_cj;
+        // TODO
+			  // sum_grad_c2 += dot(grad_cj, grad_cj);
+			  // grad_ci -= grad_cj;
       }
     }
     
@@ -95,6 +96,5 @@ void main()
   solver.particles[particle_index].lambda = lambda;
 
   // DEBUG: density particle color
-  // out_particles[particle_index].color.rgb = BlueRedColor(density / params.rest_density - 1.f + 0.5f);
-  out_particles[particle_index].color.rgb = BlueRedColor(num_boundary_particles > 0 ? 1.f : 0.f);
+  out_particles[particle_index].color.rgb = BlueRedColor(density / params.rest_density - 1.f + 0.5f);
 }

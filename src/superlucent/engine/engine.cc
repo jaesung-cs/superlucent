@@ -238,6 +238,19 @@ void Engine::Draw(double time)
       {}, barrier, {});
   }
 
+  // DEBUG: boundary particle color might be changed
+  boundaryBarrier
+    .setBuffer(boundaryBuffer_)
+    .setSrcAccessMask(vk::AccessFlagBits::eShaderWrite)
+    .setDstAccessMask(vk::AccessFlagBits::eVertexAttributeRead)
+    .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
+    .setOffset(boundaryBufferSize_ * ((image_index + 1) % 3))
+    .setSize(boundaryBufferSize_);
+
+  draw_command_buffer.pipelineBarrier(vk::PipelineStageFlagBits::eComputeShader, vk::PipelineStageFlagBits::eVertexInput, {},
+    {}, boundaryBarrier, {});
+
   // For next compute simulation step
   vk::BufferMemoryBarrier barrier;
   barrier
@@ -911,7 +924,7 @@ void Engine::CreateSimulator()
   constexpr float invMass = 1.f / mass;
   constexpr glm::vec2 wallDistance = glm::vec2(1.f, 1.f);
   constexpr glm::vec3 particleOffset = glm::vec3(-radius * glm::vec2(particleDimension.x, particleDimension.y), radius * 2.5f);
-  constexpr glm::vec3 particleStride = glm::vec3(radius * 2.f); // Compressed at initial state
+  constexpr glm::vec3 particleStride = glm::vec3(radius * 2.f);
   constexpr glm::vec3 gravity = glm::vec3(0.f, 0.f, -9.8f);
   constexpr auto viscosity = 0.02f;
 

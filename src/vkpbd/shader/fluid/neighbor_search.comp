@@ -34,7 +34,12 @@ void main()
   {
     uint i1 = grid.object_grid_pairs[pointer].object_id;
     
-    vec3 p1 = out_particles[i1].position.xyz;
+    vec3 p1;
+    if (i1 < params.num_particles)
+      p1 = out_particles[i1].position.xyz;
+    else
+      p1 = boundary_particles[i1 - params.num_particles].position.xyz;
+
     vec3 pd = p1 - p0;
     
     // For i0 boundary particle, only search for boundary i1
