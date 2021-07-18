@@ -12,7 +12,13 @@ In commit `54f6439`,
 <p align="center">
   <img src="/results/fluid_simulation.jpg">
 </p>
-(80 fps with 32,000 particles, x1/10 timestep for stable simulation)
+(80 fps with 32k particles, x1/10 timestep for stable simulation)
+
+<p align="center">
+  <img src="/results/fluid1.gif" width="400">
+  <img src="/results/fluid2.gif" width="400">
+</p>
+(220 fps with 16k particles)
 
 Implemented fluid simulation, translating [InteractiveComputerGraphics/PositionBasedDynamics](https://github.com/InteractiveComputerGraphics/PositionBasedDynamics) repo.
 - Neighbor search with max 60 neighbors per particle (lower than that causes incorrect density estimation)

@@ -141,8 +141,6 @@ void Engine::Draw(double time)
   auto dt = time - previous_time_;
   previous_time_ = time;
 
-  dt /= 10.;
-
   animation_time_ += dt;
 
   auto wait_result = device_.waitForFences(in_flight_fences_[current_frame_], true, UINT64_MAX);
@@ -877,7 +875,7 @@ void Engine::DestroyRendertarget()
 
 void Engine::CreateSimulator()
 {
-  constexpr auto particleDimension = glm::ivec3{ 40, 20, 40 };
+  constexpr auto particleDimension = glm::ivec3{ 40, 10, 40 };
   constexpr auto particleCount = particleDimension.x * particleDimension.y * particleDimension.z;
   constexpr auto radius = 0.025f;
   constexpr float density = 1000.f; // water

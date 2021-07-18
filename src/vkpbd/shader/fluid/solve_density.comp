@@ -37,7 +37,7 @@ void main()
 
   // Wall constraints
   // TODO: define walls from CPU
-  const vec3 wall_distance = vec3(1.5f + params.wall_offset, 0.55f, 3.f);
+  const vec3 wall_distance = vec3(1.5f + params.wall_offset, 0.275f, 3.f);
 
   // Five walls
   const float noise = out_particles[particle_index].properties.z * 1e-1f;

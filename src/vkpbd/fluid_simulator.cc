@@ -70,8 +70,8 @@ void FluidSimulator::cmdStep(vk::CommandBuffer commandBuffer, int cmdIndex, uint
 {
   constexpr auto radius = 0.025f;
 
-  constexpr auto wallOffsetSpeed = 5.f;
-  constexpr auto wallOffsetMagnitude = 0.5f;
+  constexpr auto wallOffsetSpeed = 2.5f;
+  constexpr auto wallOffsetMagnitude = 0.75f;
 
   // Set uniform
   FluidSimulationParams params;
