@@ -141,7 +141,7 @@ void Engine::Draw(double time)
   auto dt = time - previous_time_;
   previous_time_ = time;
 
-  dt /= 40.;
+  dt /= 10.;
 
   animation_time_ += dt;
 
@@ -877,15 +877,15 @@ void Engine::DestroyRendertarget()
 
 void Engine::CreateSimulator()
 {
-  constexpr auto particleDimension = 40;
-  constexpr auto particleCount = particleDimension * particleDimension * particleDimension;
+  constexpr auto particleDimension = glm::ivec3{ 40, 20, 40 };
+  constexpr auto particleCount = particleDimension.x * particleDimension.y * particleDimension.z;
   constexpr auto radius = 0.025f;
   constexpr float density = 1000.f; // water
   constexpr float pi = 3.141592f;
   constexpr float mass = 4.f / 3.f * pi * radius * radius * radius * density;
   constexpr float invMass = 1.f / mass;
   constexpr glm::vec2 wallDistance = glm::vec2(1.f, 1.f);
-  constexpr glm::vec3 particleOffset = glm::vec3(-glm::vec2(radius * particleDimension), radius * 1.5f);
+  constexpr glm::vec3 particleOffset = glm::vec3(-radius * glm::vec2(particleDimension.x, particleDimension.y), radius * 1.5f);
   constexpr glm::vec3 particleStride = glm::vec3(radius * 2.f); // Compressed at initial state
   constexpr glm::vec3 gravity = glm::vec3(0.f, 0.f, -9.8f);
   constexpr auto viscosity = 0.02f;
@@ -895,11 +895,11 @@ void Engine::CreateSimulator()
   const auto noise = [&rng, noiseRange]() { return rng.Uniform(-noiseRange, noiseRange); };
 
   std::vector<vkpbd::Particle> particles;
-  for (int i = 0; i < particleDimension; i++)
+  for (int i = 0; i < particleDimension.x; i++)
   {
-    for (int j = 0; j < particleDimension; j++)
+    for (int j = 0; j < particleDimension.y; j++)
     {
-      for (int k = 0; k < particleDimension; k++)
+      for (int k = 0; k < particleDimension.z; k++)
       {
         glm::vec4 position{
           particleOffset.x + particleStride.x * i + noise(),

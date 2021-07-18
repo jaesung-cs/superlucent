@@ -37,13 +37,14 @@ void main()
 
   // Wall constraints
   // TODO: define walls from CPU
-  const vec2 wall_distance = vec2(2.f + params.wall_offset, 1.1f);
+  const vec3 wall_distance = vec3(1.5f + params.wall_offset, 0.55f, 3.f);
 
   // Five walls
   const float noise = out_particles[particle_index].properties.z * 1e-1f;
-  const int num_walls = 5;
+  const int num_walls = 6;
   vec4 planes[num_walls] = {
     vec4(0.f, 0.f, 1.f, noise),
+    vec4(0.f, 0.f, -1.f, wall_distance.z + noise),
     vec4( 1.f, 0.f, 0.f, wall_distance.x + noise),
     vec4(-1.f, 0.f, 0.f, wall_distance.x + noise),
     vec4(0.f,  1.f, 0.f, wall_distance.y + noise),
