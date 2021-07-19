@@ -20,5 +20,5 @@ void main()
 
   const float radius = params.radius;
   
-  AddSphereToGrid(particle_index, position, 2.f * radius);
+  AddSphereToGrid(particle_index, position, 4.f * radius);
 }
