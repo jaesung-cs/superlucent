@@ -141,7 +141,7 @@ void Engine::Draw(double time)
   auto dt = time - previous_time_;
   previous_time_ = time;
 
-  dt /= 100.f;
+  dt /= 10.f;
 
   animation_time_ += dt;
 
@@ -171,9 +171,10 @@ void Engine::Draw(double time)
   draw_command_buffer.begin({ vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
 
   // Update boundary
+  constexpr float pi = 3.141592f;
   updateBoundaryUbo_.num_particles = boundaryParticleCount_;
   updateBoundaryUbo_.animation_time = animation_time_;
-  updateBoundaryUbo_.animation_speed = 5.f;
+  updateBoundaryUbo_.animation_speed = 2.f * pi;
   std::memcpy(particleUniformBufferMap_ + updateBoundaryUboOffset_, &updateBoundaryUbo_, sizeof(UpdateBoundaryUbo));
 
   draw_command_buffer.bindDescriptorSets(vk::PipelineBindPoint::eCompute, boundaryPipelineLayout_, 0,
@@ -917,7 +918,7 @@ void Engine::DestroyRendertarget()
 
 void Engine::CreateSimulator()
 {
-  constexpr auto particleDimension = glm::ivec3{ 40, 10, 40 };
+  constexpr auto particleDimension = glm::ivec3{ 80, 10, 15 };
   constexpr auto particleCount = particleDimension.x * particleDimension.y * particleDimension.z;
   constexpr auto radius = 0.025f;
   constexpr float density = 1000.f; // water
@@ -973,7 +974,7 @@ void Engine::CreateSimulator()
     {
       for (int j = 0; j < dimension.y; j++)
       {
-        const auto p = glm::vec4{ anchor + radius * (rotation[0] * static_cast<float>(i) + rotation[1] * static_cast<float>(j)), 0.f };
+        const auto p = glm::vec4{ anchor + 1.5f * radius * (rotation[0] * static_cast<float>(i) + rotation[1] * static_cast<float>(j)), 0.f };
         const glm::vec4 v{ 0.f };
         constexpr glm::vec4 color{ 0.25f, 0.25f, 0.25f, 0.f };
 
@@ -982,20 +983,20 @@ void Engine::CreateSimulator()
     }
   };
 
-  constexpr auto diameter = radius;
+  constexpr auto diameter = radius * 1.5f;
   constexpr auto height = 3.f;
 
   AppendWallParticles(
     boundary,
-    glm::vec3{ -1.75f, -0.5f, 0.f },
+    glm::vec3{ -2.5f, -0.3f, 0.f },
     glm::mat3{ 1.f },
-    glm::ivec2{ static_cast<int>(3.5f / diameter) + 1, static_cast<int>(1.f / diameter) + 1 });
+    glm::ivec2{ static_cast<int>(5.f / diameter) + 1, static_cast<int>(.6f / diameter) + 1 });
 
   AppendWallParticles(
     boundary,
-    glm::vec3{ -1.75f, -0.5f, height },
+    glm::vec3{ -2.5f, -0.3f, height },
     glm::mat3{ 1.f },
-    glm::ivec2{ static_cast<int>(3.5f / diameter) + 1, static_cast<int>(1.f / diameter) + 1 });
+    glm::ivec2{ static_cast<int>(5.f / diameter) + 1, static_cast<int>(.6f / diameter) + 1 });
 
   // XZ planes
   glm::mat3 rotation;
@@ -1005,35 +1006,35 @@ void Engine::CreateSimulator()
 
   AppendWallParticles(
     boundary,
-    glm::vec3{ -1.75f, -0.5f, diameter },
+    glm::vec3{ -2.5f, -0.3f, diameter },
     rotation,
-    glm::ivec2{ static_cast<int>(3.5f / diameter) + 1, static_cast<int>(height / diameter) - 1 });
+    glm::ivec2{ static_cast<int>(5.f / diameter) + 1, static_cast<int>(height / diameter) - 1 });
 
   AppendWallParticles(
     boundary,
-    glm::vec3{ -1.75f, 0.5f, diameter },
+    glm::vec3{ -2.5f, 0.3f, diameter },
     rotation,
-    glm::ivec2{ static_cast<int>(3.5f / diameter) + 1, static_cast<int>(height / diameter) - 1 });
+    glm::ivec2{ static_cast<int>(5.f / diameter) + 1, static_cast<int>(height / diameter) - 1 });
 
   // YZ planes
   rotation[0] = glm::vec3{ 0.f, 1.f, 0.f };
   rotation[1] = glm::vec3{ 0.f, 0.f, 1.f };
   rotation[2] = glm::vec3{ 1.f, 0.f, 0.f };
-  constexpr glm::vec3 motion{ 0.25f, 0.f, 0.f };
+  constexpr glm::vec3 motion{ 0.4f, 0.f, 0.f };
 
   AppendWallParticles(
     boundary,
-    glm::vec3{ -1.5f, -0.5f, diameter },
+    glm::vec3{ -2.1f, -0.3f, diameter },
     rotation,
-    glm::ivec2{ static_cast<int>(1.f / diameter) + 1, static_cast<int>(height / diameter) - 1 },
+    glm::ivec2{ static_cast<int>(.6f / diameter) + 1, static_cast<int>(height / diameter) - 1 },
     motion);
 
   AppendWallParticles(
     boundary,
-    glm::vec3{ 1.5f, -0.5f, diameter },
+    glm::vec3{ 2.1f, -0.3f, diameter },
     rotation,
-    glm::ivec2{ static_cast<int>(1.f / diameter) + 1, static_cast<int>(height / diameter) - 1 },
-    -motion);
+    glm::ivec2{ static_cast<int>(.6f / diameter) + 1, static_cast<int>(height / diameter) - 1 },
+    motion);
 
   boundaryParticleCount_ = boundary.size();
 
