@@ -7,6 +7,8 @@
 
 #include <vkpbd/vkpbd.hpp>
 
+#include <vkovr/vkovr.hpp>
+
 #include <superlucent/engine/ubo/light_ubo.h>
 #include <superlucent/engine/ubo/camera_ubo.h>
 
@@ -140,6 +142,9 @@ private:
   void CreateSimulator();
   void DestroySimulator();
 
+  void CreateVr();
+  void DestroyVr();
+
   void CreateSynchronizationObjects();
   void DestroySynchronizationObjects();
 
@@ -248,6 +253,10 @@ private:
   uint32_t current_frame_ = 0;
   std::vector<vk::Fence> in_flight_fences_;
   std::vector<vk::Fence> images_in_flight_;
+
+  // OVR
+  GLFWwindow* window_ = nullptr;
+  vkovr::OculusVr ovr_;
 };
 }
 }

@@ -37,12 +37,16 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
 Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
   : max_width_{ max_width }
   , max_height_{ max_height }
+  , window_{ window }
 {
   // Current width and height
   int width, height;
   glfwGetWindowSize(window, &width, &height);
   width_ = static_cast<uint32_t>(width);
   height_ = static_cast<uint32_t>(height);
+
+  // Create vkovr
+  CreateVr();
 
   // Prepare vulkan resources
   CreateInstance(window);
@@ -77,6 +81,8 @@ Engine::~Engine()
   DestroySwapchain();
   DestroyDevice();
   DestroyInstance();
+
+  DestroyVr();
 }
 
 void Engine::Resize(uint32_t width, uint32_t height)
@@ -420,6 +426,11 @@ void Engine::CreateInstance(GLFWwindow* window)
   for (uint32_t i = 0; i < num_glfw_extensions; i++)
     extensions.push_back(glfw_extensions[i]);
 
+  // OVR instance extensions
+  const auto ovrExtensions = ovr_.getInstanceExtensions();
+  for (const auto& ovrExtension : ovrExtensions)
+    extensions.push_back(ovrExtension.c_str());
+
   // Create instance
   vk::InstanceCreateInfo instance_create_info;
   instance_create_info
@@ -465,7 +476,10 @@ void Engine::DestroyInstance()
 void Engine::CreateDevice()
 {
   // Choose the first GPU
-  physical_device_ = instance_.enumeratePhysicalDevices()[0];
+  // physical_device_ = instance_.enumeratePhysicalDevices()[0];
+
+  // Let OVR select physical device
+  physical_device_ = ovr_.getPhysicalDevice(instance_);
 
   // Available extensions
   const auto device_extensions = physical_device_.enumerateDeviceExtensionProperties();
@@ -502,6 +516,11 @@ void Engine::CreateDevice()
   std::vector<const char*> extensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
   };
+
+  // OVR extensions
+  const auto ovrExtensions = ovr_.getDeviceExtensions();
+  for (const auto& ovrExtension : ovrExtensions)
+    extensions.push_back(ovrExtension.c_str());
 
   // Device features
   auto features = physical_device_.getFeatures();
@@ -985,6 +1004,20 @@ void Engine::DestroySimulator()
   device_.freeMemory(particleUniformMemory_);
 
   fluidSimulator_.destroy();
+}
+
+void Engine::CreateVr()
+{
+  vkovr::OculusVrCreateInfo createInfo;
+  createInfo.window = window_;
+  ovr_ = vkovr::createOclulusVr(createInfo);
+
+  ovr_.beginSession();
+}
+
+void Engine::DestroyVr()
+{
+  ovr_.destroy();
 }
 
 void Engine::CreateSynchronizationObjects()

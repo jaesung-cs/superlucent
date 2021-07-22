@@ -5,6 +5,7 @@ VisualStudioVersion = 16.0.31105.61
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "superlucent", "superlucent\superlucent.vcxproj", "{43B1C56F-66FC-49C1-98E7-AE80EE90ABEC}"
 	ProjectSection(ProjectDependencies) = postProject
+		{BC386560-034E-4DDD-82FA-B4B1D5D85BC6} = {BC386560-034E-4DDD-82FA-B4B1D5D85BC6}
 		{D2FE3FF7-EF14-446A-BD82-74E8C59B5509} = {D2FE3FF7-EF14-446A-BD82-74E8C59B5509}
 	EndProjectSection
 EndProject
@@ -25,6 +26,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "notes", "notes", "{35A73AD5
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vkpbd", "vkpbd\vkpbd.vcxproj", "{D2FE3FF7-EF14-446A-BD82-74E8C59B5509}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "vkovr", "vkovr\vkovr.vcxproj", "{BC386560-034E-4DDD-82FA-B4B1D5D85BC6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -50,6 +53,14 @@ Global
 		{D2FE3FF7-EF14-446A-BD82-74E8C59B5509}.Release|x64.Build.0 = Release|x64
 		{D2FE3FF7-EF14-446A-BD82-74E8C59B5509}.Release|x86.ActiveCfg = Release|Win32
 		{D2FE3FF7-EF14-446A-BD82-74E8C59B5509}.Release|x86.Build.0 = Release|Win32
+		{BC386560-034E-4DDD-82FA-B4B1D5D85BC6}.Debug|x64.ActiveCfg = Debug|x64
+		{BC386560-034E-4DDD-82FA-B4B1D5D85BC6}.Debug|x64.Build.0 = Debug|x64
+		{BC386560-034E-4DDD-82FA-B4B1D5D85BC6}.Debug|x86.ActiveCfg = Debug|Win32
+		{BC386560-034E-4DDD-82FA-B4B1D5D85BC6}.Debug|x86.Build.0 = Debug|Win32
+		{BC386560-034E-4DDD-82FA-B4B1D5D85BC6}.Release|x64.ActiveCfg = Release|x64
+		{BC386560-034E-4DDD-82FA-B4B1D5D85BC6}.Release|x64.Build.0 = Release|x64
+		{BC386560-034E-4DDD-82FA-B4B1D5D85BC6}.Release|x86.ActiveCfg = Release|Win32
+		{BC386560-034E-4DDD-82FA-B4B1D5D85BC6}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
