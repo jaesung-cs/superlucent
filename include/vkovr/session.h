@@ -24,7 +24,7 @@ public:
   Session();
   ~Session();
 
-  auto session() const { return session_; }
+  operator ovrSession() const { return session_; }
   const auto& getOculusProperties() const { return hmdDesc_; }
 
   std::vector<std::string> getInstanceExtensions();

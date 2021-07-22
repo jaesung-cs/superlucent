@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 
 #include <GLFW/glfw3.h>
 
@@ -45,8 +46,8 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
   width_ = static_cast<uint32_t>(width);
   height_ = static_cast<uint32_t>(height);
 
-  // Create vkovr
-  CreateVr();
+  // Create vr session before creating vulkan instance
+  CreateVrSession();
 
   // Prepare vulkan resources
   CreateInstance(window);
@@ -63,6 +64,9 @@ Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
   // Create vkpbd
   CreateSimulator();
 
+  // Create vkovr
+  CreateVrDevice();
+
   CreateSynchronizationObjects();
 }
 
@@ -71,6 +75,8 @@ Engine::~Engine()
   device_.waitIdle();
 
   DestroySynchronizationObjects();
+
+  DestroyVrDevice();
   DestroySimulator();
 
   particle_renderer_ = nullptr;
@@ -82,7 +88,7 @@ Engine::~Engine()
   DestroyDevice();
   DestroyInstance();
 
-  DestroyVr();
+  DestroyVrSession();
 }
 
 void Engine::Resize(uint32_t width, uint32_t height)
@@ -167,6 +173,11 @@ void Engine::Draw(double time)
   images_in_flight_[image_index] = in_flight_fences_[current_frame_];
 
   device_.resetFences(in_flight_fences_[current_frame_]);
+
+  // OVR
+  const auto vrStatus = vrDevice_.getStatus();
+  const auto eyePoses = vrDevice_.getEyePoses();
+  const auto projection = vrDevice_.getEyeProjection(vkovr::EyeType::LeftEye, 0.2f, 1000.f);
 
   // Build command buffer
   auto& draw_command_buffer = draw_command_buffers_[image_index];
@@ -539,11 +550,6 @@ void Engine::CreateDevice()
 
   queue_ = device_.getQueue(queue_index_, 0);
   present_queue_ = device_.getQueue(queue_index_, 1);
-
-  // Ovr device
-  vkovr::DeviceCreateInfo vrDeviceCreateInfo;
-  vrDeviceCreateInfo.device = device_;
-  vrDevice_ = vrSession_.createDevice(vrDeviceCreateInfo);
 }
 
 void Engine::DestroyDevice()
@@ -1011,7 +1017,7 @@ void Engine::DestroySimulator()
   fluidSimulator_.destroy();
 }
 
-void Engine::CreateVr()
+void Engine::CreateVrSession()
 {
   vrSession_ = vkovr::createSession({});
 
@@ -1023,9 +1029,54 @@ void Engine::CreateVr()
     << "  Resolution  : (" << properties.Resolution.w << ", " << properties.Resolution.h << ")" << std::endl;
 }
 
-void Engine::DestroyVr()
+void Engine::DestroyVrSession()
 {
   vrSession_.destroy();
+}
+
+void Engine::CreateVrDevice()
+{
+  // OVR device
+  vkovr::DeviceCreateInfo vrDeviceCreateInfo;
+  vrDeviceCreateInfo.device = device_;
+  vrDevice_ = vrSession_.createDevice(vrDeviceCreateInfo);
+
+  // OVR mirror texture
+  transient_command_buffer_.begin({ vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
+
+  vkovr::MirrorTextureCreateInfo mirrorTextureCreateInfo;
+  mirrorTextureCreateInfo.extent.width = 1600u;
+  mirrorTextureCreateInfo.extent.height = 900u;
+  mirrorTextureCreateInfo.commandBuffer = transient_command_buffer_;
+  vrMirrorTexture_ = vrDevice_.createMirrorTexture(mirrorTextureCreateInfo);
+
+  transient_command_buffer_.end();
+
+  // Need to submit barrier for image layout transition command
+  vk::SubmitInfo submitInfo;
+  submitInfo
+    .setCommandBuffers(transient_command_buffer_);
+  queue_.submit(submitInfo);
+
+  // OVR swapchain
+  for (const auto eye : { vkovr::EyeType::LeftEye, vkovr::EyeType::RightEye })
+  {
+    vkovr::SwapchainCreateInfo swapchainCreateInfo;
+    swapchainCreateInfo.extent = vrDevice_.getFovTextureSize(eye);
+
+    vrSwapchains_.emplace_back(vrDevice_.createSwapchain(swapchainCreateInfo));
+  }
+}
+
+void Engine::DestroyVrDevice()
+{
+  for (auto vrSwapchain : vrSwapchains_)
+    vrDevice_.destroySwapchain(vrSwapchain);
+  vrSwapchains_.clear();
+
+  vrDevice_.destroyMirrorTexture(vrMirrorTexture_);
+
+  vrDevice_.destroy();
 }
 
 void Engine::CreateSynchronizationObjects()

@@ -142,8 +142,11 @@ private:
   void CreateSimulator();
   void DestroySimulator();
 
-  void CreateVr();
-  void DestroyVr();
+  void CreateVrSession();
+  void DestroyVrSession();
+
+  void CreateVrDevice();
+  void DestroyVrDevice();
 
   void CreateSynchronizationObjects();
   void DestroySynchronizationObjects();
@@ -258,6 +261,8 @@ private:
   GLFWwindow* window_ = nullptr;
   vkovr::Session vrSession_;
   vkovr::Device vrDevice_;
+  vkovr::MirrorTexture vrMirrorTexture_;
+  std::vector<vkovr::Swapchain> vrSwapchains_;
 };
 }
 }

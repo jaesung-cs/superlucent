@@ -22,12 +22,14 @@
     <ClInclude Include="..\..\include\vkovr\device.h" />
     <ClInclude Include="..\..\include\vkovr\session.h" />
     <ClInclude Include="..\..\include\vkovr\mirror_texture.h" />
+    <ClInclude Include="..\..\include\vkovr\swapchain.h" />
     <ClInclude Include="..\..\include\vkovr\vkovr.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\vkovr\device.cc" />
     <ClCompile Include="..\..\src\vkovr\session.cc" />
     <ClCompile Include="..\..\src\vkovr\mirror_texture.cc" />
+    <ClCompile Include="..\..\src\vkovr\swapchain.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -140,7 +142,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>C:\lib\ovr_sdk_win_23.0.0\LibOVR\Include;C:\lib\glfw\include;C:\VulkanSDK\1.2.176.1\Include;../../include;../../lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\lib\ovr_sdk_win_23.0.0\LibOVR\Include;C:\lib\glm;C:\VulkanSDK\1.2.176.1\Include;../../include;../../lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -150,7 +152,7 @@
     </Link>
     <Lib>
       <AdditionalLibraryDirectories>C:\VulkanSDK\1.2.176.1\Lib;../../lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>LibOVR.lib;vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>LibOVR.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -163,7 +165,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
-      <AdditionalIncludeDirectories>C:\lib\ovr_sdk_win_23.0.0\LibOVR\Include;C:\lib\glfw\include;C:\VulkanSDK\1.2.176.1\Include;../../include;../../lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\lib\ovr_sdk_win_23.0.0\LibOVR\Include;C:\lib\glm;C:\VulkanSDK\1.2.176.1\Include;../../include;../../lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -175,7 +177,7 @@
     </Link>
     <Lib>
       <AdditionalLibraryDirectories>C:\VulkanSDK\1.2.176.1\Lib;../../lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>LibOVR.lib;vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>LibOVR.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
