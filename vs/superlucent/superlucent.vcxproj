@@ -122,7 +122,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>../../src;../../include;../../lib;C:\lib\glfw\include;C:\lib\glm;C:\lib\assimp\include;C:\VulkanSDK\1.2.176.1\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src;../../include;../../lib;C:\lib\ovr_sdk_win_23.0.0\LibOVR\Include;C:\lib\glfw\include;C:\lib\glm;C:\lib\assimp\include;C:\VulkanSDK\1.2.176.1\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -145,7 +145,7 @@ python compile_shader.py
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>../../src;../../include;../../lib;C:\lib\glfw\include;C:\lib\glm;C:\lib\assimp\include;C:\VulkanSDK\1.2.176.1\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../src;../../include;../../lib;C:\lib\ovr_sdk_win_23.0.0\LibOVR\Include;C:\lib\glfw\include;C:\lib\glm;C:\lib\assimp\include;C:\VulkanSDK\1.2.176.1\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

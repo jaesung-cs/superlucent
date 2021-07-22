@@ -427,7 +427,7 @@ void Engine::CreateInstance(GLFWwindow* window)
     extensions.push_back(glfw_extensions[i]);
 
   // OVR instance extensions
-  const auto ovrExtensions = ovr_.getInstanceExtensions();
+  const auto ovrExtensions = vrSession_.getInstanceExtensions();
   for (const auto& ovrExtension : ovrExtensions)
     extensions.push_back(ovrExtension.c_str());
 
@@ -479,7 +479,7 @@ void Engine::CreateDevice()
   // physical_device_ = instance_.enumeratePhysicalDevices()[0];
 
   // Let OVR select physical device
-  physical_device_ = ovr_.getPhysicalDevice(instance_);
+  physical_device_ = vrSession_.getPhysicalDevice(instance_);
 
   // Available extensions
   const auto device_extensions = physical_device_.enumerateDeviceExtensionProperties();
@@ -518,7 +518,7 @@ void Engine::CreateDevice()
   };
 
   // OVR extensions
-  const auto ovrExtensions = ovr_.getDeviceExtensions();
+  const auto ovrExtensions = vrSession_.getDeviceExtensions();
   for (const auto& ovrExtension : ovrExtensions)
     extensions.push_back(ovrExtension.c_str());
 
@@ -539,6 +539,11 @@ void Engine::CreateDevice()
 
   queue_ = device_.getQueue(queue_index_, 0);
   present_queue_ = device_.getQueue(queue_index_, 1);
+
+  // Ovr device
+  vkovr::DeviceCreateInfo vrDeviceCreateInfo;
+  vrDeviceCreateInfo.device = device_;
+  vrDevice_ = vrSession_.createDevice(vrDeviceCreateInfo);
 }
 
 void Engine::DestroyDevice()
@@ -1008,16 +1013,19 @@ void Engine::DestroySimulator()
 
 void Engine::CreateVr()
 {
-  vkovr::OculusVrCreateInfo createInfo;
-  createInfo.window = window_;
-  ovr_ = vkovr::createOclulusVr(createInfo);
+  vrSession_ = vkovr::createSession({});
 
-  ovr_.beginSession();
+  // Print Oculus properties
+  const auto& properties = vrSession_.getOculusProperties();
+  std::cout << "VR device properties:" << std::endl
+    << "  Product name: " << properties.ProductName << std::endl
+    << "  Manufacturer: " << properties.Manufacturer << std::endl
+    << "  Resolution  : (" << properties.Resolution.w << ", " << properties.Resolution.h << ")" << std::endl;
 }
 
 void Engine::DestroyVr()
 {
-  ovr_.destroy();
+  vrSession_.destroy();
 }
 
 void Engine::CreateSynchronizationObjects()

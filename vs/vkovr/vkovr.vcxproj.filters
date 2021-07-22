@@ -12,9 +12,24 @@
     <ClInclude Include="..\..\include\vkovr\vkovr.hpp">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\include\vkovr\mirror_texture.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\vkovr\device.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\vkovr\session.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\vkovr\vkovr.cc">
+    <ClCompile Include="..\..\src\vkovr\mirror_texture.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\vkovr\device.cc">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\vkovr\session.cc">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

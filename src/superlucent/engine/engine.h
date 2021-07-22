@@ -256,7 +256,8 @@ private:
 
   // OVR
   GLFWwindow* window_ = nullptr;
-  vkovr::OculusVr ovr_;
+  vkovr::Session vrSession_;
+  vkovr::Device vrDevice_;
 };
 }
 }

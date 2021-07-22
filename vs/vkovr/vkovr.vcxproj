@@ -19,10 +19,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\include\vkovr\device.h" />
+    <ClInclude Include="..\..\include\vkovr\session.h" />
+    <ClInclude Include="..\..\include\vkovr\mirror_texture.h" />
     <ClInclude Include="..\..\include\vkovr\vkovr.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\vkovr\vkovr.cc" />
+    <ClCompile Include="..\..\src\vkovr\device.cc" />
+    <ClCompile Include="..\..\src\vkovr\session.cc" />
+    <ClCompile Include="..\..\src\vkovr\mirror_texture.cc" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
