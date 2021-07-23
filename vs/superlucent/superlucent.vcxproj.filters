@@ -66,6 +66,9 @@
     <ClCompile Include="..\..\src\superlucent\geometry\tetragrid.cc">
       <Filter>src\superlucent\geometry</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\superlucent\engine\mesh_renderer.cc">
+      <Filter>src\superlucent\engine</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\superlucent\application.h">
@@ -110,6 +113,9 @@
     <ClInclude Include="..\..\src\superlucent\geometry\tetragrid.h">
       <Filter>src\superlucent\geometry</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\src\superlucent\engine\mesh_renderer.h">
+      <Filter>src\superlucent\engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\src\superlucent\shader\rendering\cell_sphere.frag">
@@ -126,6 +132,12 @@
     </None>
     <None Include="..\..\src\compile_shader.py">
       <Filter>src</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\rendering\mesh.frag">
+      <Filter>src\superlucent\shader\rendering</Filter>
+    </None>
+    <None Include="..\..\src\superlucent\shader\rendering\mesh.vert">
+      <Filter>src\superlucent\shader\rendering</Filter>
     </None>
   </ItemGroup>
 </Project>

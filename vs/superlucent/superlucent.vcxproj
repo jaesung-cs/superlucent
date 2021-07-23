@@ -165,6 +165,7 @@ python compile_shader.py
     <ClCompile Include="..\..\src\main.cc" />
     <ClCompile Include="..\..\src\superlucent\application.cc" />
     <ClCompile Include="..\..\src\superlucent\engine\engine.cc" />
+    <ClCompile Include="..\..\src\superlucent\engine\mesh_renderer.cc" />
     <ClCompile Include="..\..\src\superlucent\engine\particle_renderer.cc" />
     <ClCompile Include="..\..\src\superlucent\engine\uniform_buffer.cc" />
     <ClCompile Include="..\..\src\superlucent\geometry\mesh.cc" />
@@ -177,6 +178,7 @@ python compile_shader.py
   <ItemGroup>
     <ClInclude Include="..\..\src\superlucent\application.h" />
     <ClInclude Include="..\..\src\superlucent\engine\engine.h" />
+    <ClInclude Include="..\..\src\superlucent\engine\mesh_renderer.h" />
     <ClInclude Include="..\..\src\superlucent\engine\particle_renderer.h" />
     <ClInclude Include="..\..\src\superlucent\engine\ubo\camera_ubo.h" />
     <ClInclude Include="..\..\src\superlucent\engine\ubo\light_ubo.h" />
@@ -196,6 +198,8 @@ python compile_shader.py
     <None Include="..\..\src\superlucent\shader\rendering\cell_sphere.vert" />
     <None Include="..\..\src\superlucent\shader\rendering\floor.frag" />
     <None Include="..\..\src\superlucent\shader\rendering\floor.vert" />
+    <None Include="..\..\src\superlucent\shader\rendering\mesh.frag" />
+    <None Include="..\..\src\superlucent\shader\rendering\mesh.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
