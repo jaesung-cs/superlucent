@@ -258,7 +258,7 @@ private:
   std::vector<vk::Fence> images_in_flight_;
 
   // OVR
-  GLFWwindow* window_ = nullptr;
+  bool vrAvailable_ = false;
   vkovr::Session vrSession_;
   vkovr::Device vrDevice_;
   vkovr::MirrorTexture vrMirrorTexture_;

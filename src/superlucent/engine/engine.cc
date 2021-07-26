@@ -38,7 +38,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
 Engine::Engine(GLFWwindow* window, uint32_t max_width, uint32_t max_height)
   : max_width_{ max_width }
   , max_height_{ max_height }
-  , window_{ window }
 {
   // Current width and height
   int width, height;
@@ -175,9 +174,12 @@ void Engine::Draw(double time)
   device_.resetFences(in_flight_fences_[current_frame_]);
 
   // OVR
-  const auto vrStatus = vrDevice_.getStatus();
-  const auto eyePoses = vrDevice_.getEyePoses();
-  const auto projection = vrDevice_.getEyeProjection(vkovr::EyeType::LeftEye, 0.2f, 1000.f);
+  if (vrAvailable_)
+  {
+    const auto vrStatus = vrDevice_.getStatus();
+    const auto eyePoses = vrDevice_.getEyePoses();
+    const auto projection = vrDevice_.getEyeProjection(vkovr::EyeType::LeftEye, 0.2f, 1000.f);
+  }
 
   // Build command buffer
   auto& draw_command_buffer = draw_command_buffers_[image_index];
@@ -427,7 +429,7 @@ void Engine::CreateInstance(GLFWwindow* window)
   };
 
   // Extensions
-  std::vector<const char*> extensions = {
+  std::vector<std::string> extensions = {
     VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
   };
 
@@ -437,17 +439,24 @@ void Engine::CreateInstance(GLFWwindow* window)
   for (uint32_t i = 0; i < num_glfw_extensions; i++)
     extensions.push_back(glfw_extensions[i]);
 
-  // OVR instance extensions
-  const auto ovrExtensions = vrSession_.getInstanceExtensions();
-  for (const auto& ovrExtension : ovrExtensions)
-    extensions.push_back(ovrExtension.c_str());
+  if (vrAvailable_)
+  {
+    // OVR instance extensions
+    const auto ovrExtensions = vrSession_.getInstanceExtensions();
+    for (const auto& ovrExtension : ovrExtensions)
+      extensions.push_back(ovrExtension);
+  }
 
   // Create instance
+  std::vector<const char*> extensionCstr;
+  for (const auto& extension : extensions)
+    extensionCstr.push_back(extension.c_str());
+
   vk::InstanceCreateInfo instance_create_info;
   instance_create_info
     .setPApplicationInfo(&app_info)
     .setPEnabledLayerNames(layers)
-    .setPEnabledExtensionNames(extensions);
+    .setPEnabledExtensionNames(extensionCstr);
 
   vk::DebugUtilsMessengerCreateInfoEXT messenger_create_info;
   messenger_create_info
@@ -486,11 +495,16 @@ void Engine::DestroyInstance()
 
 void Engine::CreateDevice()
 {
-  // Choose the first GPU
-  // physical_device_ = instance_.enumeratePhysicalDevices()[0];
-
-  // Let OVR select physical device
-  physical_device_ = vrSession_.getPhysicalDevice(instance_);
+  if (vrAvailable_)
+  {
+    // Let OVR select physical device
+    physical_device_ = vrSession_.getPhysicalDevice(instance_);
+  }
+  else
+  {
+    // Choose the first GPU
+    physical_device_ = instance_.enumeratePhysicalDevices()[0];
+  }
 
   // Available extensions
   const auto device_extensions = physical_device_.enumerateDeviceExtensionProperties();
@@ -524,14 +538,17 @@ void Engine::CreateDevice()
   };
 
   // Device extensions
-  std::vector<const char*> extensions = {
+  std::vector<std::string> extensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
   };
 
   // OVR extensions
-  const auto ovrExtensions = vrSession_.getDeviceExtensions();
-  for (const auto& ovrExtension : ovrExtensions)
-    extensions.push_back(ovrExtension.c_str());
+  if (vrAvailable_)
+  {
+    const auto ovrExtensions = vrSession_.getDeviceExtensions();
+    for (const auto& ovrExtension : ovrExtensions)
+      extensions.push_back(ovrExtension);
+  }
 
   // Device features
   auto features = physical_device_.getFeatures();
@@ -541,10 +558,14 @@ void Engine::CreateDevice()
     .setSamplerAnisotropy(true);
 
   // Create device
+  std::vector<const char*> extensionCstr;
+  for (const auto& extension : extensions)
+    extensionCstr.push_back(extension.c_str());
+
   vk::DeviceCreateInfo device_create_info;
   device_create_info
     .setQueueCreateInfos(queue_create_info)
-    .setPEnabledExtensionNames(extensions)
+    .setPEnabledExtensionNames(extensionCstr)
     .setPEnabledFeatures(&features);
   device_ = physical_device_.createDevice(device_create_info);
 
@@ -1019,64 +1040,80 @@ void Engine::DestroySimulator()
 
 void Engine::CreateVrSession()
 {
-  vrSession_ = vkovr::createSession({});
+  try
+  {
+    vrSession_ = vkovr::createSession({});
 
-  // Print Oculus properties
-  const auto& properties = vrSession_.getOculusProperties();
-  std::cout << "VR device properties:" << std::endl
-    << "  Product name: " << properties.ProductName << std::endl
-    << "  Manufacturer: " << properties.Manufacturer << std::endl
-    << "  Resolution  : (" << properties.Resolution.w << ", " << properties.Resolution.h << ")" << std::endl;
+    // Print Oculus properties
+    const auto& properties = vrSession_.getOculusProperties();
+    std::cout << "VR device properties:" << std::endl
+      << "  Product name: " << properties.ProductName << std::endl
+      << "  Manufacturer: " << properties.Manufacturer << std::endl
+      << "  Resolution  : (" << properties.Resolution.w << ", " << properties.Resolution.h << ")" << std::endl;
+
+    vrAvailable_ = true;
+  }
+  catch (const std::exception& e)
+  {
+    std::cerr << e.what() << std::endl;
+  }
 }
 
 void Engine::DestroyVrSession()
 {
-  vrSession_.destroy();
+  if (vrAvailable_)
+    vrSession_.destroy();
 }
 
 void Engine::CreateVrDevice()
 {
   // OVR device
-  vkovr::DeviceCreateInfo vrDeviceCreateInfo;
-  vrDeviceCreateInfo.device = device_;
-  vrDevice_ = vrSession_.createDevice(vrDeviceCreateInfo);
-
-  // OVR mirror texture
-  transient_command_buffer_.begin({ vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
-
-  vkovr::MirrorTextureCreateInfo mirrorTextureCreateInfo;
-  mirrorTextureCreateInfo.extent.width = 1600u;
-  mirrorTextureCreateInfo.extent.height = 900u;
-  mirrorTextureCreateInfo.commandBuffer = transient_command_buffer_;
-  vrMirrorTexture_ = vrDevice_.createMirrorTexture(mirrorTextureCreateInfo);
-
-  transient_command_buffer_.end();
-
-  // Need to submit barrier for image layout transition command
-  vk::SubmitInfo submitInfo;
-  submitInfo
-    .setCommandBuffers(transient_command_buffer_);
-  queue_.submit(submitInfo);
-
-  // OVR swapchain
-  for (const auto eye : { vkovr::EyeType::LeftEye, vkovr::EyeType::RightEye })
+  if (vrAvailable_)
   {
-    vkovr::SwapchainCreateInfo swapchainCreateInfo;
-    swapchainCreateInfo.extent = vrDevice_.getFovTextureSize(eye);
+    vkovr::DeviceCreateInfo vrDeviceCreateInfo;
+    vrDeviceCreateInfo.device = device_;
+    vrDevice_ = vrSession_.createDevice(vrDeviceCreateInfo);
 
-    vrSwapchains_.emplace_back(vrDevice_.createSwapchain(swapchainCreateInfo));
+    // OVR mirror texture
+    transient_command_buffer_.begin({ vk::CommandBufferUsageFlagBits::eOneTimeSubmit });
+
+    vkovr::MirrorTextureCreateInfo mirrorTextureCreateInfo;
+    mirrorTextureCreateInfo.extent.width = 1600u;
+    mirrorTextureCreateInfo.extent.height = 900u;
+    mirrorTextureCreateInfo.commandBuffer = transient_command_buffer_;
+    vrMirrorTexture_ = vrDevice_.createMirrorTexture(mirrorTextureCreateInfo);
+
+    transient_command_buffer_.end();
+
+    // Need to submit barrier for image layout transition command
+    vk::SubmitInfo submitInfo;
+    submitInfo
+      .setCommandBuffers(transient_command_buffer_);
+    queue_.submit(submitInfo);
+
+    // OVR swapchain
+    for (const auto eye : { vkovr::EyeType::LeftEye, vkovr::EyeType::RightEye })
+    {
+      vkovr::SwapchainCreateInfo swapchainCreateInfo;
+      swapchainCreateInfo.extent = vrDevice_.getFovTextureSize(eye);
+
+      vrSwapchains_.emplace_back(vrDevice_.createSwapchain(swapchainCreateInfo));
+    }
   }
 }
 
 void Engine::DestroyVrDevice()
 {
-  for (auto vrSwapchain : vrSwapchains_)
-    vrDevice_.destroySwapchain(vrSwapchain);
-  vrSwapchains_.clear();
+  if (vrAvailable_)
+  {
+    for (auto vrSwapchain : vrSwapchains_)
+      vrDevice_.destroySwapchain(vrSwapchain);
+    vrSwapchains_.clear();
 
-  vrDevice_.destroyMirrorTexture(vrMirrorTexture_);
+    vrDevice_.destroyMirrorTexture(vrMirrorTexture_);
 
-  vrDevice_.destroy();
+    vrDevice_.destroy();
+  }
 }
 
 void Engine::CreateSynchronizationObjects()
